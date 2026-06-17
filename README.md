@@ -7,22 +7,23 @@ The thesis:
 
 > Configuration describes a typed graph of executable objects.
 
-ETCM is for projects where config files are no longer just parameter bags:
+ETCM is for projects where configuration is part of the system architecture:
 machine learning experiments, distributed runtimes, HPC jobs, data pipelines,
 service settings, and reusable infrastructure components.
 
 ## Why
 
-Config-heavy Python projects often end up with:
+ETCM is designed to complement familiar Python configuration workflows. It is
+useful when a project benefits from:
 
-- YAML registries and local `$ref` conventions
-- Pydantic schemas duplicated beside config files
-- CLI overrides that can silently change critical fields
-- experiment artifacts that need a resolved config for replay
+- config files that reference reusable definitions across files
+- generated Pydantic views from shared configuration definitions
+- explicit override policy for important fields
+- resolved config artifacts for replay and audit
 - object graphs made from models, optimizers, datasets, launchers, callbacks,
   and runtime modules
 
-ETCM makes those relationships explicit and type-checked.
+ETCM keeps those relationships explicit, type-checked, and easy to inspect.
 
 ## Example
 
