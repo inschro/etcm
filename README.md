@@ -77,3 +77,4 @@ direction and remaining v0 implementation scope.
 - [Stage 4 Parser Core Notes](docs/stage4/README.md)
 - [Stage 5 Resolver Core Notes](docs/stage5/README.md)
 - [Stage 6 Generated View Notes](docs/stage6/README.md)
+- [Stage 7 Pipeline CLI Notes](docs/stage7/README.md)

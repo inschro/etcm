@@ -229,7 +229,7 @@ Acceptance:
 - resolved JSON export is stable under repeated runs
 - conversion refuses unvalidated graphs unless `force=True`
 
-## Post-Stage 6: CLI Pipeline Follow-Up
+## Phase 7: Pipeline CLI
 
 Add a small CLI that mirrors the Python pipeline instead of exposing every
 internal inspection view as a separate command.
@@ -262,7 +262,7 @@ Acceptance:
 - invalid selectors or validation failures print ETCM diagnostics to stderr and
   exit non-zero.
 
-## Phase 7: Bridges And Adoption
+## Phase 8: Bridges And Adoption
 
 Only after the core is credible:
 
