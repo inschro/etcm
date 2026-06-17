@@ -28,6 +28,7 @@ Acceptance:
 
 Decide and document the implementation strategy before writing parser code.
 Record decisions as short ADR-style docs so future changes are intentional.
+The completed Stage 1 notes live in [stage1/](stage1/).
 
 Tool decisions:
 

@@ -65,3 +65,4 @@ v0 implementation scope before package code is written.
 - [Manifest](docs/manifest.md)
 - [Product Spec](docs/product_spec.md)
 - [Implementation Roadmap](docs/roadmap.md)
+- [Stage 1 Architecture Notes](docs/stage1/README.md)
