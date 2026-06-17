@@ -1,0 +1,55 @@
+{
+  "edges": [],
+  "nodes": [
+    {
+      "graph_path": "root",
+      "id": "root",
+      "implementation": "default",
+      "selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/path_policies/data.etcm#default",
+      "source_path": "valid/path_policies/data.etcm",
+      "spec_ancestors": [],
+      "spec_name": "DataConfig",
+      "values": {
+        "cache_dir": "valid/path_policies/data/cache",
+        "existing_file": "valid/path_policies/data/existing.txt",
+        "output_dir": "valid/path_policies/data/future-output"
+      }
+    }
+  ],
+  "path_resolution": [
+    {
+      "exists": false,
+      "expected_kind": "dir",
+      "field_path": "root.cache_dir",
+      "field_policy": "resolver",
+      "original": "data/cache",
+      "resolved_path": "valid/path_policies/data/cache",
+      "resolver_policy": "allow_missing",
+      "source_path": "valid/path_policies/data.etcm"
+    },
+    {
+      "exists": true,
+      "expected_kind": "file",
+      "field_path": "root.existing_file",
+      "field_policy": "must_exist",
+      "original": "data/existing.txt",
+      "resolved_path": "valid/path_policies/data/existing.txt",
+      "resolver_policy": "allow_missing",
+      "source_path": "valid/path_policies/data.etcm"
+    },
+    {
+      "exists": false,
+      "expected_kind": "dir",
+      "field_path": "root.output_dir",
+      "field_policy": "allow_missing",
+      "original": "data/future-output",
+      "resolved_path": "valid/path_policies/data/future-output",
+      "resolver_policy": "allow_missing",
+      "source_path": "valid/path_policies/data.etcm"
+    }
+  ],
+  "root_selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/path_policies/data.etcm",
+  "sources": [
+    "valid/path_policies/data.etcm"
+  ]
+}

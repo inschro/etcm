@@ -1,0 +1,13 @@
+spec Runtime:
+  tags: list[str] = Field(default=[], override="append")
+  metadata: dict[str, str] = Field(default={}, override="merge")
+  device: str = Field(default="cpu", override="allow")
+
+impl base:
+  tags: ["base"]
+  metadata: {"owner": "tests"}
+
+impl child <- base:
+  tags: ["child"]
+  metadata: {"mode": "fast"}
+  device: "cuda"

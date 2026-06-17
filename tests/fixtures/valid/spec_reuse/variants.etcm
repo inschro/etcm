@@ -1,0 +1,5 @@
+$spec: spec.etcm
+
+impl smoke:
+  train_file: "data/smoke.txt"
+  retries: 3

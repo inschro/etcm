@@ -1,0 +1,5 @@
+spec BadRef:
+  model: ModelConfig
+
+impl default:
+  $model: missing.etcm#default

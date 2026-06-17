@@ -1,0 +1,8 @@
+spec Loop:
+  value: int = Field(default=1)
+
+impl a <- b:
+  value: 1
+
+impl b <- a:
+  value: 2

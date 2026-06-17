@@ -1,0 +1,2 @@
+spec A <- b.etcm:
+  value: int = Field(default=1)

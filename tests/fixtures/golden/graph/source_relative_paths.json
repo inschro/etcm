@@ -1,0 +1,57 @@
+{
+  "edges": [
+    {
+      "field_path": [
+        "data"
+      ],
+      "kind": "ref",
+      "source": "root",
+      "target": "root.data"
+    }
+  ],
+  "nodes": [
+    {
+      "graph_path": "root",
+      "id": "root",
+      "implementation": "default",
+      "selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/source_relative_paths/train.etcm#default",
+      "source_path": "valid/source_relative_paths/train.etcm",
+      "spec_ancestors": [],
+      "spec_name": "TrainRun",
+      "values": {
+        "data": {
+          "$ref": "root.data"
+        }
+      }
+    },
+    {
+      "graph_path": "root.data",
+      "id": "root.data",
+      "implementation": "default",
+      "selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/source_relative_paths/nested/model.etcm#default",
+      "source_path": "valid/source_relative_paths/nested/model.etcm",
+      "spec_ancestors": [],
+      "spec_name": "DataConfig",
+      "values": {
+        "local_file": "valid/source_relative_paths/nested/local.txt"
+      }
+    }
+  ],
+  "path_resolution": [
+    {
+      "exists": true,
+      "expected_kind": "file",
+      "field_path": "root.data.local_file",
+      "field_policy": "must_exist",
+      "original": "local.txt",
+      "resolved_path": "valid/source_relative_paths/nested/local.txt",
+      "resolver_policy": "allow_missing",
+      "source_path": "valid/source_relative_paths/nested/model.etcm"
+    }
+  ],
+  "root_selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/source_relative_paths/train.etcm",
+  "sources": [
+    "valid/source_relative_paths/nested/model.etcm",
+    "valid/source_relative_paths/train.etcm"
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "edges": [
+    {
+      "field_path": [
+        "model"
+      ],
+      "kind": "ref",
+      "source": "root",
+      "target": "root.model"
+    }
+  ],
+  "nodes": [
+    {
+      "graph_path": "root",
+      "id": "root",
+      "implementation": "smoke",
+      "selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/typed_refs/train.etcm#smoke",
+      "source_path": "valid/typed_refs/train.etcm",
+      "spec_ancestors": [],
+      "spec_name": "TrainRun",
+      "values": {
+        "max_steps": 2,
+        "model": {
+          "$ref": "root.model"
+        }
+      }
+    },
+    {
+      "graph_path": "root.model",
+      "id": "root.model",
+      "implementation": "tiny",
+      "selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/typed_refs/model.etcm#tiny",
+      "source_path": "valid/typed_refs/model.etcm",
+      "spec_ancestors": [],
+      "spec_name": "ModelConfig",
+      "values": {
+        "depth": 4
+      }
+    }
+  ],
+  "path_resolution": [],
+  "root_selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/typed_refs/train.etcm#smoke",
+  "sources": [
+    "valid/typed_refs/model.etcm",
+    "valid/typed_refs/train.etcm"
+  ]
+}

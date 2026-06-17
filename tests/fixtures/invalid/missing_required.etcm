@@ -1,0 +1,6 @@
+spec MissingRequired:
+  name: str
+  retries: int = Field(default=1)
+
+impl default:
+  retries: 2

@@ -1,0 +1,23 @@
+{
+  "code": "E_INVALID_PATH",
+  "details": {
+    "declaring_source_path": "invalid/invalid_path_kind.etcm",
+    "exists": true,
+    "expected_kind": "file",
+    "field": "file_path",
+    "field_policy": "must_exist",
+    "original": ".",
+    "resolved_path": "invalid",
+    "resolver_policy": "allow_missing"
+  },
+  "graph_path": "root.file_path",
+  "message": "Invalid path for field 'file_path'.",
+  "selector": null,
+  "source_path": "invalid/invalid_path_kind.etcm",
+  "span": {
+    "column": 3,
+    "end_column": 1,
+    "end_line": 6,
+    "line": 5
+  }
+}

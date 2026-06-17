@@ -1,0 +1,17 @@
+{
+  "code": "E_TYPE_MISMATCH",
+  "details": {
+    "actual": "string",
+    "expected": "int"
+  },
+  "graph_path": "root.count",
+  "message": "Value of type 'string' is not assignable to 'int'.",
+  "selector": null,
+  "source_path": "invalid/type_mismatch.etcm",
+  "span": {
+    "column": 3,
+    "end_column": 1,
+    "end_line": 6,
+    "line": 5
+  }
+}

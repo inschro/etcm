@@ -1,0 +1,5 @@
+spec BadPath:
+  file_path: Path = Field(path_exists="must_exist", path_kind="file")
+
+impl default:
+  file_path: "."

@@ -1,0 +1,9 @@
+spec DataConfig:
+  existing_file: Path = Field(path_exists="must_exist", path_kind="file")
+  output_dir: Path = Field(path_exists="allow_missing", path_kind="dir")
+  cache_dir: Path = Field(path_exists="resolver", path_kind="dir")
+
+impl default:
+  existing_file: "data/existing.txt"
+  output_dir: "data/future-output"
+  cache_dir: "data/cache"

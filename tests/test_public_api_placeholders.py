@@ -20,13 +20,22 @@ def test_resolver_rejects_unknown_path_policy() -> None:
     "call",
     [
         lambda: load("configs/train.etcm#smoke"),
-        lambda: resolve("configs/train.etcm#smoke"),
-        lambda: validate("configs/train.etcm#smoke"),
         lambda: Resolver().load("configs/train.etcm#smoke"),
-        lambda: Resolver().resolve("configs/train.etcm#smoke"),
-        lambda: Resolver().validate("configs/train.etcm#smoke"),
     ],
 )
-def test_public_api_placeholders_are_explicit(call: Callable[[], object]) -> None:
-    with pytest.raises(ETCMNotImplementedError, match="Stage 2"):
+def test_generated_view_placeholders_are_explicit(call: Callable[[], object]) -> None:
+    with pytest.raises(ETCMNotImplementedError, match="Stage 6"):
         call()
+
+
+def test_resolve_and_validate_are_no_longer_placeholders() -> None:
+    for call in (
+        lambda: resolve("configs/train.etcm#smoke"),
+        lambda: validate("configs/train.etcm#smoke"),
+        lambda: Resolver().resolve("configs/train.etcm#smoke"),
+        lambda: Resolver().validate("configs/train.etcm#smoke"),
+    ):
+        with pytest.raises(Exception) as raised:
+            call()
+
+        assert not isinstance(raised.value, ETCMNotImplementedError)

@@ -1,0 +1,19 @@
+{
+  "code": "E_REF_CYCLE",
+  "details": {
+    "chain": [
+      "invalid/ref_cycle/node.etcm#a",
+      "invalid/ref_cycle/node.etcm#b"
+    ]
+  },
+  "graph_path": "root.child.child",
+  "message": "Cycle while resolving implementation 'a'.",
+  "selector": "/home/ingo/code_stuff/etcm/tests/fixtures/invalid/ref_cycle/node.etcm#a",
+  "source_path": "invalid/ref_cycle/node.etcm",
+  "span": {
+    "column": null,
+    "end_column": null,
+    "end_line": null,
+    "line": null
+  }
+}

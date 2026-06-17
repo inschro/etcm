@@ -1,0 +1,35 @@
+{
+  "edges": [],
+  "nodes": [
+    {
+      "graph_path": "root",
+      "id": "root",
+      "implementation": "smoke",
+      "selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/spec_reuse/variants.etcm#smoke",
+      "source_path": "valid/spec_reuse/variants.etcm",
+      "spec_ancestors": [],
+      "spec_name": "DataConfig",
+      "values": {
+        "retries": 3,
+        "train_file": "valid/spec_reuse/data/smoke.txt"
+      }
+    }
+  ],
+  "path_resolution": [
+    {
+      "exists": false,
+      "expected_kind": "file",
+      "field_path": "root.train_file",
+      "field_policy": "allow_missing",
+      "original": "data/smoke.txt",
+      "resolved_path": "valid/spec_reuse/data/smoke.txt",
+      "resolver_policy": "allow_missing",
+      "source_path": "valid/spec_reuse/variants.etcm"
+    }
+  ],
+  "root_selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/spec_reuse/variants.etcm#smoke",
+  "sources": [
+    "valid/spec_reuse/spec.etcm",
+    "valid/spec_reuse/variants.etcm"
+  ]
+}

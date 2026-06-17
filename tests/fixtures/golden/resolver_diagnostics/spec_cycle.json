@@ -1,0 +1,19 @@
+{
+  "code": "E_SPEC_CYCLE",
+  "details": {
+    "chain": [
+      "invalid/spec_cycle/a.etcm",
+      "invalid/spec_cycle/b.etcm"
+    ]
+  },
+  "graph_path": null,
+  "message": "Cycle while resolving spec inheritance.",
+  "selector": null,
+  "source_path": "invalid/spec_cycle/a.etcm",
+  "span": {
+    "column": null,
+    "end_column": null,
+    "end_line": null,
+    "line": null
+  }
+}

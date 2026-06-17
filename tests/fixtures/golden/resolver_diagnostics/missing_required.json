@@ -1,0 +1,16 @@
+{
+  "code": "E_MISSING_FIELD",
+  "details": {
+    "field": "name"
+  },
+  "graph_path": "root.name",
+  "message": "Missing required field 'name'.",
+  "selector": null,
+  "source_path": "invalid/missing_required.etcm",
+  "span": {
+    "column": 1,
+    "end_column": 1,
+    "end_line": 7,
+    "line": 5
+  }
+}

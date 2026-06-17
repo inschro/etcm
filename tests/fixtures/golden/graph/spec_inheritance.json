@@ -1,0 +1,33 @@
+{
+  "edges": [
+    {
+      "field_path": [],
+      "kind": "spec_parent",
+      "source": "root",
+      "target": "spec:Runtime"
+    }
+  ],
+  "nodes": [
+    {
+      "graph_path": "root",
+      "id": "root",
+      "implementation": "default",
+      "selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/spec_inheritance_resolver/cuda.etcm#default",
+      "source_path": "valid/spec_inheritance_resolver/cuda.etcm",
+      "spec_ancestors": [
+        "Runtime"
+      ],
+      "spec_name": "CudaRuntime",
+      "values": {
+        "device": "cuda",
+        "gpus": 2
+      }
+    }
+  ],
+  "path_resolution": [],
+  "root_selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/spec_inheritance_resolver/cuda.etcm",
+  "sources": [
+    "valid/spec_inheritance_resolver/base.etcm",
+    "valid/spec_inheritance_resolver/cuda.etcm"
+  ]
+}

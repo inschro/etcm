@@ -1,0 +1,5 @@
+spec DataConfig:
+  local_file: Path = Field(path_exists="must_exist", path_kind="file")
+
+impl default:
+  local_file: "local.txt"

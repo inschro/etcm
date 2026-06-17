@@ -1,0 +1,55 @@
+{
+  "edges": [
+    {
+      "field_path": [],
+      "kind": "impl_parent",
+      "source": "root",
+      "target": "root.__parent"
+    }
+  ],
+  "nodes": [
+    {
+      "graph_path": "root",
+      "id": "root",
+      "implementation": "child",
+      "selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/impl_inheritance_resolver/runtime.etcm#child",
+      "source_path": "valid/impl_inheritance_resolver/runtime.etcm",
+      "spec_ancestors": [],
+      "spec_name": "Runtime",
+      "values": {
+        "device": "cuda",
+        "metadata": {
+          "mode": "fast",
+          "owner": "tests"
+        },
+        "tags": [
+          "base",
+          "child"
+        ]
+      }
+    },
+    {
+      "graph_path": "root.__parent",
+      "id": "root.__parent",
+      "implementation": "base",
+      "selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/impl_inheritance_resolver/runtime.etcm#base",
+      "source_path": "valid/impl_inheritance_resolver/runtime.etcm",
+      "spec_ancestors": [],
+      "spec_name": "Runtime",
+      "values": {
+        "device": "cpu",
+        "metadata": {
+          "owner": "tests"
+        },
+        "tags": [
+          "base"
+        ]
+      }
+    }
+  ],
+  "path_resolution": [],
+  "root_selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/impl_inheritance_resolver/runtime.etcm#child",
+  "sources": [
+    "valid/impl_inheritance_resolver/runtime.etcm"
+  ]
+}

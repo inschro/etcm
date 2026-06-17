@@ -1,0 +1,8 @@
+spec Runtime:
+  seed: int = Field(default=0, override="deny")
+
+impl base:
+  seed: 1
+
+impl child <- base:
+  seed: 2

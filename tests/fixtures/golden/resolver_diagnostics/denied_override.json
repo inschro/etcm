@@ -1,0 +1,17 @@
+{
+  "code": "E_INVALID_OVERRIDE",
+  "details": {
+    "field": "seed",
+    "override": "deny"
+  },
+  "graph_path": "root.seed",
+  "message": "Field 'seed' cannot be overridden with policy 'deny'.",
+  "selector": null,
+  "source_path": "invalid/denied_override.etcm",
+  "span": {
+    "column": 3,
+    "end_column": 1,
+    "end_line": 9,
+    "line": 8
+  }
+}

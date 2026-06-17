@@ -1,0 +1,8 @@
+spec Node:
+  child: Node
+
+impl a:
+  $child: node.etcm#b
+
+impl b:
+  $child: node.etcm#a

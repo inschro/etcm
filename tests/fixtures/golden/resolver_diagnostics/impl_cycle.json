@@ -1,0 +1,19 @@
+{
+  "code": "E_IMPL_CYCLE",
+  "details": {
+    "chain": [
+      "invalid/impl_cycle.etcm#a",
+      "invalid/impl_cycle.etcm#b"
+    ]
+  },
+  "graph_path": "root.__parent.__parent",
+  "message": "Cycle while resolving implementation 'a'.",
+  "selector": "/home/ingo/code_stuff/etcm/tests/fixtures/invalid/impl_cycle.etcm#a",
+  "source_path": "invalid/impl_cycle.etcm",
+  "span": {
+    "column": null,
+    "end_column": null,
+    "end_line": null,
+    "line": null
+  }
+}
