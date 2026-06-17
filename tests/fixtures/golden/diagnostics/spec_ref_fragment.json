@@ -1,0 +1,16 @@
+{
+  "code": "E_PARSE_UNEXPECTED_TOKEN",
+  "details": {
+    "expected": []
+  },
+  "graph_path": null,
+  "message": "Unexpected token while parsing ETCM.",
+  "selector": null,
+  "source_path": "invalid/spec_ref_fragment.etcm",
+  "span": {
+    "column": 23,
+    "end_column": 24,
+    "end_line": 1,
+    "line": 1
+  }
+}

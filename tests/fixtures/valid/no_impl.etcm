@@ -1,0 +1,3 @@
+spec OnlySpec:
+  name: str
+  retries: int = Field(default=1, gt=0)

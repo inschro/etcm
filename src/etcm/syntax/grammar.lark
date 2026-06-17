@@ -1,16 +1,58 @@
-start: item*
+start: _NL* (item _NL*)+
 
-?item: spec_stub | spec_ref_stub | impl_stub
+?item: spec | spec_ref | impl
 
-spec_stub: "spec" NAME ":" _NL
-spec_ref_stub: "$spec" ":" PATH _NL
-impl_stub: "impl" NAME ":" _NL
+spec: "spec" NAME spec_parent? ":" _NL _INDENT spec_line* _DEDENT
+spec_parent: "<-" PATH
+?spec_line: field | _NL
 
-PATH: /[A-Za-z0-9_\.\/:-]+/
+spec_ref: "$spec" ":" PATH _NL
 
+impl: "impl" NAME impl_parent? ":" _NL _INDENT impl_line* _DEDENT
+impl_parent: "<-" SELECTOR
+?impl_line: assignment | _NL
+
+?assignment: ref_assignment | value_assignment
+ref_assignment: "$" NAME ":" SELECTOR _NL
+value_assignment: field_path ":" value _NL
+field_path: NAME ("." NAME)*
+
+field: NAME ":" type_expr field_meta? _NL
+field_meta: "=" "Field" LPAR [meta_pair ("," meta_pair)* ","?] RPAR
+meta_pair: NAME "=" value
+
+?type_expr: union_type
+?union_type: type_atom ("|" type_atom)* -> union_type
+?type_atom: NAME LSQB type_expr ("," type_expr)* RSQB -> generic_type
+          | NAME -> named_type
+
+?value: ESCAPED_STRING -> string
+      | SIGNED_NUMBER -> number
+      | "true" -> true
+      | "false" -> false
+      | "null" -> null
+      | list_lit
+      | map_lit
+
+list_lit: LSQB [value ("," value)* ","?] RSQB
+map_lit: LBRACE [map_pair ("," map_pair)* ","?] RBRACE
+map_pair: map_key ":" value
+?map_key: NAME -> bare_key
+        | ESCAPED_STRING -> string_key
+
+LPAR: "("
+RPAR: ")"
+LSQB: "["
+RSQB: "]"
+LBRACE: "{"
+RBRACE: "}"
+PATH: /[A-Za-z0-9_\.\/-]+/
+SELECTOR: /[A-Za-z0-9_\.\/-]+#[A-Za-z_][A-Za-z0-9_]*/ | /[A-Za-z0-9_\.\/-]+#/ | /[A-Za-z0-9_\.\/-]+/
+
+%declare _INDENT _DEDENT
 %import common.CNAME -> NAME
+%import common.ESCAPED_STRING
+%import common.SIGNED_NUMBER
 %import common.WS_INLINE
 %ignore WS_INLINE
-_NL: /(\r?\n)+/
-COMMENT: /#[^\n]*/
-%ignore COMMENT
+_NL: /(\r?\n[ \t]*)+/

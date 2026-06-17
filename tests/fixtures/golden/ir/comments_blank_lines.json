@@ -1,0 +1,106 @@
+{
+  "implementations": [
+    {
+      "assignments": [
+        {
+          "field_path": [
+            "environment"
+          ],
+          "kind": "literal",
+          "value": {
+            "kind": "string",
+            "value": "prod"
+          }
+        },
+        {
+          "field_path": [
+            "timeout_seconds"
+          ],
+          "kind": "literal",
+          "value": {
+            "kind": "float",
+            "value": 10.0
+          }
+        },
+        {
+          "field_path": [
+            "label"
+          ],
+          "kind": "literal",
+          "value": {
+            "kind": "string",
+            "value": "service#prod"
+          }
+        }
+      ],
+      "name": "prod",
+      "parent": null
+    }
+  ],
+  "source_path": "valid/comments_blank_lines.etcm",
+  "spec": {
+    "fields": [
+      {
+        "default": null,
+        "metadata": {
+          "choices": {
+            "kind": "list",
+            "value": [
+              {
+                "kind": "string",
+                "value": "dev"
+              },
+              {
+                "kind": "string",
+                "value": "prod"
+              }
+            ]
+          }
+        },
+        "name": "environment",
+        "override": "allow",
+        "type": {
+          "args": [],
+          "kind": "named",
+          "name": "str"
+        }
+      },
+      {
+        "default": {
+          "kind": "float",
+          "value": 30.0
+        },
+        "metadata": {
+          "gt": {
+            "kind": "float",
+            "value": 0.0
+          }
+        },
+        "name": "timeout_seconds",
+        "override": "allow",
+        "type": {
+          "args": [],
+          "kind": "named",
+          "name": "float"
+        }
+      },
+      {
+        "default": {
+          "kind": "string",
+          "value": "prod#primary"
+        },
+        "metadata": {},
+        "name": "label",
+        "override": "allow",
+        "type": {
+          "args": [],
+          "kind": "named",
+          "name": "str"
+        }
+      }
+    ],
+    "name": "ServiceSettings",
+    "parent": null
+  },
+  "spec_ref": null
+}

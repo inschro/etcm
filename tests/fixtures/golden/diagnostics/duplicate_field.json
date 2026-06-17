@@ -1,0 +1,16 @@
+{
+  "code": "E_DUPLICATE_FIELD",
+  "details": {
+    "previous_line": 2
+  },
+  "graph_path": null,
+  "message": "Duplicate field 'retries' in spec 'BadConfig'.",
+  "selector": null,
+  "source_path": "invalid/duplicate_field.etcm",
+  "span": {
+    "column": 3,
+    "end_column": 1,
+    "end_line": 4,
+    "line": 3
+  }
+}

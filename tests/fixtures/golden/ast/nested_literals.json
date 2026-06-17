@@ -1,0 +1,29 @@
+{
+  "items": [
+    {
+      "field_count": 5,
+      "kind": "spec",
+      "name": "SweepConfig",
+      "parent": null,
+      "span": {
+        "column": 1,
+        "end_column": 1,
+        "end_line": 8,
+        "line": 1
+      }
+    },
+    {
+      "assignment_count": 5,
+      "kind": "impl",
+      "name": "lr_search",
+      "parent": null,
+      "span": {
+        "column": 1,
+        "end_column": 1,
+        "end_line": 14,
+        "line": 8
+      }
+    }
+  ],
+  "source_path": "valid/nested_literals.etcm"
+}

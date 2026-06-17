@@ -1,0 +1,14 @@
+{
+  "code": "E_PARSE_SELECTOR",
+  "details": {},
+  "graph_path": null,
+  "message": "Invalid selector 'models/lm.etcm#'.",
+  "selector": "models/lm.etcm#",
+  "source_path": "invalid/path_selector_ambiguity.etcm",
+  "span": {
+    "column": 3,
+    "end_column": 1,
+    "end_line": 6,
+    "line": 5
+  }
+}

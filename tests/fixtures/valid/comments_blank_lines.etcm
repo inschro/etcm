@@ -1,0 +1,14 @@
+# Leading comment
+
+spec ServiceSettings:
+  # Field comment
+  environment: str = Field(choices=["dev", "prod"]) # trailing field comment
+
+  timeout_seconds: float = Field(default=30.0, gt=0.0)
+  label: str = Field(default="prod#primary")
+
+impl prod:
+  environment: "prod" # trailing assignment comment
+
+  timeout_seconds: 10.0
+  label: "service#prod"

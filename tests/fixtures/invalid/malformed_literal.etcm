@@ -1,0 +1,2 @@
+spec BrokenLiteral:
+  values: list[int] = Field(default=[1, 2,)

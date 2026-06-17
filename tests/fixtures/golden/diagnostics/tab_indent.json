@@ -1,0 +1,14 @@
+{
+  "code": "E_PARSE_TAB_INDENT",
+  "details": {},
+  "graph_path": null,
+  "message": "Tabs cannot be used for indentation in ETCM.",
+  "selector": null,
+  "source_path": "invalid/tab_indent.etcm",
+  "span": {
+    "column": 1,
+    "end_column": 2,
+    "end_line": 2,
+    "line": 2
+  }
+}

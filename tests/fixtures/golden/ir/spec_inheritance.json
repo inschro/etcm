@@ -1,0 +1,80 @@
+{
+  "implementations": [
+    {
+      "assignments": [
+        {
+          "field_path": [
+            "min_lr_ratio"
+          ],
+          "kind": "literal",
+          "value": {
+            "kind": "float",
+            "value": 0.01
+          }
+        },
+        {
+          "field_path": [
+            "cycles"
+          ],
+          "kind": "literal",
+          "value": {
+            "kind": "float",
+            "value": 0.5
+          }
+        }
+      ],
+      "name": "default",
+      "parent": null
+    }
+  ],
+  "source_path": "valid/spec_inheritance.etcm",
+  "spec": {
+    "fields": [
+      {
+        "default": {
+          "kind": "float",
+          "value": 0.0
+        },
+        "metadata": {
+          "ge": {
+            "kind": "float",
+            "value": 0.0
+          },
+          "le": {
+            "kind": "float",
+            "value": 1.0
+          }
+        },
+        "name": "min_lr_ratio",
+        "override": "allow",
+        "type": {
+          "args": [],
+          "kind": "named",
+          "name": "float"
+        }
+      },
+      {
+        "default": {
+          "kind": "float",
+          "value": 0.5
+        },
+        "metadata": {
+          "gt": {
+            "kind": "float",
+            "value": 0.0
+          }
+        },
+        "name": "cycles",
+        "override": "allow",
+        "type": {
+          "args": [],
+          "kind": "named",
+          "name": "float"
+        }
+      }
+    ],
+    "name": "CosineLRScheduler",
+    "parent": "schedulers/base.etcm"
+  },
+  "spec_ref": null
+}

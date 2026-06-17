@@ -1,0 +1,2 @@
+spec Child <- specs/base.etcm#bad:
+  value: int

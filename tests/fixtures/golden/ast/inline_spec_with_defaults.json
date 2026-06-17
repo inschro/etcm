@@ -1,0 +1,29 @@
+{
+  "items": [
+    {
+      "field_count": 4,
+      "kind": "spec",
+      "name": "RuntimeConfig",
+      "parent": null,
+      "span": {
+        "column": 1,
+        "end_column": 1,
+        "end_line": 7,
+        "line": 1
+      }
+    },
+    {
+      "assignment_count": 3,
+      "kind": "impl",
+      "name": "default",
+      "parent": null,
+      "span": {
+        "column": 1,
+        "end_column": 1,
+        "end_line": 11,
+        "line": 7
+      }
+    }
+  ],
+  "source_path": "valid/inline_spec_with_defaults.etcm"
+}

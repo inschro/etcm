@@ -147,13 +147,17 @@ Acceptance:
 ## Phase 4: Parser Core
 
 Implement the parser only after the architecture decisions and fixtures exist.
+The Stage 4 parser core notes live in [stage4/](stage4/).
 
 Parser requirements:
 
 - parse `spec`, top-level `$spec`, `impl`, field declarations, refs, inheritance,
   literals, type expressions, and `Field(...)` metadata
 - preserve source location for every definition, assignment, ref, and literal
-- support comments and trailing commas where specified by the grammar decision
+- support YAML-style `#` comments and trailing commas where specified by the
+  grammar decision
+- keep attached selector fragments such as `path.etcm#impl` distinct from
+  comments
 - reject files that define both inline `spec` and top-level `$spec`
 - reject multiple specs in one file
 - reject duplicate field names and duplicate implementation names
@@ -272,6 +276,7 @@ Resolver:
 - relative and absolute selectors
 - omitted fragment defaults to `#default`
 - spec inheritance and `$spec` references without fragments
+- YAML-style comments do not consume attached selector fragments
 - `Path` values resolved relative to the declaring config file
 - `Path` fields with resolver default `allow_missing`
 - `Path` fields with resolver default `must_exist`

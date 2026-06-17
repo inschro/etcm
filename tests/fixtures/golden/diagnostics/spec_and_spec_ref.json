@@ -1,0 +1,14 @@
+{
+  "code": "E_SPEC_AND_SPEC_REF",
+  "details": {},
+  "graph_path": null,
+  "message": "Document may define either inline spec or top-level $spec, not both.",
+  "selector": null,
+  "source_path": "invalid/spec_and_spec_ref.etcm",
+  "span": {
+    "column": 1,
+    "end_column": 1,
+    "end_line": 5,
+    "line": 3
+  }
+}

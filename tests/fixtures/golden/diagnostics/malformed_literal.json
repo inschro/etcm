@@ -1,0 +1,26 @@
+{
+  "code": "E_PARSE_UNEXPECTED_TOKEN",
+  "details": {
+    "expected": [
+      "ESCAPED_STRING",
+      "FALSE",
+      "LBRACE",
+      "LSQB",
+      "NULL",
+      "RSQB",
+      "SIGNED_NUMBER",
+      "TRUE",
+      "_NL"
+    ]
+  },
+  "graph_path": null,
+  "message": "Unexpected token while parsing ETCM.",
+  "selector": null,
+  "source_path": "invalid/malformed_literal.etcm",
+  "span": {
+    "column": 43,
+    "end_column": 44,
+    "end_line": 2,
+    "line": 2
+  }
+}

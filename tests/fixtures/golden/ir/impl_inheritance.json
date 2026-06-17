@@ -1,0 +1,92 @@
+{
+  "implementations": [
+    {
+      "assignments": [
+        {
+          "field_path": [
+            "depth"
+          ],
+          "kind": "literal",
+          "value": {
+            "kind": "int",
+            "value": 50
+          }
+        },
+        {
+          "field_path": [
+            "width"
+          ],
+          "kind": "literal",
+          "value": {
+            "kind": "int",
+            "value": 64
+          }
+        }
+      ],
+      "name": "baseline",
+      "parent": null
+    },
+    {
+      "assignments": [
+        {
+          "field_path": [
+            "width"
+          ],
+          "kind": "literal",
+          "value": {
+            "kind": "int",
+            "value": 96
+          }
+        }
+      ],
+      "name": "wider",
+      "parent": "baseline"
+    },
+    {
+      "assignments": [
+        {
+          "field_path": [
+            "width"
+          ],
+          "kind": "literal",
+          "value": {
+            "kind": "int",
+            "value": 128
+          }
+        }
+      ],
+      "name": "external",
+      "parent": "models/base.etcm#resnet_50"
+    }
+  ],
+  "source_path": "valid/impl_inheritance.etcm",
+  "spec": {
+    "fields": [
+      {
+        "default": null,
+        "metadata": {},
+        "name": "depth",
+        "override": "allow",
+        "type": {
+          "args": [],
+          "kind": "named",
+          "name": "int"
+        }
+      },
+      {
+        "default": null,
+        "metadata": {},
+        "name": "width",
+        "override": "allow",
+        "type": {
+          "args": [],
+          "kind": "named",
+          "name": "int"
+        }
+      }
+    ],
+    "name": "ModelConfig",
+    "parent": null
+  },
+  "spec_ref": null
+}

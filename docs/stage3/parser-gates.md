@@ -53,7 +53,7 @@ Stage 4 must prove:
 - tabs used for indentation fail with `E_PARSE_TAB_INDENT`
 - inconsistent indentation fails with `E_PARSE_BAD_INDENT`
 - blank lines inside blocks do not accidentally close the block
-- comments inside blocks do not alter indentation state
+- YAML-style `#` comments inside blocks do not alter indentation state
 
 If Lark's `Indenter` cannot satisfy these gates cleanly, Stage 4 should stop and
 reopen the parser choice rather than pushing indentation complexity into the
@@ -65,6 +65,9 @@ Stage 4 must prove:
 
 - spec inheritance paths do not require `#`
 - implementation inheritance and refs can still target `#impl`
+- `#` attached to a selector is not a comment
+- `#` starts a comment only at line start or after whitespace, outside quoted
+  strings
 - path-like strings remain literals when quoted
 - selector syntax is unambiguous in `$field` refs and parent declarations
 - filesystem validation is deferred to the resolver

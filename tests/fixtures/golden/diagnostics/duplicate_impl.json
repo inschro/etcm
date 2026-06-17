@@ -1,0 +1,16 @@
+{
+  "code": "E_DUPLICATE_IMPL",
+  "details": {
+    "previous_line": 4
+  },
+  "graph_path": null,
+  "message": "Duplicate implementation 'smoke'.",
+  "selector": null,
+  "source_path": "invalid/duplicate_impl.etcm",
+  "span": {
+    "column": 1,
+    "end_column": 1,
+    "end_line": 9,
+    "line": 7
+  }
+}

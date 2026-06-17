@@ -1,0 +1,19 @@
+{
+  "code": "E_PARSE_UNEXPECTED_TOKEN",
+  "details": {
+    "expected": [
+      "NAME",
+      "_NL"
+    ]
+  },
+  "graph_path": null,
+  "message": "Unexpected token while parsing ETCM.",
+  "selector": null,
+  "source_path": "invalid/malformed_syntax.etcm",
+  "span": {
+    "column": 12,
+    "end_column": 13,
+    "end_line": 2,
+    "line": 2
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "implementations": [
+    {
+      "assignments": [
+        {
+          "field_path": [
+            "train_file"
+          ],
+          "kind": "literal",
+          "value": {
+            "kind": "string",
+            "value": "data/smoke.txt"
+          }
+        },
+        {
+          "field_path": [
+            "retries"
+          ],
+          "kind": "literal",
+          "value": {
+            "kind": "int",
+            "value": 2
+          }
+        }
+      ],
+      "name": "smoke",
+      "parent": null
+    }
+  ],
+  "source_path": "valid/spec_ref_impls.etcm",
+  "spec": null,
+  "spec_ref": {
+    "path": "specs/data.etcm"
+  }
+}

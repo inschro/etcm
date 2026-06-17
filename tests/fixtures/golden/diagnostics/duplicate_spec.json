@@ -1,0 +1,16 @@
+{
+  "code": "E_DUPLICATE_SPEC",
+  "details": {
+    "previous": "First"
+  },
+  "graph_path": null,
+  "message": "Duplicate spec definition 'Second'.",
+  "selector": null,
+  "source_path": "invalid/duplicate_spec.etcm",
+  "span": {
+    "column": 1,
+    "end_column": 1,
+    "end_line": 6,
+    "line": 4
+  }
+}

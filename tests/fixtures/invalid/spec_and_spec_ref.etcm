@@ -1,0 +1,4 @@
+$spec: specs/base.etcm
+
+spec InlineSpec:
+  value: int

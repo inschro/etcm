@@ -1,0 +1,188 @@
+{
+  "implementations": [
+    {
+      "assignments": [
+        {
+          "field_path": [
+            "method"
+          ],
+          "kind": "literal",
+          "value": {
+            "kind": "string",
+            "value": "random"
+          }
+        },
+        {
+          "field_path": [
+            "values"
+          ],
+          "kind": "literal",
+          "value": {
+            "kind": "list",
+            "value": [
+              {
+                "kind": "float",
+                "value": 0.0001
+              },
+              {
+                "kind": "float",
+                "value": 0.0003
+              },
+              {
+                "kind": "float",
+                "value": 0.001
+              }
+            ]
+          }
+        },
+        {
+          "field_path": [
+            "metadata"
+          ],
+          "kind": "literal",
+          "value": {
+            "kind": "map",
+            "value": [
+              {
+                "key": "metric",
+                "value": {
+                  "kind": "string",
+                  "value": "loss"
+                }
+              },
+              {
+                "key": "mode",
+                "value": {
+                  "kind": "string",
+                  "value": "fast"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "field_path": [
+            "enabled"
+          ],
+          "kind": "literal",
+          "value": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "field_path": [
+            "maybe"
+          ],
+          "kind": "literal",
+          "value": {
+            "kind": "null",
+            "value": null
+          }
+        }
+      ],
+      "name": "lr_search",
+      "parent": null
+    }
+  ],
+  "source_path": "valid/nested_literals.etcm",
+  "spec": {
+    "fields": [
+      {
+        "default": null,
+        "metadata": {
+          "choices": {
+            "kind": "list",
+            "value": [
+              {
+                "kind": "string",
+                "value": "grid"
+              },
+              {
+                "kind": "string",
+                "value": "random"
+              }
+            ]
+          }
+        },
+        "name": "method",
+        "override": "allow",
+        "type": {
+          "args": [],
+          "kind": "named",
+          "name": "str"
+        }
+      },
+      {
+        "default": null,
+        "metadata": {},
+        "name": "values",
+        "override": "allow",
+        "type": {
+          "args": [
+            {
+              "args": [],
+              "kind": "named",
+              "name": "float"
+            }
+          ],
+          "kind": "generic",
+          "name": "list"
+        }
+      },
+      {
+        "default": null,
+        "metadata": {},
+        "name": "metadata",
+        "override": "allow",
+        "type": {
+          "args": [
+            {
+              "args": [],
+              "kind": "named",
+              "name": "str"
+            },
+            {
+              "args": [],
+              "kind": "named",
+              "name": "str"
+            }
+          ],
+          "kind": "generic",
+          "name": "dict"
+        }
+      },
+      {
+        "default": {
+          "kind": "bool",
+          "value": true
+        },
+        "metadata": {},
+        "name": "enabled",
+        "override": "allow",
+        "type": {
+          "args": [],
+          "kind": "named",
+          "name": "bool"
+        }
+      },
+      {
+        "default": {
+          "kind": "null",
+          "value": null
+        },
+        "metadata": {},
+        "name": "maybe",
+        "override": "allow",
+        "type": {
+          "args": [],
+          "kind": "named",
+          "name": "null"
+        }
+      }
+    ],
+    "name": "SweepConfig",
+    "parent": null
+  },
+  "spec_ref": null
+}

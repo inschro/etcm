@@ -1,0 +1,29 @@
+{
+  "items": [
+    {
+      "field_count": 2,
+      "kind": "spec",
+      "name": "CosineLRScheduler",
+      "parent": "schedulers/base.etcm",
+      "span": {
+        "column": 1,
+        "end_column": 1,
+        "end_line": 5,
+        "line": 1
+      }
+    },
+    {
+      "assignment_count": 2,
+      "kind": "impl",
+      "name": "default",
+      "parent": null,
+      "span": {
+        "column": 1,
+        "end_column": 1,
+        "end_line": 8,
+        "line": 5
+      }
+    }
+  ],
+  "source_path": "valid/spec_inheritance.etcm"
+}

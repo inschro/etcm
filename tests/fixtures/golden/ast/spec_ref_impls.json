@@ -1,0 +1,27 @@
+{
+  "items": [
+    {
+      "kind": "spec_ref",
+      "path": "specs/data.etcm",
+      "span": {
+        "column": 1,
+        "end_column": 1,
+        "end_line": 3,
+        "line": 1
+      }
+    },
+    {
+      "assignment_count": 2,
+      "kind": "impl",
+      "name": "smoke",
+      "parent": null,
+      "span": {
+        "column": 1,
+        "end_column": 1,
+        "end_line": 6,
+        "line": 3
+      }
+    }
+  ],
+  "source_path": "valid/spec_ref_impls.etcm"
+}

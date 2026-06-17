@@ -1,0 +1,20 @@
+{
+  "code": "E_PARSE_BAD_INDENT",
+  "details": {
+    "expected": [
+      "NAME",
+      "_DEDENT",
+      "_NL"
+    ]
+  },
+  "graph_path": null,
+  "message": "Invalid indentation in ETCM document.",
+  "selector": null,
+  "source_path": "invalid/bad_indent.etcm",
+  "span": {
+    "column": 10,
+    "end_column": 11,
+    "end_line": 2,
+    "line": 2
+  }
+}

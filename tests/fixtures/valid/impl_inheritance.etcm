@@ -1,0 +1,13 @@
+spec ModelConfig:
+  depth: int
+  width: int
+
+impl baseline:
+  depth: 50
+  width: 64
+
+impl wider <- baseline:
+  width: 96
+
+impl external <- models/base.etcm#resnet_50:
+  width: 128

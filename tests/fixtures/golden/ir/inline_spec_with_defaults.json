@@ -1,0 +1,152 @@
+{
+  "implementations": [
+    {
+      "assignments": [
+        {
+          "field_path": [
+            "device"
+          ],
+          "kind": "literal",
+          "value": {
+            "kind": "string",
+            "value": "cpu"
+          }
+        },
+        {
+          "field_path": [
+            "tags"
+          ],
+          "kind": "literal",
+          "value": {
+            "kind": "list",
+            "value": [
+              {
+                "kind": "string",
+                "value": "debug"
+              }
+            ]
+          }
+        },
+        {
+          "field_path": [
+            "metadata"
+          ],
+          "kind": "literal",
+          "value": {
+            "kind": "map",
+            "value": [
+              {
+                "key": "owner",
+                "value": {
+                  "kind": "string",
+                  "value": "tests"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "name": "default",
+      "parent": null
+    }
+  ],
+  "source_path": "valid/inline_spec_with_defaults.etcm",
+  "spec": {
+    "fields": [
+      {
+        "default": {
+          "kind": "string",
+          "value": "auto"
+        },
+        "metadata": {
+          "choices": {
+            "kind": "list",
+            "value": [
+              {
+                "kind": "string",
+                "value": "auto"
+              },
+              {
+                "kind": "string",
+                "value": "cpu"
+              },
+              {
+                "kind": "string",
+                "value": "cuda"
+              }
+            ]
+          }
+        },
+        "name": "device",
+        "override": "allow",
+        "type": {
+          "args": [],
+          "kind": "named",
+          "name": "str"
+        }
+      },
+      {
+        "default": {
+          "kind": "int",
+          "value": 0
+        },
+        "metadata": {},
+        "name": "seed",
+        "override": "deny",
+        "type": {
+          "args": [],
+          "kind": "named",
+          "name": "int"
+        }
+      },
+      {
+        "default": {
+          "kind": "list",
+          "value": []
+        },
+        "metadata": {},
+        "name": "tags",
+        "override": "append",
+        "type": {
+          "args": [
+            {
+              "args": [],
+              "kind": "named",
+              "name": "str"
+            }
+          ],
+          "kind": "generic",
+          "name": "list"
+        }
+      },
+      {
+        "default": {
+          "kind": "map",
+          "value": []
+        },
+        "metadata": {},
+        "name": "metadata",
+        "override": "merge",
+        "type": {
+          "args": [
+            {
+              "args": [],
+              "kind": "named",
+              "name": "str"
+            },
+            {
+              "args": [],
+              "kind": "named",
+              "name": "str"
+            }
+          ],
+          "kind": "generic",
+          "name": "dict"
+        }
+      }
+    ],
+    "name": "RuntimeConfig",
+    "parent": null
+  },
+  "spec_ref": null
+}

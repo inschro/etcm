@@ -40,6 +40,8 @@ Useful behavior to generalize:
 
 - registry files declare one Python schema and many named artifacts
 - selectors use `path#artifact`, with `#default` when omitted
+- comments use YAML-style `#` behavior, so attached selector fragments are not
+  comments
 - `$ref` composes artifacts across files
 - refs resolve relative to the current config file
 - sibling keys beside `$ref` override the referenced payload
@@ -204,6 +206,8 @@ V0 should include:
 
 - `.etcm` parser for spec and implementation blocks
 - selector support: `path#impl`, defaulting to `#default`
+- YAML-style comments: `#` starts a comment at line start or after whitespace,
+  outside quoted strings
 - top-level `$spec` reuse for implementation-only files
 - fragment-free spec inheritance and `$spec` references because every file has
   one spec source

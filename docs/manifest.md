@@ -59,6 +59,10 @@ models/resnet.etcm#resnet_50
 
 When the fragment is omitted, ETCM resolves `#default`.
 
+ETCM comments follow YAML-style `#` rules: `#` starts a comment only at the
+beginning of a line or after whitespace, outside quoted strings. Attached
+selector fragments such as `models/resnet.etcm#resnet_50` are not comments.
+
 ## Spec Inheritance
 
 Specs may inherit from other specs. This is the basis for typed polymorphism:

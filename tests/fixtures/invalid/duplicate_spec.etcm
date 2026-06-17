@@ -1,0 +1,5 @@
+spec First:
+  value: int
+
+spec Second:
+  value: int

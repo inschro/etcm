@@ -1,0 +1,53 @@
+{
+  "items": [
+    {
+      "field_count": 2,
+      "kind": "spec",
+      "name": "ModelConfig",
+      "parent": null,
+      "span": {
+        "column": 1,
+        "end_column": 1,
+        "end_line": 5,
+        "line": 1
+      }
+    },
+    {
+      "assignment_count": 2,
+      "kind": "impl",
+      "name": "baseline",
+      "parent": null,
+      "span": {
+        "column": 1,
+        "end_column": 1,
+        "end_line": 9,
+        "line": 5
+      }
+    },
+    {
+      "assignment_count": 1,
+      "kind": "impl",
+      "name": "wider",
+      "parent": "baseline",
+      "span": {
+        "column": 1,
+        "end_column": 1,
+        "end_line": 12,
+        "line": 9
+      }
+    },
+    {
+      "assignment_count": 1,
+      "kind": "impl",
+      "name": "external",
+      "parent": "models/base.etcm#resnet_50",
+      "span": {
+        "column": 1,
+        "end_column": 1,
+        "end_line": 14,
+        "line": 12
+      }
+    }
+  ],
+  "source_path": "valid/impl_inheritance.etcm"
+}

@@ -1,0 +1,41 @@
+{
+  "implementations": [],
+  "source_path": "valid/no_impl.etcm",
+  "spec": {
+    "fields": [
+      {
+        "default": null,
+        "metadata": {},
+        "name": "name",
+        "override": "allow",
+        "type": {
+          "args": [],
+          "kind": "named",
+          "name": "str"
+        }
+      },
+      {
+        "default": {
+          "kind": "int",
+          "value": 1
+        },
+        "metadata": {
+          "gt": {
+            "kind": "int",
+            "value": 0
+          }
+        },
+        "name": "retries",
+        "override": "allow",
+        "type": {
+          "args": [],
+          "kind": "named",
+          "name": "int"
+        }
+      }
+    ],
+    "name": "OnlySpec",
+    "parent": null
+  },
+  "spec_ref": null
+}

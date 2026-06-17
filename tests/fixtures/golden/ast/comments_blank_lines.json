@@ -1,0 +1,29 @@
+{
+  "items": [
+    {
+      "field_count": 3,
+      "kind": "spec",
+      "name": "ServiceSettings",
+      "parent": null,
+      "span": {
+        "column": 1,
+        "end_column": 1,
+        "end_line": 10,
+        "line": 3
+      }
+    },
+    {
+      "assignment_count": 3,
+      "kind": "impl",
+      "name": "prod",
+      "parent": null,
+      "span": {
+        "column": 1,
+        "end_column": 1,
+        "end_line": 15,
+        "line": 10
+      }
+    }
+  ],
+  "source_path": "valid/comments_blank_lines.etcm"
+}

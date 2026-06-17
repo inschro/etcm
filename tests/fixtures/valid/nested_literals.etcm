@@ -1,0 +1,13 @@
+spec SweepConfig:
+  method: str = Field(choices=["grid", "random"])
+  values: list[float]
+  metadata: dict[str, str]
+  enabled: bool = Field(default=true)
+  maybe: null = Field(default=null)
+
+impl lr_search:
+  method: "random"
+  values: [0.0001, 0.0003, 0.001]
+  metadata: {"metric": "loss", "mode": "fast"}
+  enabled: false
+  maybe: null

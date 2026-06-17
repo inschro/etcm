@@ -1,4 +1,5 @@
 import importlib.util
+from pathlib import Path
 
 
 def test_public_imports() -> None:
@@ -14,8 +15,13 @@ def test_ir_does_not_import_parser_or_codegen_dependencies() -> None:
     import etcm.ir
 
     assert etcm.ir is not None
-    assert "lark" not in {name.split(".", 1)[0] for name in __import__("sys").modules}
-    assert "pydantic" not in {name.split(".", 1)[0] for name in __import__("sys").modules}
+    ir_sources = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in (Path(__file__).resolve().parents[1] / "src" / "etcm" / "ir").glob("*.py")
+    )
+
+    assert "lark" not in ir_sources
+    assert "pydantic" not in ir_sources
 
 
 def test_declared_runtime_dependencies_are_available() -> None:

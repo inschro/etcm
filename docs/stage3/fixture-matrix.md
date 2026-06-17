@@ -28,7 +28,7 @@ Fixture paths are relative to `tests/fixtures/`.
 | `valid/typed_refs/` | Resolver | Cross-file `$field` refs with assignable implementation targets. |
 | `valid/path_policies/` | Resolver | `Path` fields with field-level `must_exist`, `allow_missing`, and delegated resolver policy. |
 | `valid/nested_literals.etcm` | Parser | Lists, mappings, strings, numbers, booleans, null, and trailing commas where allowed. |
-| `valid/comments_blank_lines.etcm` | Parser | Comments and blank lines inside and around blocks. |
+| `valid/comments_blank_lines.etcm` | Parser | YAML-style comments, quoted `#`, and blank lines inside and around blocks. |
 | `valid/source_relative_paths/` | Resolver | Path values resolve relative to the source file that declared the value. |
 | `valid/ml_train_run/` | Resolver | Realistic ML run with config fields for model, data, optimizer, and runtime settings. |
 | `valid/service_settings/` | Resolver | Non-ML service config to prevent the language from becoming ML-only. |
@@ -54,6 +54,8 @@ Fixture paths are relative to `tests/fixtures/`.
 | `invalid/invalid_path_kind.etcm` | Resolver | `E_INVALID_PATH`. |
 | `invalid/missing_path_must_exist.etcm` | Resolver | `E_INVALID_PATH`. |
 | `invalid/path_selector_ambiguity.etcm` | Parser | `E_PARSE_SELECTOR`. |
+| `invalid/spec_ref_fragment.etcm` | Parser | `E_PARSE_UNEXPECTED_TOKEN`. |
+| `invalid/spec_inheritance_fragment.etcm` | Parser | `E_PARSE_UNEXPECTED_TOKEN`. |
 
 ## Behavior Coverage
 
@@ -66,7 +68,9 @@ The matrix must cover these v0 behaviors before parser work starts:
 - `$field` refs point to implementation selectors, not arbitrary literals
 - field assignment order is deterministic
 - duplicate definitions fail locally before resolver graph construction
-- comments and blank lines are accepted where they do not change block meaning
+- YAML-style comments and blank lines are accepted where they do not change
+  block meaning
+- attached selector fragments are not parsed as comments
 - tabs are rejected with a specific diagnostic unless a later stage explicitly
   adopts tab normalization
 - `Path` syntax is parsed as data and validated only by the resolver
