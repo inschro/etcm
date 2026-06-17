@@ -23,16 +23,24 @@ VALID_RESOLVER_FIXTURES = {
     "source_relative_paths": "valid/source_relative_paths/train.etcm",
 }
 
-INVALID_RESOLVER_FIXTURES = {
+INVALID_RESOLVE_FIXTURES = {
     "missing_selector": ("invalid/missing_selector.etcm", "E_MISSING_SELECTOR"),
     "spec_cycle": ("invalid/spec_cycle/a.etcm", "E_SPEC_CYCLE"),
     "impl_cycle": ("invalid/impl_cycle.etcm#a", "E_IMPL_CYCLE"),
     "ref_cycle": ("invalid/ref_cycle/node.etcm#a", "E_REF_CYCLE"),
+}
+
+INVALID_VALIDATE_FIXTURES = {
     "type_mismatch": ("invalid/type_mismatch.etcm", "E_TYPE_MISMATCH"),
     "missing_required": ("invalid/missing_required.etcm", "E_MISSING_FIELD"),
     "denied_override": ("invalid/denied_override.etcm#child", "E_INVALID_OVERRIDE"),
     "invalid_path_kind": ("invalid/invalid_path_kind.etcm", "E_INVALID_PATH"),
     "missing_path_must_exist": ("invalid/missing_path_must_exist.etcm", "E_INVALID_PATH"),
+    "constraint_choice": ("invalid/constraint_choice.etcm", "E_CONSTRAINT"),
+    "constraint_bound": ("invalid/constraint_bound.etcm", "E_CONSTRAINT"),
+    "constraint_length": ("invalid/constraint_length.etcm", "E_CONSTRAINT"),
+    "constraint_regex": ("invalid/constraint_regex.etcm", "E_CONSTRAINT"),
+    "constraint_malformed": ("invalid/constraint_malformed.etcm", "E_CONSTRAINT"),
 }
 
 
@@ -41,11 +49,12 @@ def test_valid_resolver_fixtures_match_graph_golden(name: str, selector: str) ->
     graph = resolve(str(FIXTURES / selector))
 
     assert isinstance(graph, ResolvedGraph)
+    assert graph.validated is False
     assert graph.to_dict(path_base=FIXTURES) == _read_golden("graph", name)
 
 
-@pytest.mark.parametrize(("name", "case"), INVALID_RESOLVER_FIXTURES.items())
-def test_invalid_resolver_fixtures_match_diagnostic_golden(
+@pytest.mark.parametrize(("name", "case"), INVALID_RESOLVE_FIXTURES.items())
+def test_invalid_resolve_fixtures_match_diagnostic_golden(
     name: str,
     case: tuple[str, str],
 ) -> None:
@@ -61,16 +70,41 @@ def test_invalid_resolver_fixtures_match_diagnostic_golden(
     )
 
 
-def test_validate_returns_none_for_valid_selector() -> None:
-    assert validate(str(FIXTURES / "valid/typed_refs/train.etcm#smoke")) is None
+@pytest.mark.parametrize(("name", "case"), INVALID_VALIDATE_FIXTURES.items())
+def test_invalid_validate_fixtures_match_diagnostic_golden(
+    name: str,
+    case: tuple[str, str],
+) -> None:
+    selector, code = case
+    graph = resolve(str(FIXTURES / selector))
+
+    with pytest.raises(ETCMError) as raised:
+        validate(graph)
+
+    assert raised.value.diagnostic.code == code
+    assert _diagnostic_summary(raised.value.diagnostic) == _read_golden(
+        "resolver_diagnostics",
+        name,
+    )
+
+
+def test_validate_returns_validated_graph_for_valid_graph() -> None:
+    graph = resolve(str(FIXTURES / "valid/typed_refs/train.etcm#smoke"))
+
+    validated = validate(graph)
+
+    assert validated.validated is True
 
 
 def test_resolver_path_policy_controls_delegated_paths() -> None:
     selector = str(FIXTURES / "valid/path_policies/data.etcm")
 
-    assert Resolver(path_exists="allow_missing").validate(selector) is None
+    graph = Resolver(path_exists="allow_missing").resolve(selector)
+    assert Resolver(path_exists="allow_missing").validate(graph).validated is True
+
+    strict_graph = Resolver(path_exists="must_exist").resolve(selector)
     with pytest.raises(ETCMError) as raised:
-        Resolver(path_exists="must_exist").validate(selector)
+        Resolver(path_exists="must_exist").validate(strict_graph)
 
     assert raised.value.diagnostic.code == "E_INVALID_PATH"
     assert raised.value.diagnostic.graph_path == "root.cache_dir"

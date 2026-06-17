@@ -1,0 +1,19 @@
+{
+  "code": "E_CONSTRAINT",
+  "details": {
+    "actual": "BadName",
+    "constraint": "regex",
+    "expected": "^[a-z]+$",
+    "field": "name"
+  },
+  "graph_path": "root.name",
+  "message": "Field 'name' violates constraint 'regex'.",
+  "selector": null,
+  "source_path": "invalid/constraint_regex.etcm",
+  "span": {
+    "column": 3,
+    "end_column": 1,
+    "end_line": 6,
+    "line": 5
+  }
+}

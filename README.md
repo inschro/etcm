@@ -43,9 +43,13 @@ impl smoke:
 Planned Python API:
 
 ```python
-from etcm import load
+from etcm import convert, load, resolve, validate
 
-cfg = load("configs/train.etcm#smoke", as_="pydantic")
+cfg = load("configs/train.etcm#smoke", target="pydantic")
+
+graph = resolve("configs/train.etcm#smoke")
+graph = validate(graph)
+cfg = convert(graph, target="pydantic")
 ```
 
 Planned CLI:
@@ -59,8 +63,8 @@ etcm graph configs/train.etcm#smoke
 
 ## Current Status
 
-This repository is in design stage. The docs define the product direction and
-v0 implementation scope before package code is written.
+This repository is implemented through the generated-view API stage. The docs
+define the product direction and remaining v0 implementation scope.
 
 - [Manifest](docs/manifest.md)
 - [Product Spec](docs/product_spec.md)

@@ -1,0 +1,22 @@
+{
+  "code": "E_CONSTRAINT",
+  "details": {
+    "actual": "tpu",
+    "constraint": "choices",
+    "expected": [
+      "cpu",
+      "cuda"
+    ],
+    "field": "device"
+  },
+  "graph_path": "root.device",
+  "message": "Field 'device' violates constraint 'choices'.",
+  "selector": null,
+  "source_path": "invalid/constraint_choice.etcm",
+  "span": {
+    "column": 3,
+    "end_column": 1,
+    "end_line": 6,
+    "line": 5
+  }
+}

@@ -8,9 +8,9 @@
   "selector": null,
   "source_path": "invalid/missing_required.etcm",
   "span": {
-    "column": 1,
-    "end_column": 1,
-    "end_line": 7,
-    "line": 5
+    "column": 3,
+    "end_column": 3,
+    "end_line": 3,
+    "line": 2
   }
 }

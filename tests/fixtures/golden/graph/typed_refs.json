@@ -11,6 +11,89 @@
   ],
   "nodes": [
     {
+      "field_values": {
+        "max_steps": {
+          "literal": {
+            "kind": "int",
+            "value": 2
+          },
+          "local_value": null,
+          "origin": "local",
+          "overrode_parent": false,
+          "parent_value": null,
+          "ref_target": null,
+          "source_path": "valid/typed_refs/train.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 1,
+            "end_line": 9,
+            "line": 7
+          },
+          "value": 2
+        },
+        "model": {
+          "literal": null,
+          "local_value": null,
+          "origin": "local",
+          "overrode_parent": false,
+          "parent_value": null,
+          "ref_target": "root.model",
+          "source_path": "valid/typed_refs/train.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 3,
+            "end_line": 7,
+            "line": 6
+          },
+          "value": {
+            "$ref": "root.model"
+          }
+        }
+      },
+      "fields": {
+        "max_steps": {
+          "default": 10,
+          "has_default": true,
+          "metadata": {
+            "gt": 0
+          },
+          "name": "max_steps",
+          "override": "allow",
+          "required": false,
+          "source_path": "valid/typed_refs/train.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 1,
+            "end_line": 5,
+            "line": 3
+          },
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "int"
+          }
+        },
+        "model": {
+          "default": null,
+          "has_default": false,
+          "metadata": {},
+          "name": "model",
+          "override": "allow",
+          "required": true,
+          "source_path": "valid/typed_refs/train.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 3,
+            "end_line": 3,
+            "line": 2
+          },
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "ModelConfig"
+          }
+        }
+      },
       "graph_path": "root",
       "id": "root",
       "implementation": "smoke",
@@ -26,6 +109,49 @@
       }
     },
     {
+      "field_values": {
+        "depth": {
+          "literal": {
+            "kind": "int",
+            "value": 4
+          },
+          "local_value": null,
+          "origin": "local",
+          "overrode_parent": false,
+          "parent_value": null,
+          "ref_target": null,
+          "source_path": "valid/typed_refs/model.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 1,
+            "end_line": 7,
+            "line": 5
+          },
+          "value": 4
+        }
+      },
+      "fields": {
+        "depth": {
+          "default": 12,
+          "has_default": true,
+          "metadata": {},
+          "name": "depth",
+          "override": "allow",
+          "required": false,
+          "source_path": "valid/typed_refs/model.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 1,
+            "end_line": 4,
+            "line": 2
+          },
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "int"
+          }
+        }
+      },
       "graph_path": "root.model",
       "id": "root.model",
       "implementation": "tiny",
@@ -43,5 +169,6 @@
   "sources": [
     "valid/typed_refs/model.etcm",
     "valid/typed_refs/train.etcm"
-  ]
+  ],
+  "validated": false
 }

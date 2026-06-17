@@ -8,10 +8,11 @@ Stage 5 starts from `parse_document()` output and resolves semantic meaning.
 from etcm import Resolver, resolve, validate
 
 graph = resolve("configs/train.etcm#smoke")
-validate("configs/train.etcm#smoke")
+graph = validate(graph)
 ```
 
-`Resolver.load(..., as_="pydantic")` remains a Stage 6 generated-view boundary.
+`Resolver.load(..., target="pydantic")` is implemented by Stage 6 as a
+resolve/validate/convert convenience.
 
 ## Semantics
 

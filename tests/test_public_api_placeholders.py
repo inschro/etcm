@@ -1,9 +1,11 @@
-from collections.abc import Callable
+from pathlib import Path
 
 import pytest
 
-from etcm import Resolver, load, resolve, validate
-from etcm.errors import ETCMNotImplementedError
+from etcm import Resolver, convert, load, resolve, validate
+from etcm.errors import ETCMError
+
+FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
 
 def test_resolver_accepts_path_policy() -> None:
@@ -16,26 +18,36 @@ def test_resolver_rejects_unknown_path_policy() -> None:
         Resolver(path_exists="sometimes")  # type: ignore[arg-type]
 
 
-@pytest.mark.parametrize(
-    "call",
-    [
-        lambda: load("configs/train.etcm#smoke"),
-        lambda: Resolver().load("configs/train.etcm#smoke"),
-    ],
-)
-def test_generated_view_placeholders_are_explicit(call: Callable[[], object]) -> None:
-    with pytest.raises(ETCMNotImplementedError, match="Stage 6"):
-        call()
+def test_resolve_validate_convert_pipeline() -> None:
+    selector = str(FIXTURES / "valid/typed_refs/train.etcm#smoke")
+
+    graph = resolve(selector)
+    assert graph.validated is False
+
+    validated = validate(graph)
+    assert validated.validated is True
+    assert convert(validated, target="dict") == {"max_steps": 2, "model": {"depth": 4}}
 
 
-def test_resolve_and_validate_are_no_longer_placeholders() -> None:
-    for call in (
-        lambda: resolve("configs/train.etcm#smoke"),
-        lambda: validate("configs/train.etcm#smoke"),
-        lambda: Resolver().resolve("configs/train.etcm#smoke"),
-        lambda: Resolver().validate("configs/train.etcm#smoke"),
-    ):
-        with pytest.raises(Exception) as raised:
-            call()
+def test_load_orchestrates_full_pipeline() -> None:
+    selector = str(FIXTURES / "valid/typed_refs/train.etcm#smoke")
 
-        assert not isinstance(raised.value, ETCMNotImplementedError)
+    cfg = load(selector, target="dict")
+
+    assert cfg == {"max_steps": 2, "model": {"depth": 4}}
+
+
+def test_convert_requires_validated_graph_unless_forced() -> None:
+    graph = resolve(str(FIXTURES / "valid/typed_refs/train.etcm#smoke"))
+
+    with pytest.raises(ETCMError, match="unvalidated graph"):
+        convert(graph, target="dict")
+
+    assert convert(graph, target="dict", force=True) == {"max_steps": 2, "model": {"depth": 4}}
+
+
+def test_convert_rejects_unknown_target() -> None:
+    graph = validate(resolve(str(FIXTURES / "valid/typed_refs/train.etcm#smoke")))
+
+    with pytest.raises(ValueError, match="target"):
+        convert(graph, target="yaml")  # type: ignore[arg-type]

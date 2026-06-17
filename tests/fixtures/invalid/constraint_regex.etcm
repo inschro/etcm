@@ -1,0 +1,5 @@
+spec User:
+  name: str = Field(regex="^[a-z]+$")
+
+impl default:
+  name: "BadName"

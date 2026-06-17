@@ -3,9 +3,10 @@ from pathlib import Path
 
 
 def test_public_imports() -> None:
-    from etcm import Resolver, load, resolve, validate
+    from etcm import Resolver, convert, load, resolve, validate
 
     assert Resolver is not None
+    assert convert is not None
     assert load is not None
     assert resolve is not None
     assert validate is not None

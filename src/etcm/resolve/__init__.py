@@ -1,13 +1,14 @@
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping
 from dataclasses import dataclass
 from dataclasses import field as dataclass_field
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any, Literal, NoReturn
+from typing import Any, Literal, NoReturn, cast
 
-from etcm.errors import Diagnostic, ETCMError, ETCMNotImplementedError
+from etcm.errors import Diagnostic, ETCMError
 from etcm.ir import (
     Assignment,
     Document,
@@ -19,13 +20,21 @@ from etcm.ir import (
     SourceSpan,
     TypeExpr,
 )
-from etcm.resolve.graph import PathResolution, ResolvedEdge, ResolvedGraph, ResolvedNode
+from etcm.resolve.graph import (
+    PathResolution,
+    ResolvedEdge,
+    ResolvedField,
+    ResolvedGraph,
+    ResolvedNode,
+    ResolvedValue,
+)
 from etcm.syntax import parse_file
 
 PathExistsPolicy = Literal["allow_missing", "must_exist"]
+ViewTarget = Literal["pydantic", "dataclass", "dict"]
 
-_STAGE6_MESSAGE = "ETCM generated views are not implemented until Stage 6."
 _PRIMITIVE_TYPES = {"str", "int", "float", "bool", "null", "Path"}
+_PATH_METADATA = {"path_exists", "path_kind"}
 
 
 @dataclass(frozen=True)
@@ -40,18 +49,10 @@ class _ResolvedSpec:
 
 
 @dataclass(frozen=True)
-class _ResolvedValue:
-    value: Any
-    source_path: Path
-    span: SourceSpan | None
-    origin: str
-
-
-@dataclass(frozen=True)
 class _NodeResult:
     node_id: str
     spec: _ResolvedSpec
-    values: Mapping[str, _ResolvedValue]
+    values: Mapping[str, ResolvedValue]
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "values", MappingProxyType(dict(self.values)))
@@ -72,6 +73,7 @@ class _GraphBuilder:
             edges=tuple(self.edges),
             sources=tuple(sorted(self.sources)),
             path_resolution=tuple(self.paths),
+            validated=False,
         )
 
 
@@ -83,15 +85,26 @@ class Resolver:
         if self.path_exists not in ("allow_missing", "must_exist"):
             raise ValueError("path_exists must be 'allow_missing' or 'must_exist'")
 
-    def load(self, selector: str, *, as_: str = "pydantic") -> object:
-        raise ETCMNotImplementedError(_STAGE6_MESSAGE)
+    def load(self, selector: str, *, target: ViewTarget = "pydantic") -> object:
+        return self.convert(self.validate(self.resolve(selector)), target=target)
 
     def resolve(self, selector: str) -> ResolvedGraph:
         state = _ResolverState(self)
         return state.resolve(selector)
 
-    def validate(self, selector: str) -> None:
-        self.resolve(selector)
+    def validate(self, graph: ResolvedGraph) -> ResolvedGraph:
+        return _validate_graph(graph)
+
+    def convert(
+        self,
+        graph: ResolvedGraph,
+        *,
+        target: ViewTarget = "pydantic",
+        force: bool = False,
+    ) -> object:
+        from etcm.codegen import convert
+
+        return convert(graph, target=target, force=force)
 
 
 class _ResolverState:
@@ -128,22 +141,22 @@ class _ResolverState:
         implementation = selector.implementation or "default"
         key = (source_path, implementation)
         if key in impl_stack:
-            self._raise(
+            _raise(
                 cycle_code,
                 f"Cycle while resolving implementation '{implementation}'.",
                 source_path=source_path,
-                selector=self._selector_text(source_path, implementation),
+                selector=_selector_text(source_path, implementation),
                 graph_path=graph_path,
-                details={"chain": [self._selector_text(path, impl) for path, impl in impl_stack]},
+                details={"chain": [_selector_text(path, impl) for path, impl in impl_stack]},
             )
         if key in ref_stack:
-            self._raise(
+            _raise(
                 "E_REF_CYCLE",
                 f"Reference cycle at implementation '{implementation}'.",
                 source_path=source_path,
-                selector=self._selector_text(source_path, implementation),
+                selector=_selector_text(source_path, implementation),
                 graph_path=graph_path,
-                details={"chain": [self._selector_text(path, impl) for path, impl in ref_stack]},
+                details={"chain": [_selector_text(path, impl) for path, impl in ref_stack]},
             )
 
         document = self._load_document(source_path)
@@ -164,37 +177,14 @@ class _ResolverState:
                 ref_stack=ref_stack,
                 cycle_code="E_IMPL_CYCLE",
             )
-            if not self._is_assignable(parent_result.spec, spec.name):
-                self._raise(
-                    "E_TYPE_MISMATCH",
-                    f"Implementation parent is not assignable to spec '{spec.name}'.",
-                    source_path=source_path,
-                    span=impl.span,
-                    selector=self._selector_text(
-                        parent_selector.path,
-                        parent_selector.implementation,
-                    ),
-                    graph_path=graph_path,
-                    details={"actual": parent_result.spec.name, "expected": spec.name},
-                )
-            values = {
-                name: _ResolvedValue(
-                    value=value.value,
-                    source_path=value.source_path,
-                    span=value.span,
-                    origin="parent",
-                )
-                for name, value in parent_result.values.items()
-            }
+            values = {name: value.as_parent() for name, value in parent_result.values.items()}
 
-        local_fields: set[str] = set()
         for assignment in impl.assignments:
             field_name = self._assignment_field_name(assignment)
             field = self._field(spec, field_name, assignment.span)
             new_value = self._assignment_value(
                 assignment=assignment,
                 field=field,
-                spec=spec,
                 source_path=source_path,
                 graph_path=f"{graph_path}.{field_name}",
                 builder=builder,
@@ -206,32 +196,19 @@ class _ResolverState:
                 field=field,
                 field_name=field_name,
                 new_value=new_value,
-                source_path=source_path,
-                span=assignment.span,
-                graph_path=f"{graph_path}.{field_name}",
             )
-            local_fields.add(field_name)
-
-        for field_name in spec.fields:
-            if field_name not in values:
-                self._raise(
-                    "E_MISSING_FIELD",
-                    f"Missing required field '{field_name}'.",
-                    source_path=source_path,
-                    span=impl.span,
-                    graph_path=f"{graph_path}.{field_name}",
-                    details={"field": field_name},
-                )
 
         node_id = graph_path
         builder.nodes[node_id] = ResolvedNode(
             id=node_id,
-            selector=self._selector_text(source_path, implementation),
+            selector=_selector_text(source_path, implementation),
             spec_name=spec.name,
             spec_ancestors=spec.ancestors,
             implementation=implementation,
             source_path=source_path,
             graph_path=graph_path,
+            fields={name: self._field_schema(field) for name, field in spec.fields.items()},
+            field_values=values,
             values={name: value.value for name, value in values.items()},
         )
         if spec.ancestors:
@@ -245,13 +222,12 @@ class _ResolverState:
         *,
         assignment: Assignment | RefAssignment,
         field: FieldDef,
-        spec: _ResolvedSpec,
         source_path: Path,
         graph_path: str,
         builder: _GraphBuilder,
         impl_stack: tuple[tuple[Path, str], ...],
         ref_stack: tuple[tuple[Path, str], ...],
-    ) -> _ResolvedValue:
+    ) -> ResolvedValue:
         if isinstance(assignment, RefAssignment):
             child_selector = self._selector_from_ir(assignment.selector, source_path)
             child = self._resolve_node(
@@ -262,35 +238,20 @@ class _ResolverState:
                 ref_stack=(*ref_stack, (impl_stack[-1][0], impl_stack[-1][1])),
                 cycle_code="E_REF_CYCLE",
             )
-            if not self._ref_assignable(child.spec, field.type_expr):
-                self._raise(
-                    "E_TYPE_MISMATCH",
-                    f"Reference for field '{field.name}' is not assignable.",
-                    source_path=source_path,
-                    span=assignment.span,
-                    selector=self._selector_text(
-                        child_selector.path,
-                        child_selector.implementation,
-                    ),
-                    graph_path=graph_path,
-                    details={
-                        "actual": child.spec.name,
-                        "expected": self._type_text(field.type_expr),
-                    },
-                )
             source_node_id = graph_path.rsplit(".", 1)[0] if "." in graph_path else "root"
             builder.edges.append(ResolvedEdge("ref", source_node_id, child.node_id, (field.name,)))
-            return _ResolvedValue(
+            return ResolvedValue(
                 value={"$ref": child.node_id},
                 source_path=source_path,
                 span=assignment.span,
                 origin="local",
+                ref_target=child.node_id,
             )
 
         if len(assignment.field_path) != 1:
-            self._raise(
+            _raise(
                 "E_TYPE_MISMATCH",
-                "Nested assignment paths are not supported in Stage 5.",
+                "Nested assignment paths are not supported in Stage 6.",
                 source_path=source_path,
                 span=assignment.span,
                 graph_path=graph_path,
@@ -304,56 +265,58 @@ class _ResolverState:
             graph_path=graph_path,
             builder=builder,
         )
-        return _ResolvedValue(
+        return ResolvedValue(
             value=value,
             source_path=source_path,
             span=assignment.span,
             origin="local",
+            literal=assignment.value,
         )
 
     def _apply_value(
         self,
         *,
-        values: Mapping[str, _ResolvedValue],
+        values: Mapping[str, ResolvedValue],
         field: FieldDef,
         field_name: str,
-        new_value: _ResolvedValue,
-        source_path: Path,
-        span: SourceSpan | None,
-        graph_path: str,
-    ) -> dict[str, _ResolvedValue]:
+        new_value: ResolvedValue,
+    ) -> dict[str, ResolvedValue]:
         result = dict(values)
         previous = result.get(field_name)
         if previous is None or previous.origin == "default":
             result[field_name] = new_value
             return result
 
-        policy = field.override
         if previous.origin == "parent":
-            if policy == "deny":
-                self._invalid_override(field, source_path, span, graph_path)
-            if policy == "force_only":
-                self._invalid_override(field, source_path, span, graph_path)
-            if policy == "append":
-                if not isinstance(previous.value, list) or not isinstance(new_value.value, list):
-                    self._invalid_override(field, source_path, span, graph_path)
-                result[field_name] = _ResolvedValue(
+            if (
+                field.override == "append"
+                and isinstance(previous.value, list)
+                and isinstance(new_value.value, list)
+            ):
+                result[field_name] = new_value.with_override(
                     value=[*previous.value, *new_value.value],
-                    source_path=new_value.source_path,
-                    span=new_value.span,
-                    origin="local",
+                    parent_value=previous.value,
+                    local_value=new_value.value,
                 )
                 return result
-            if policy == "merge":
-                if not isinstance(previous.value, dict) or not isinstance(new_value.value, dict):
-                    self._invalid_override(field, source_path, span, graph_path)
-                result[field_name] = _ResolvedValue(
+            if (
+                field.override == "merge"
+                and isinstance(previous.value, dict)
+                and isinstance(new_value.value, dict)
+            ):
+                result[field_name] = new_value.with_override(
                     value={**previous.value, **new_value.value},
-                    source_path=new_value.source_path,
-                    span=new_value.span,
-                    origin="local",
+                    parent_value=previous.value,
+                    local_value=new_value.value,
                 )
                 return result
+            result[field_name] = new_value.with_override(
+                value=new_value.value,
+                parent_value=previous.value,
+                local_value=new_value.value,
+            )
+            return result
+
         result[field_name] = new_value
         return result
 
@@ -363,7 +326,7 @@ class _ResolverState:
         if cached is not None:
             return cached
         if source_path in stack:
-            self._raise(
+            _raise(
                 "E_SPEC_CYCLE",
                 "Cycle while resolving spec inheritance.",
                 source_path=source_path,
@@ -377,7 +340,7 @@ class _ResolverState:
             self._specs[source_path] = spec
             return spec
         if document.spec is None:
-            self._raise("E_MISSING_SELECTOR", "Document has no spec.", source_path=source_path)
+            _raise("E_MISSING_SELECTOR", "Document has no spec.", source_path=source_path)
 
         assert document.spec is not None
         fields: dict[str, FieldDef] = {}
@@ -390,7 +353,7 @@ class _ResolverState:
 
         for field_def in document.spec.fields:
             if field_def.name in fields:
-                self._raise(
+                _raise(
                     "E_TYPE_MISMATCH",
                     f"Spec '{document.spec.name}' redefines inherited field '{field_def.name}'.",
                     source_path=source_path,
@@ -413,8 +376,8 @@ class _ResolverState:
         spec: _ResolvedSpec,
         builder: _GraphBuilder,
         graph_path: str,
-    ) -> dict[str, _ResolvedValue]:
-        values: dict[str, _ResolvedValue] = {}
+    ) -> dict[str, ResolvedValue]:
+        values: dict[str, ResolvedValue] = {}
         for name, field_def in spec.fields.items():
             if field_def.default is None:
                 continue
@@ -423,7 +386,7 @@ class _ResolverState:
                 if field_def.span is not None
                 else spec.source_path
             )
-            values[name] = _ResolvedValue(
+            values[name] = ResolvedValue(
                 value=self._materialize_literal(
                     literal=field_def.default,
                     expected=field_def.type_expr,
@@ -436,6 +399,7 @@ class _ResolverState:
                 source_path=source_path,
                 span=field_def.span,
                 origin="default",
+                literal=field_def.default,
             )
         return values
 
@@ -450,78 +414,28 @@ class _ResolverState:
         graph_path: str,
         builder: _GraphBuilder | None,
     ) -> Any:
-        if expected.kind == "union":
-            for option in expected.args:
-                try:
-                    return self._materialize_literal(
-                        literal=literal,
-                        expected=option,
-                        field=field,
-                        source_path=source_path,
-                        span=span,
-                        graph_path=graph_path,
-                        builder=builder,
-                    )
-                except ETCMError as exc:
-                    if exc.diagnostic.code != "E_TYPE_MISMATCH":
-                        raise
-            self._type_mismatch(literal, expected, source_path, span, graph_path)
-
-        if expected.kind == "generic":
-            return self._materialize_generic(
-                literal,
-                expected,
-                field,
-                source_path,
-                span,
-                graph_path,
-            )
-
-        if expected.kind != "named" or expected.name is None:
-            self._type_mismatch(literal, expected, source_path, span, graph_path)
-
-        name = expected.name
-        if name == "str" and literal.kind == "string":
-            return literal.value
-        if name == "int" and literal.kind == "int":
-            return literal.value
-        if name == "float" and literal.kind in {"int", "float"}:
-            return float(literal.value)
-        if name == "bool" and literal.kind == "bool":
-            return literal.value
-        if name == "null" and literal.kind == "null":
-            return None
-        if name == "Path" and literal.kind == "string":
+        if _type_accepts_path(expected) and literal.kind == "string":
             return self._materialize_path(literal, field, source_path, span, graph_path, builder)
-
-        self._type_mismatch(literal, expected, source_path, span, graph_path)
-
-    def _materialize_generic(
-        self,
-        literal: LiteralValue,
-        expected: TypeExpr,
-        field: FieldDef,
-        source_path: Path,
-        span: SourceSpan | None,
-        graph_path: str,
-    ) -> Any:
-        if expected.name == "list" and literal.kind == "list" and len(expected.args) == 1:
+        if expected.kind == "generic" and expected.name == "list" and literal.kind == "list":
+            item_type = expected.args[0] if expected.args else TypeExpr(kind="named", name="Any")
             return [
                 self._materialize_literal(
                     literal=value,
-                    expected=expected.args[0],
+                    expected=item_type,
                     field=field,
                     source_path=source_path,
                     span=span,
-                    graph_path=graph_path,
-                    builder=None,
+                    graph_path=f"{graph_path}[{index}]",
+                    builder=builder,
                 )
-                for value in literal.value
+                for index, value in enumerate(literal.value)
             ]
-        if expected.name == "dict" and literal.kind == "map" and len(expected.args) == 2:
-            key_type, value_type = expected.args
-            if key_type.name != "str":
-                self._type_mismatch(literal, expected, source_path, span, graph_path)
+        if expected.kind == "generic" and expected.name == "dict" and literal.kind == "map":
+            value_type = (
+                expected.args[1]
+                if len(expected.args) == 2
+                else TypeExpr(kind="named", name="Any")
+            )
             return {
                 key: self._materialize_literal(
                     literal=value,
@@ -530,11 +444,11 @@ class _ResolverState:
                     source_path=source_path,
                     span=span,
                     graph_path=f"{graph_path}.{key}",
-                    builder=None,
+                    builder=builder,
                 )
                 for key, value in literal.value
             }
-        self._type_mismatch(literal, expected, source_path, span, graph_path)
+        return _literal_plain_value(literal)
 
     def _materialize_path(
         self,
@@ -549,39 +463,7 @@ class _ResolverState:
         resolved = self._resolve_path(Path(original), source_path.parent)
         field_policy = self._metadata_string(field, "path_exists", "resolver")
         expected_kind = self._metadata_string(field, "path_kind", "any")
-        effective_policy = (
-            self._resolver.path_exists if field_policy == "resolver" else field_policy
-        )
         exists = resolved.exists()
-        kind_ok = (
-            expected_kind == "any"
-            or (expected_kind == "file" and resolved.is_file())
-            or (expected_kind == "dir" and resolved.is_dir())
-        )
-        if effective_policy == "must_exist" and not exists:
-            self._invalid_path(
-                field,
-                original,
-                resolved,
-                field_policy,
-                expected_kind,
-                exists,
-                source_path,
-                span,
-                graph_path,
-            )
-        if exists and not kind_ok:
-            self._invalid_path(
-                field,
-                original,
-                resolved,
-                field_policy,
-                expected_kind,
-                exists,
-                source_path,
-                span,
-                graph_path,
-            )
         if builder is not None:
             builder.paths.append(
                 PathResolution(
@@ -593,21 +475,24 @@ class _ResolverState:
                     resolver_policy=self._resolver.path_exists,
                     expected_kind=expected_kind,
                     exists=exists,
+                    span=span,
                 )
             )
         return resolved
 
-    def _ref_assignable(self, actual: _ResolvedSpec, expected: TypeExpr) -> bool:
-        if expected.kind == "union":
-            return any(self._ref_assignable(actual, option) for option in expected.args)
-        if expected.kind != "named" or expected.name is None:
-            return False
-        if expected.name in _PRIMITIVE_TYPES:
-            return False
-        return self._is_assignable(actual, expected.name)
-
-    def _is_assignable(self, actual: _ResolvedSpec, expected_name: str) -> bool:
-        return actual.name == expected_name or expected_name in actual.ancestors
+    def _field_schema(self, field: FieldDef) -> ResolvedField:
+        source_path = field.span.source_path.resolve() if field.span is not None else Path()
+        return ResolvedField(
+            name=field.name,
+            type_expr=field.type_expr,
+            required=field.default is None,
+            source_path=source_path,
+            metadata={key: _literal_plain_value(value) for key, value in field.metadata.items()},
+            override=field.override,
+            has_default=field.default is not None,
+            default=_literal_plain_value(field.default) if field.default is not None else None,
+            span=field.span,
+        )
 
     def _load_document(self, source_path: Path) -> Document:
         source_path = source_path.resolve()
@@ -615,7 +500,7 @@ class _ResolverState:
         if cached is not None:
             return cached
         if not source_path.is_file():
-            self._raise(
+            _raise(
                 "E_MISSING_SELECTOR",
                 f"Selector source file does not exist: {source_path}",
                 source_path=source_path,
@@ -628,17 +513,17 @@ class _ResolverState:
         for implementation in document.implementations:
             if implementation.name == name:
                 return implementation
-        self._raise(
+        _raise(
             "E_MISSING_SELECTOR",
             f"Implementation '{name}' not found.",
             source_path=document.source_path.resolve(),
-            selector=self._selector_text(document.source_path.resolve(), name),
+            selector=_selector_text(document.source_path.resolve(), name),
         )
 
     def _field(self, spec: _ResolvedSpec, field_name: str, span: SourceSpan | None) -> FieldDef:
         field = spec.fields.get(field_name)
         if field is None:
-            self._raise(
+            _raise(
                 "E_TYPE_MISMATCH",
                 f"Unknown field '{field_name}' for spec '{spec.name}'.",
                 source_path=span.source_path if span is not None else spec.source_path,
@@ -660,7 +545,7 @@ class _ResolverState:
         try:
             selector = Selector.parse(raw)
         except ValueError as exc:
-            self._raise(
+            _raise(
                 "E_MISSING_SELECTOR",
                 str(exc),
                 source_path=declaring_source.resolve(),
@@ -693,129 +578,419 @@ class _ResolverState:
             return default
         return str(value.value)
 
-    def _type_text(self, type_expr: TypeExpr) -> str:
-        if type_expr.kind == "named":
-            return str(type_expr.name)
-        if type_expr.kind == "generic":
-            return f"{type_expr.name}[{', '.join(self._type_text(arg) for arg in type_expr.args)}]"
-        if type_expr.kind == "union":
-            return " | ".join(self._type_text(arg) for arg in type_expr.args)
-        return type_expr.kind
 
-    def _selector_text(self, source_path: Path, implementation: str | None) -> str:
-        if implementation is None:
-            return source_path.as_posix()
-        return f"{source_path.as_posix()}#{implementation}"
+def _validate_graph(graph: ResolvedGraph) -> ResolvedGraph:
+    node_by_id = {node.id: node for node in graph.nodes}
+    for edge in graph.edges:
+        if edge.kind == "impl_parent":
+            source = node_by_id[edge.source]
+            target = node_by_id[edge.target]
+            if not _spec_assignable(target, source.spec_name):
+                _raise(
+                    "E_TYPE_MISMATCH",
+                    f"Implementation parent is not assignable to spec '{source.spec_name}'.",
+                    source_path=source.source_path,
+                    selector=target.selector,
+                    graph_path=source.graph_path,
+                    details={"actual": target.spec_name, "expected": source.spec_name},
+                )
 
-    def _type_mismatch(
-        self,
-        literal: LiteralValue,
-        expected: TypeExpr,
-        source_path: Path,
-        span: SourceSpan | None,
-        graph_path: str,
-    ) -> None:
-        self._raise(
-            "E_TYPE_MISMATCH",
-            f"Value of type '{literal.kind}' is not assignable to '{self._type_text(expected)}'.",
-            source_path=source_path,
-            span=span,
-            graph_path=graph_path,
-            details={"actual": literal.kind, "expected": self._type_text(expected)},
-        )
+    for node in sorted(graph.nodes, key=lambda item: item.id):
+        _validate_node(node, node_by_id)
 
-    def _invalid_override(
-        self,
-        field: FieldDef,
-        source_path: Path,
-        span: SourceSpan | None,
-        graph_path: str,
-    ) -> None:
-        self._raise(
-            "E_INVALID_OVERRIDE",
-            f"Field '{field.name}' cannot be overridden with policy '{field.override}'.",
-            source_path=source_path,
-            span=span,
-            graph_path=graph_path,
-            details={"field": field.name, "override": field.override},
-        )
+    for path in graph.path_resolution:
+        _validate_path(path)
 
-    def _invalid_path(
-        self,
-        field: FieldDef,
-        original: str,
-        resolved: Path,
-        field_policy: str,
-        expected_kind: str,
-        exists: bool,
-        source_path: Path,
-        span: SourceSpan | None,
-        graph_path: str,
-    ) -> None:
-        self._raise(
-            "E_INVALID_PATH",
-            f"Invalid path for field '{field.name}'.",
-            source_path=source_path,
-            span=span,
-            graph_path=graph_path,
-            details={
-                "field": field.name,
-                "original": original,
-                "resolved_path": resolved.as_posix(),
-                "declaring_source_path": source_path.as_posix(),
-                "field_policy": field_policy,
-                "resolver_policy": self._resolver.path_exists,
-                "expected_kind": expected_kind,
-                "exists": exists,
-            },
-        )
+    return graph.with_validated(True)
 
-    def _raise(
-        self,
-        code: str,
-        message: str,
-        *,
-        source_path: Path,
-        span: SourceSpan | None = None,
-        selector: str | None = None,
-        graph_path: str | None = None,
-        details: dict[str, Any] | None = None,
-    ) -> NoReturn:
-        raise ETCMError(
-            Diagnostic(
-                code=code,
-                message=message,
-                source_path=source_path,
-                line=span.line if span is not None else None,
-                column=span.column if span is not None else None,
-                end_line=span.end_line if span is not None else None,
-                end_column=span.end_column if span is not None else None,
-                selector=selector,
+
+def _validate_node(node: ResolvedNode, node_by_id: Mapping[str, ResolvedNode]) -> None:
+    for field_name, field in node.fields.items():
+        value = node.field_values.get(field_name)
+        graph_path = f"{node.graph_path}.{field_name}"
+        if value is None:
+            _raise(
+                "E_MISSING_FIELD",
+                f"Missing required field '{field_name}'.",
+                source_path=field.source_path,
+                span=field.span,
                 graph_path=graph_path,
-                details=details,
+                details={"field": field_name},
             )
+        if value.overrode_parent:
+            _validate_override(field, value, graph_path)
+        if value.ref_target is not None:
+            _validate_ref(field, value, node_by_id, graph_path)
+            continue
+        _validate_value_type(field, value, graph_path)
+        _validate_constraints(field, value, graph_path)
+
+
+def _validate_ref(
+    field: ResolvedField,
+    value: ResolvedValue,
+    node_by_id: Mapping[str, ResolvedNode],
+    graph_path: str,
+) -> None:
+    assert value.ref_target is not None
+    target = node_by_id[value.ref_target]
+    if not _ref_assignable(target, field.type_expr):
+        _raise(
+            "E_TYPE_MISMATCH",
+            f"Reference for field '{field.name}' is not assignable.",
+            source_path=value.source_path,
+            span=value.span,
+            selector=target.selector,
+            graph_path=graph_path,
+            details={"actual": target.spec_name, "expected": _type_text(field.type_expr)},
         )
 
 
-def load(selector: str, *, as_: str = "pydantic") -> object:
-    return Resolver().load(selector, as_=as_)
+def _validate_value_type(field: ResolvedField, value: ResolvedValue, graph_path: str) -> None:
+    if _value_matches_type(value.value, field.type_expr):
+        return
+    actual = value.literal.kind if value.literal is not None else type(value.value).__name__
+    _raise(
+        "E_TYPE_MISMATCH",
+        f"Value of type '{actual}' is not assignable to '{_type_text(field.type_expr)}'.",
+        source_path=value.source_path,
+        span=value.span,
+        graph_path=graph_path,
+        details={"actual": actual, "expected": _type_text(field.type_expr)},
+    )
 
 
-def resolve(selector: str) -> ResolvedGraph:
-    return Resolver().resolve(selector)
+def _validate_override(field: ResolvedField, value: ResolvedValue, graph_path: str) -> None:
+    if field.override in {"deny", "force_only"}:
+        _invalid_override(field, value, graph_path)
+    if field.override == "append" and not (
+        isinstance(value.parent_value, list) and isinstance(value.local_value, list)
+    ):
+        _invalid_override(field, value, graph_path)
+    if field.override == "merge" and not (
+        isinstance(value.parent_value, dict) and isinstance(value.local_value, dict)
+    ):
+        _invalid_override(field, value, graph_path)
 
 
-def validate(selector: str) -> None:
-    return Resolver().validate(selector)
+def _validate_path(path: PathResolution) -> None:
+    effective_policy = (
+        path.resolver_policy if path.field_policy == "resolver" else path.field_policy
+    )
+    kind_ok = (
+        path.expected_kind == "any"
+        or (path.expected_kind == "file" and path.resolved_path.is_file())
+        or (path.expected_kind == "dir" and path.resolved_path.is_dir())
+    )
+    if effective_policy == "must_exist" and not path.exists:
+        _invalid_path(path)
+    if path.exists and not kind_ok:
+        _invalid_path(path)
+
+
+def _validate_constraints(field: ResolvedField, value: ResolvedValue, graph_path: str) -> None:
+    for name, constraint in field.metadata.items():
+        if name in _PATH_METADATA:
+            continue
+        if name == "choices":
+            _validate_choices(field, value, constraint, graph_path)
+        elif name in {"gt", "ge", "lt", "le"}:
+            _validate_numeric_bound(field, value, name, constraint, graph_path)
+        elif name in {"min_length", "max_length"}:
+            _validate_length_bound(field, value, name, constraint, graph_path)
+        elif name == "regex":
+            _validate_regex(field, value, constraint, graph_path)
+
+
+def _validate_choices(
+    field: ResolvedField,
+    value: ResolvedValue,
+    choices: object,
+    graph_path: str,
+) -> None:
+    if not isinstance(choices, list):
+        _invalid_constraint(field, value, "choices", choices, graph_path)
+    if value.value not in choices:
+        _constraint_failed(field, value, "choices", choices, graph_path)
+
+
+def _validate_numeric_bound(
+    field: ResolvedField,
+    value: ResolvedValue,
+    name: str,
+    bound: object,
+    graph_path: str,
+) -> None:
+    if not _is_number(bound) or not _is_number(value.value):
+        _invalid_constraint(field, value, name, bound, graph_path)
+    actual = float(cast(int | float, value.value))
+    expected = float(cast(int | float, bound))
+    ok = (
+        (name == "gt" and actual > expected)
+        or (name == "ge" and actual >= expected)
+        or (name == "lt" and actual < expected)
+        or (name == "le" and actual <= expected)
+    )
+    if not ok:
+        _constraint_failed(field, value, name, bound, graph_path)
+
+
+def _validate_length_bound(
+    field: ResolvedField,
+    value: ResolvedValue,
+    name: str,
+    bound: object,
+    graph_path: str,
+) -> None:
+    if not isinstance(bound, int) or isinstance(bound, bool) or not hasattr(value.value, "__len__"):
+        _invalid_constraint(field, value, name, bound, graph_path)
+    actual = len(value.value)
+    ok = (name == "min_length" and actual >= bound) or (
+        name == "max_length" and actual <= bound
+    )
+    if not ok:
+        _constraint_failed(field, value, name, bound, graph_path)
+
+
+def _validate_regex(
+    field: ResolvedField,
+    value: ResolvedValue,
+    pattern: object,
+    graph_path: str,
+) -> None:
+    if not isinstance(pattern, str) or not isinstance(value.value, str):
+        _invalid_constraint(field, value, "regex", pattern, graph_path)
+    try:
+        matched = re.fullmatch(pattern, value.value) is not None
+    except re.error:
+        _invalid_constraint(field, value, "regex", pattern, graph_path)
+    if not matched:
+        _constraint_failed(field, value, "regex", pattern, graph_path)
+
+
+def _value_matches_type(value: Any, type_expr: TypeExpr) -> bool:
+    if type_expr.kind == "union":
+        return any(_value_matches_type(value, option) for option in type_expr.args)
+    if type_expr.kind == "generic":
+        if type_expr.name == "list" and isinstance(value, list) and len(type_expr.args) == 1:
+            return all(_value_matches_type(item, type_expr.args[0]) for item in value)
+        if type_expr.name == "dict" and isinstance(value, dict) and len(type_expr.args) == 2:
+            key_type, value_type = type_expr.args
+            return key_type.name == "str" and all(
+                isinstance(key, str) and _value_matches_type(item, value_type)
+                for key, item in value.items()
+            )
+        return False
+    if type_expr.kind != "named" or type_expr.name is None:
+        return False
+    if type_expr.name == "str":
+        return isinstance(value, str)
+    if type_expr.name == "int":
+        return type(value) is int
+    if type_expr.name == "float":
+        return type(value) in {int, float}
+    if type_expr.name == "bool":
+        return isinstance(value, bool)
+    if type_expr.name == "null":
+        return value is None
+    if type_expr.name == "Path":
+        return isinstance(value, Path)
+    return False
+
+
+def _ref_assignable(actual: ResolvedNode, expected: TypeExpr) -> bool:
+    if expected.kind == "union":
+        return any(_ref_assignable(actual, option) for option in expected.args)
+    if expected.kind != "named" or expected.name is None:
+        return False
+    if expected.name in _PRIMITIVE_TYPES:
+        return False
+    return _spec_assignable(actual, expected.name)
+
+
+def _spec_assignable(actual: ResolvedNode, expected_name: str) -> bool:
+    return actual.spec_name == expected_name or expected_name in actual.spec_ancestors
+
+
+def _type_accepts_path(type_expr: TypeExpr) -> bool:
+    if type_expr.kind == "named":
+        return type_expr.name == "Path"
+    if type_expr.kind == "union":
+        return any(_type_accepts_path(option) for option in type_expr.args)
+    return False
+
+
+def _literal_plain_value(literal: LiteralValue) -> Any:
+    if literal.kind == "list":
+        return [_literal_plain_value(value) for value in literal.value]
+    if literal.kind == "map":
+        return {key: _literal_plain_value(value) for key, value in literal.value}
+    return literal.value
+
+
+def _is_number(value: object) -> bool:
+    return type(value) in {int, float}
+
+
+def _type_text(type_expr: TypeExpr) -> str:
+    if type_expr.kind == "named":
+        return str(type_expr.name)
+    if type_expr.kind == "generic":
+        return f"{type_expr.name}[{', '.join(_type_text(arg) for arg in type_expr.args)}]"
+    if type_expr.kind == "union":
+        return " | ".join(_type_text(arg) for arg in type_expr.args)
+    return type_expr.kind
+
+
+def _selector_text(source_path: Path, implementation: str | None) -> str:
+    if implementation is None:
+        return source_path.as_posix()
+    return f"{source_path.as_posix()}#{implementation}"
+
+
+def _invalid_override(field: ResolvedField, value: ResolvedValue, graph_path: str) -> NoReturn:
+    _raise(
+        "E_INVALID_OVERRIDE",
+        f"Field '{field.name}' cannot be overridden with policy '{field.override}'.",
+        source_path=value.source_path,
+        span=value.span,
+        graph_path=graph_path,
+        details={"field": field.name, "override": field.override},
+    )
+
+
+def _invalid_path(path: PathResolution) -> NoReturn:
+    field_name = path.field_path.rsplit(".", 1)[-1]
+    _raise(
+        "E_INVALID_PATH",
+        f"Invalid path for field '{field_name}'.",
+        source_path=path.source_path,
+        span=path.span,
+        graph_path=path.field_path,
+        details={
+            "field": field_name,
+            "original": path.original,
+            "resolved_path": path.resolved_path.as_posix(),
+            "declaring_source_path": path.source_path.as_posix(),
+            "field_policy": path.field_policy,
+            "resolver_policy": path.resolver_policy,
+            "expected_kind": path.expected_kind,
+            "exists": path.exists,
+        },
+    )
+
+
+def _constraint_failed(
+    field: ResolvedField,
+    value: ResolvedValue,
+    constraint: str,
+    expected: object,
+    graph_path: str,
+) -> NoReturn:
+    _raise(
+        "E_CONSTRAINT",
+        f"Field '{field.name}' violates constraint '{constraint}'.",
+        source_path=value.source_path,
+        span=value.span,
+        graph_path=graph_path,
+        details={
+            "field": field.name,
+            "constraint": constraint,
+            "expected": expected,
+            "actual": value.value,
+        },
+    )
+
+
+def _invalid_constraint(
+    field: ResolvedField,
+    value: ResolvedValue,
+    constraint: str,
+    expected: object,
+    graph_path: str,
+) -> NoReturn:
+    _raise(
+        "E_CONSTRAINT",
+        f"Field '{field.name}' has invalid constraint '{constraint}'.",
+        source_path=value.source_path,
+        span=value.span,
+        graph_path=graph_path,
+        details={
+            "field": field.name,
+            "constraint": constraint,
+            "expected": expected,
+            "actual": value.value,
+        },
+    )
+
+
+def _raise(
+    code: str,
+    message: str,
+    *,
+    source_path: Path | None = None,
+    span: SourceSpan | None = None,
+    selector: str | None = None,
+    graph_path: str | None = None,
+    details: dict[str, Any] | None = None,
+) -> NoReturn:
+    raise ETCMError(
+        Diagnostic(
+            code=code,
+            message=message,
+            source_path=source_path,
+            line=span.line if span is not None else None,
+            column=span.column if span is not None else None,
+            end_line=span.end_line if span is not None else None,
+            end_column=span.end_column if span is not None else None,
+            selector=selector,
+            graph_path=graph_path,
+            details=details,
+        )
+    )
+
+
+def load(
+    selector: str,
+    *,
+    target: ViewTarget = "pydantic",
+    path_exists: PathExistsPolicy = "allow_missing",
+) -> object:
+    return Resolver(path_exists=path_exists).load(selector, target=target)
+
+
+def resolve(
+    selector: str,
+    *,
+    path_exists: PathExistsPolicy = "allow_missing",
+) -> ResolvedGraph:
+    return Resolver(path_exists=path_exists).resolve(selector)
+
+
+def validate(graph: ResolvedGraph) -> ResolvedGraph:
+    return Resolver().validate(graph)
+
+
+def convert(
+    graph: ResolvedGraph,
+    *,
+    target: ViewTarget = "pydantic",
+    force: bool = False,
+) -> object:
+    return Resolver().convert(graph, target=target, force=force)
 
 
 __all__ = [
     "PathExistsPolicy",
     "PathResolution",
     "ResolvedEdge",
+    "ResolvedField",
     "ResolvedGraph",
     "ResolvedNode",
+    "ResolvedValue",
     "Resolver",
+    "ViewTarget",
+    "convert",
     "load",
     "resolve",
     "validate",

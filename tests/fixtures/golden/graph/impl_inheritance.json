@@ -9,6 +9,171 @@
   ],
   "nodes": [
     {
+      "field_values": {
+        "device": {
+          "literal": {
+            "kind": "string",
+            "value": "cuda"
+          },
+          "local_value": "cuda",
+          "origin": "local",
+          "overrode_parent": true,
+          "parent_value": "cpu",
+          "ref_target": null,
+          "source_path": "valid/impl_inheritance_resolver/runtime.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 1,
+            "end_line": 14,
+            "line": 13
+          },
+          "value": "cuda"
+        },
+        "metadata": {
+          "literal": {
+            "kind": "map",
+            "value": [
+              [
+                "mode",
+                {
+                  "kind": "string",
+                  "value": "fast"
+                }
+              ]
+            ]
+          },
+          "local_value": {
+            "mode": "fast"
+          },
+          "origin": "local",
+          "overrode_parent": true,
+          "parent_value": {
+            "owner": "tests"
+          },
+          "ref_target": null,
+          "source_path": "valid/impl_inheritance_resolver/runtime.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 3,
+            "end_line": 13,
+            "line": 12
+          },
+          "value": {
+            "mode": "fast",
+            "owner": "tests"
+          }
+        },
+        "tags": {
+          "literal": {
+            "kind": "list",
+            "value": [
+              {
+                "kind": "string",
+                "value": "child"
+              }
+            ]
+          },
+          "local_value": [
+            "child"
+          ],
+          "origin": "local",
+          "overrode_parent": true,
+          "parent_value": [
+            "base"
+          ],
+          "ref_target": null,
+          "source_path": "valid/impl_inheritance_resolver/runtime.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 3,
+            "end_line": 12,
+            "line": 11
+          },
+          "value": [
+            "base",
+            "child"
+          ]
+        }
+      },
+      "fields": {
+        "device": {
+          "default": "cpu",
+          "has_default": true,
+          "metadata": {},
+          "name": "device",
+          "override": "allow",
+          "required": false,
+          "source_path": "valid/impl_inheritance_resolver/runtime.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 1,
+            "end_line": 6,
+            "line": 4
+          },
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "str"
+          }
+        },
+        "metadata": {
+          "default": {},
+          "has_default": true,
+          "metadata": {},
+          "name": "metadata",
+          "override": "merge",
+          "required": false,
+          "source_path": "valid/impl_inheritance_resolver/runtime.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 3,
+            "end_line": 4,
+            "line": 3
+          },
+          "type": {
+            "args": [
+              {
+                "args": [],
+                "kind": "named",
+                "name": "str"
+              },
+              {
+                "args": [],
+                "kind": "named",
+                "name": "str"
+              }
+            ],
+            "kind": "generic",
+            "name": "dict"
+          }
+        },
+        "tags": {
+          "default": [],
+          "has_default": true,
+          "metadata": {},
+          "name": "tags",
+          "override": "append",
+          "required": false,
+          "source_path": "valid/impl_inheritance_resolver/runtime.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 3,
+            "end_line": 3,
+            "line": 2
+          },
+          "type": {
+            "args": [
+              {
+                "args": [],
+                "kind": "named",
+                "name": "str"
+              }
+            ],
+            "kind": "generic",
+            "name": "list"
+          }
+        }
+      },
       "graph_path": "root",
       "id": "root",
       "implementation": "child",
@@ -29,6 +194,161 @@
       }
     },
     {
+      "field_values": {
+        "device": {
+          "literal": {
+            "kind": "string",
+            "value": "cpu"
+          },
+          "local_value": null,
+          "origin": "default",
+          "overrode_parent": false,
+          "parent_value": null,
+          "ref_target": null,
+          "source_path": "valid/impl_inheritance_resolver/runtime.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 1,
+            "end_line": 6,
+            "line": 4
+          },
+          "value": "cpu"
+        },
+        "metadata": {
+          "literal": {
+            "kind": "map",
+            "value": [
+              [
+                "owner",
+                {
+                  "kind": "string",
+                  "value": "tests"
+                }
+              ]
+            ]
+          },
+          "local_value": null,
+          "origin": "local",
+          "overrode_parent": false,
+          "parent_value": null,
+          "ref_target": null,
+          "source_path": "valid/impl_inheritance_resolver/runtime.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 1,
+            "end_line": 10,
+            "line": 8
+          },
+          "value": {
+            "owner": "tests"
+          }
+        },
+        "tags": {
+          "literal": {
+            "kind": "list",
+            "value": [
+              {
+                "kind": "string",
+                "value": "base"
+              }
+            ]
+          },
+          "local_value": null,
+          "origin": "local",
+          "overrode_parent": false,
+          "parent_value": null,
+          "ref_target": null,
+          "source_path": "valid/impl_inheritance_resolver/runtime.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 3,
+            "end_line": 8,
+            "line": 7
+          },
+          "value": [
+            "base"
+          ]
+        }
+      },
+      "fields": {
+        "device": {
+          "default": "cpu",
+          "has_default": true,
+          "metadata": {},
+          "name": "device",
+          "override": "allow",
+          "required": false,
+          "source_path": "valid/impl_inheritance_resolver/runtime.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 1,
+            "end_line": 6,
+            "line": 4
+          },
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "str"
+          }
+        },
+        "metadata": {
+          "default": {},
+          "has_default": true,
+          "metadata": {},
+          "name": "metadata",
+          "override": "merge",
+          "required": false,
+          "source_path": "valid/impl_inheritance_resolver/runtime.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 3,
+            "end_line": 4,
+            "line": 3
+          },
+          "type": {
+            "args": [
+              {
+                "args": [],
+                "kind": "named",
+                "name": "str"
+              },
+              {
+                "args": [],
+                "kind": "named",
+                "name": "str"
+              }
+            ],
+            "kind": "generic",
+            "name": "dict"
+          }
+        },
+        "tags": {
+          "default": [],
+          "has_default": true,
+          "metadata": {},
+          "name": "tags",
+          "override": "append",
+          "required": false,
+          "source_path": "valid/impl_inheritance_resolver/runtime.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 3,
+            "end_line": 3,
+            "line": 2
+          },
+          "type": {
+            "args": [
+              {
+                "args": [],
+                "kind": "named",
+                "name": "str"
+              }
+            ],
+            "kind": "generic",
+            "name": "list"
+          }
+        }
+      },
       "graph_path": "root.__parent",
       "id": "root.__parent",
       "implementation": "base",
@@ -51,5 +371,6 @@
   "root_selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/impl_inheritance_resolver/runtime.etcm#child",
   "sources": [
     "valid/impl_inheritance_resolver/runtime.etcm"
-  ]
+  ],
+  "validated": false
 }

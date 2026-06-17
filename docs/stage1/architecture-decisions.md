@@ -31,17 +31,19 @@ Responsibilities:
 
 ## Public API
 
-The first public API should be:
+The public API should keep ergonomic loading separate from orthogonal pipeline
+primitives:
 
 ```python
-from etcm import Resolver, load, resolve, validate
+from etcm import Resolver, convert, load, resolve, validate
 
-cfg = load("configs/train.etcm#smoke", as_="pydantic")
+cfg = load("configs/train.etcm#smoke", target="pydantic")
 graph = resolve("configs/train.etcm#smoke")
-validate("configs/train.etcm#smoke")
+graph = validate(graph)
+cfg = convert(graph, target="pydantic")
 
 resolver = Resolver(path_exists="must_exist")
-cfg = resolver.load("configs/train.etcm#smoke", as_="pydantic")
+cfg = resolver.load("configs/train.etcm#smoke", target="pydantic")
 ```
 
 Rules:
@@ -128,4 +130,3 @@ Initial error categories:
 - invalid override
 - invalid path
 - generated view failure
-

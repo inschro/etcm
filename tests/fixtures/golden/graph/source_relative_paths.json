@@ -11,6 +11,48 @@
   ],
   "nodes": [
     {
+      "field_values": {
+        "data": {
+          "literal": null,
+          "local_value": null,
+          "origin": "local",
+          "overrode_parent": false,
+          "parent_value": null,
+          "ref_target": "root.data",
+          "source_path": "valid/source_relative_paths/train.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 1,
+            "end_line": 6,
+            "line": 5
+          },
+          "value": {
+            "$ref": "root.data"
+          }
+        }
+      },
+      "fields": {
+        "data": {
+          "default": null,
+          "has_default": false,
+          "metadata": {},
+          "name": "data",
+          "override": "allow",
+          "required": true,
+          "source_path": "valid/source_relative_paths/train.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 1,
+            "end_line": 4,
+            "line": 2
+          },
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "DataConfig"
+          }
+        }
+      },
       "graph_path": "root",
       "id": "root",
       "implementation": "default",
@@ -25,6 +67,52 @@
       }
     },
     {
+      "field_values": {
+        "local_file": {
+          "literal": {
+            "kind": "string",
+            "value": "local.txt"
+          },
+          "local_value": null,
+          "origin": "local",
+          "overrode_parent": false,
+          "parent_value": null,
+          "ref_target": null,
+          "source_path": "valid/source_relative_paths/nested/model.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 1,
+            "end_line": 6,
+            "line": 5
+          },
+          "value": "valid/source_relative_paths/nested/local.txt"
+        }
+      },
+      "fields": {
+        "local_file": {
+          "default": null,
+          "has_default": false,
+          "metadata": {
+            "path_exists": "must_exist",
+            "path_kind": "file"
+          },
+          "name": "local_file",
+          "override": "allow",
+          "required": true,
+          "source_path": "valid/source_relative_paths/nested/model.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 1,
+            "end_line": 4,
+            "line": 2
+          },
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "Path"
+          }
+        }
+      },
       "graph_path": "root.data",
       "id": "root.data",
       "implementation": "default",
@@ -46,12 +134,19 @@
       "original": "local.txt",
       "resolved_path": "valid/source_relative_paths/nested/local.txt",
       "resolver_policy": "allow_missing",
-      "source_path": "valid/source_relative_paths/nested/model.etcm"
+      "source_path": "valid/source_relative_paths/nested/model.etcm",
+      "span": {
+        "column": 3,
+        "end_column": 1,
+        "end_line": 6,
+        "line": 5
+      }
     }
   ],
   "root_selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/source_relative_paths/train.etcm",
   "sources": [
     "valid/source_relative_paths/nested/model.etcm",
     "valid/source_relative_paths/train.etcm"
-  ]
+  ],
+  "validated": false
 }

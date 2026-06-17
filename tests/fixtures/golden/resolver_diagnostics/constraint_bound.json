@@ -1,0 +1,19 @@
+{
+  "code": "E_CONSTRAINT",
+  "details": {
+    "actual": 0,
+    "constraint": "gt",
+    "expected": 0,
+    "field": "epochs"
+  },
+  "graph_path": "root.epochs",
+  "message": "Field 'epochs' violates constraint 'gt'.",
+  "selector": null,
+  "source_path": "invalid/constraint_bound.etcm",
+  "span": {
+    "column": 3,
+    "end_column": 1,
+    "end_line": 6,
+    "line": 5
+  }
+}

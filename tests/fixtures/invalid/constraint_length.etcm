@@ -1,0 +1,5 @@
+spec Tags:
+  tags: list[str] = Field(min_length=2)
+
+impl default:
+  tags: ["smoke"]

@@ -36,6 +36,7 @@ the key in JSON golden outputs.
 | `E_IMPL_CYCLE` | Resolver | Implementation inheritance contains a cycle. |
 | `E_REF_CYCLE` | Resolver | Field references contain a cycle. |
 | `E_TYPE_MISMATCH` | Resolver | A literal or referenced implementation is not assignable to the field type. |
+| `E_CONSTRAINT` | Resolver | A field value violates a non-path field constraint. |
 | `E_INVALID_OVERRIDE` | Resolver | An assignment or CLI override violates override policy. |
 | `E_INVALID_PATH` | Resolver | A `Path` value violates existence or kind policy. |
 | `E_GENERATED_VIEW` | Codegen | A generated view cannot represent the resolved graph. |

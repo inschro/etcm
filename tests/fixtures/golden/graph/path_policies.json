@@ -2,6 +2,136 @@
   "edges": [],
   "nodes": [
     {
+      "field_values": {
+        "cache_dir": {
+          "literal": {
+            "kind": "string",
+            "value": "data/cache"
+          },
+          "local_value": null,
+          "origin": "local",
+          "overrode_parent": false,
+          "parent_value": null,
+          "ref_target": null,
+          "source_path": "valid/path_policies/data.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 1,
+            "end_line": 10,
+            "line": 9
+          },
+          "value": "valid/path_policies/data/cache"
+        },
+        "existing_file": {
+          "literal": {
+            "kind": "string",
+            "value": "data/existing.txt"
+          },
+          "local_value": null,
+          "origin": "local",
+          "overrode_parent": false,
+          "parent_value": null,
+          "ref_target": null,
+          "source_path": "valid/path_policies/data.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 3,
+            "end_line": 8,
+            "line": 7
+          },
+          "value": "valid/path_policies/data/existing.txt"
+        },
+        "output_dir": {
+          "literal": {
+            "kind": "string",
+            "value": "data/future-output"
+          },
+          "local_value": null,
+          "origin": "local",
+          "overrode_parent": false,
+          "parent_value": null,
+          "ref_target": null,
+          "source_path": "valid/path_policies/data.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 3,
+            "end_line": 9,
+            "line": 8
+          },
+          "value": "valid/path_policies/data/future-output"
+        }
+      },
+      "fields": {
+        "cache_dir": {
+          "default": null,
+          "has_default": false,
+          "metadata": {
+            "path_exists": "resolver",
+            "path_kind": "dir"
+          },
+          "name": "cache_dir",
+          "override": "allow",
+          "required": true,
+          "source_path": "valid/path_policies/data.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 1,
+            "end_line": 6,
+            "line": 4
+          },
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "Path"
+          }
+        },
+        "existing_file": {
+          "default": null,
+          "has_default": false,
+          "metadata": {
+            "path_exists": "must_exist",
+            "path_kind": "file"
+          },
+          "name": "existing_file",
+          "override": "allow",
+          "required": true,
+          "source_path": "valid/path_policies/data.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 3,
+            "end_line": 3,
+            "line": 2
+          },
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "Path"
+          }
+        },
+        "output_dir": {
+          "default": null,
+          "has_default": false,
+          "metadata": {
+            "path_exists": "allow_missing",
+            "path_kind": "dir"
+          },
+          "name": "output_dir",
+          "override": "allow",
+          "required": true,
+          "source_path": "valid/path_policies/data.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 3,
+            "end_line": 4,
+            "line": 3
+          },
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "Path"
+          }
+        }
+      },
       "graph_path": "root",
       "id": "root",
       "implementation": "default",
@@ -25,7 +155,13 @@
       "original": "data/cache",
       "resolved_path": "valid/path_policies/data/cache",
       "resolver_policy": "allow_missing",
-      "source_path": "valid/path_policies/data.etcm"
+      "source_path": "valid/path_policies/data.etcm",
+      "span": {
+        "column": 3,
+        "end_column": 1,
+        "end_line": 10,
+        "line": 9
+      }
     },
     {
       "exists": true,
@@ -35,7 +171,13 @@
       "original": "data/existing.txt",
       "resolved_path": "valid/path_policies/data/existing.txt",
       "resolver_policy": "allow_missing",
-      "source_path": "valid/path_policies/data.etcm"
+      "source_path": "valid/path_policies/data.etcm",
+      "span": {
+        "column": 3,
+        "end_column": 3,
+        "end_line": 8,
+        "line": 7
+      }
     },
     {
       "exists": false,
@@ -45,11 +187,18 @@
       "original": "data/future-output",
       "resolved_path": "valid/path_policies/data/future-output",
       "resolver_policy": "allow_missing",
-      "source_path": "valid/path_policies/data.etcm"
+      "source_path": "valid/path_policies/data.etcm",
+      "span": {
+        "column": 3,
+        "end_column": 3,
+        "end_line": 9,
+        "line": 8
+      }
     }
   ],
   "root_selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/path_policies/data.etcm",
   "sources": [
     "valid/path_policies/data.etcm"
-  ]
+  ],
+  "validated": false
 }

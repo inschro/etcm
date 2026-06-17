@@ -2,6 +2,93 @@
   "edges": [],
   "nodes": [
     {
+      "field_values": {
+        "retries": {
+          "literal": {
+            "kind": "int",
+            "value": 3
+          },
+          "local_value": null,
+          "origin": "local",
+          "overrode_parent": false,
+          "parent_value": null,
+          "ref_target": null,
+          "source_path": "valid/spec_reuse/variants.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 1,
+            "end_line": 6,
+            "line": 5
+          },
+          "value": 3
+        },
+        "train_file": {
+          "literal": {
+            "kind": "string",
+            "value": "data/smoke.txt"
+          },
+          "local_value": null,
+          "origin": "local",
+          "overrode_parent": false,
+          "parent_value": null,
+          "ref_target": null,
+          "source_path": "valid/spec_reuse/variants.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 3,
+            "end_line": 5,
+            "line": 4
+          },
+          "value": "valid/spec_reuse/data/smoke.txt"
+        }
+      },
+      "fields": {
+        "retries": {
+          "default": 2,
+          "has_default": true,
+          "metadata": {
+            "gt": 0
+          },
+          "name": "retries",
+          "override": "allow",
+          "required": false,
+          "source_path": "valid/spec_reuse/spec.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 1,
+            "end_line": 4,
+            "line": 3
+          },
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "int"
+          }
+        },
+        "train_file": {
+          "default": null,
+          "has_default": false,
+          "metadata": {
+            "path_exists": "allow_missing",
+            "path_kind": "file"
+          },
+          "name": "train_file",
+          "override": "allow",
+          "required": true,
+          "source_path": "valid/spec_reuse/spec.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 3,
+            "end_line": 3,
+            "line": 2
+          },
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "Path"
+          }
+        }
+      },
       "graph_path": "root",
       "id": "root",
       "implementation": "smoke",
@@ -24,12 +111,19 @@
       "original": "data/smoke.txt",
       "resolved_path": "valid/spec_reuse/data/smoke.txt",
       "resolver_policy": "allow_missing",
-      "source_path": "valid/spec_reuse/variants.etcm"
+      "source_path": "valid/spec_reuse/variants.etcm",
+      "span": {
+        "column": 3,
+        "end_column": 3,
+        "end_line": 5,
+        "line": 4
+      }
     }
   ],
   "root_selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/spec_reuse/variants.etcm#smoke",
   "sources": [
     "valid/spec_reuse/spec.etcm",
     "valid/spec_reuse/variants.etcm"
-  ]
+  ],
+  "validated": false
 }

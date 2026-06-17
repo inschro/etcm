@@ -1,0 +1,5 @@
+spec Train:
+  epochs: int = Field(gt="zero")
+
+impl default:
+  epochs: 1

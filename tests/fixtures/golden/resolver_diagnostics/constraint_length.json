@@ -1,0 +1,21 @@
+{
+  "code": "E_CONSTRAINT",
+  "details": {
+    "actual": [
+      "smoke"
+    ],
+    "constraint": "min_length",
+    "expected": 2,
+    "field": "tags"
+  },
+  "graph_path": "root.tags",
+  "message": "Field 'tags' violates constraint 'min_length'.",
+  "selector": null,
+  "source_path": "invalid/constraint_length.etcm",
+  "span": {
+    "column": 3,
+    "end_column": 1,
+    "end_line": 6,
+    "line": 5
+  }
+}

@@ -87,14 +87,15 @@ Planned modules:
 Public API:
 
 ```python
-from etcm import Resolver, load, resolve, validate
+from etcm import Resolver, convert, load, resolve, validate
 
-cfg = load("configs/train.etcm#smoke", as_="pydantic")
+cfg = load("configs/train.etcm#smoke", target="pydantic")
 graph = resolve("configs/train.etcm#smoke")
-validate("configs/train.etcm#smoke")
+graph = validate(graph)
+cfg = convert(graph, target="pydantic")
 
 resolver = Resolver(path_exists="must_exist")
-cfg = resolver.load("configs/train.etcm#smoke", as_="pydantic")
+cfg = resolver.load("configs/train.etcm#smoke", target="pydantic")
 ```
 
 Core data contracts:
@@ -203,16 +204,23 @@ Acceptance:
 - reference cycles show the full selector chain
 - resolved graph preserves implementation identity and source locations
 
-## Phase 6: Generated Views And CLI
+## Phase 6: Orthogonal API And Generated Views
 
-Build user-facing surfaces over the resolved graph.
+Build generated user-facing surfaces over the resolved graph. CLI remains a
+later thin wrapper over the same Python APIs.
+
+Pipeline:
+
+- `resolve(selector)` builds an unvalidated graph object
+- `validate(graph)` returns a graph with `validated=True`
+- `convert(graph, target="pydantic")` returns generated views
+- `load(selector, target="pydantic")` orchestrates the full pipeline
 
 Generated views:
 
-- `as_="pydantic"` returns generated Pydantic models
-- `as_="dataclass"` returns generated dataclasses
-- `as_="dict"` returns a JSON-compatible payload
-- `resolve()` returns a graph object with node and edge metadata
+- `target="pydantic"` returns generated Pydantic models
+- `target="dataclass"` returns generated dataclasses
+- `target="dict"` returns a JSON-compatible payload
 
 CLI:
 
@@ -236,8 +244,7 @@ Acceptance:
 - generated Pydantic models enforce ETCM constraints
 - generated objects are immutable by default
 - resolved JSON export is stable under repeated runs
-- CLI commands return non-zero on invalid configs
-- errors are concise by default and detailed with `--verbose`
+- conversion refuses unvalidated graphs unless `force=True`
 
 ## Phase 7: Bridges And Adoption
 

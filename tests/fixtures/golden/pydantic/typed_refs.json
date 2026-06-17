@@ -1,0 +1,36 @@
+{
+  "classes": [
+    {
+      "fields": [
+        {
+          "annotation": "int",
+          "metadata": {},
+          "name": "depth",
+          "required": true
+        }
+      ],
+      "frozen": true,
+      "name": "ModelConfig"
+    },
+    {
+      "fields": [
+        {
+          "annotation": "ModelConfig",
+          "metadata": {},
+          "name": "model",
+          "required": true
+        },
+        {
+          "annotation": "int",
+          "metadata": {
+            "gt": 0
+          },
+          "name": "max_steps",
+          "required": true
+        }
+      ],
+      "frozen": true,
+      "name": "TrainRun"
+    }
+  ]
+}

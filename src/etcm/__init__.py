@@ -1,3 +1,3 @@
-from etcm.resolve import Resolver, load, resolve, validate
+from etcm.resolve import Resolver, convert, load, resolve, validate
 
-__all__ = ["Resolver", "load", "resolve", "validate"]
+__all__ = ["Resolver", "convert", "load", "resolve", "validate"]

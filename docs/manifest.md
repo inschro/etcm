@@ -309,7 +309,7 @@ schema definitions in Python just to get validation.
 ```python
 from etcm import load
 
-cfg = load("experiments/train.etcm#imagenet", as_="pydantic")
+cfg = load("experiments/train.etcm#imagenet", target="pydantic")
 ```
 
 V0 generated representations:
@@ -317,7 +317,7 @@ V0 generated representations:
 - `pydantic`: default Python validation and IDE-friendly object view
 - `dataclass`: lightweight typed object view
 - `dict`: JSON/YAML-compatible resolved payload
-- `graph`: node and edge metadata for inspection and tooling
+- `resolve`: node and edge metadata for inspection and tooling
 
 Pydantic is the first target because it already gives Python projects strong
 runtime validation and JSON Schema export.

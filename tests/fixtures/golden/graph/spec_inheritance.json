@@ -9,6 +9,90 @@
   ],
   "nodes": [
     {
+      "field_values": {
+        "device": {
+          "literal": {
+            "kind": "string",
+            "value": "cuda"
+          },
+          "local_value": null,
+          "origin": "local",
+          "overrode_parent": false,
+          "parent_value": null,
+          "ref_target": null,
+          "source_path": "valid/spec_inheritance_resolver/cuda.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 3,
+            "end_line": 6,
+            "line": 5
+          },
+          "value": "cuda"
+        },
+        "gpus": {
+          "literal": {
+            "kind": "int",
+            "value": 2
+          },
+          "local_value": null,
+          "origin": "local",
+          "overrode_parent": false,
+          "parent_value": null,
+          "ref_target": null,
+          "source_path": "valid/spec_inheritance_resolver/cuda.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 1,
+            "end_line": 7,
+            "line": 6
+          },
+          "value": 2
+        }
+      },
+      "fields": {
+        "device": {
+          "default": "cpu",
+          "has_default": true,
+          "metadata": {},
+          "name": "device",
+          "override": "allow",
+          "required": false,
+          "source_path": "valid/spec_inheritance_resolver/base.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 1,
+            "end_line": 3,
+            "line": 2
+          },
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "str"
+          }
+        },
+        "gpus": {
+          "default": 1,
+          "has_default": true,
+          "metadata": {
+            "gt": 0
+          },
+          "name": "gpus",
+          "override": "allow",
+          "required": false,
+          "source_path": "valid/spec_inheritance_resolver/cuda.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 1,
+            "end_line": 4,
+            "line": 2
+          },
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "int"
+          }
+        }
+      },
       "graph_path": "root",
       "id": "root",
       "implementation": "default",
@@ -29,5 +113,6 @@
   "sources": [
     "valid/spec_inheritance_resolver/base.etcm",
     "valid/spec_inheritance_resolver/cuda.etcm"
-  ]
+  ],
+  "validated": false
 }

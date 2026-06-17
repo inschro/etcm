@@ -1,0 +1,5 @@
+spec Runtime:
+  device: str = Field(choices=["cpu", "cuda"])
+
+impl default:
+  device: "tpu"
