@@ -327,10 +327,10 @@ runtime validation and JSON Schema export.
 V0 command intent:
 
 ```bash
+etcm resolve experiments/train.etcm#imagenet --format json
 etcm validate experiments/train.etcm#imagenet
-etcm resolve experiments/train.etcm#imagenet
-etcm inspect experiments/train.etcm#imagenet
-etcm graph experiments/train.etcm#imagenet
+etcm validate experiments/train.etcm#imagenet --short
+etcm load experiments/train.etcm#imagenet --target pydantic
 ```
 
 Later extensions:

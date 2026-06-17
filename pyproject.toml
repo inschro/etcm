@@ -9,6 +9,9 @@ dependencies = [
     "pydantic>=2.13",
 ]
 
+[project.scripts]
+etcm = "etcm.cli:main"
+
 [project.optional-dependencies]
 dev = [
     "basedpyright",

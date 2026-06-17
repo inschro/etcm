@@ -206,8 +206,8 @@ Acceptance:
 
 ## Phase 6: Orthogonal API And Generated Views
 
-Build generated user-facing surfaces over the resolved graph. CLI remains a
-later thin wrapper over the same Python APIs.
+Build generated user-facing surfaces over the resolved graph. CLI command
+wrappers are intentionally handled as a follow-up over the same Python APIs.
 
 Pipeline:
 
@@ -222,29 +222,45 @@ Generated views:
 - `target="dataclass"` returns generated dataclasses
 - `target="dict"` returns a JSON-compatible payload
 
-CLI:
-
-```bash
-etcm validate configs/train.etcm#smoke
-etcm resolve configs/train.etcm#smoke --format json
-etcm inspect configs/train.etcm#smoke
-etcm graph configs/train.etcm#smoke --format dot
-```
-
-CLI behavior:
-
-- `validate` checks parse, resolution, type compatibility, path policy, override
-  policy, and constraints
-- `resolve` prints the fully materialized payload or graph
-- `inspect` prints spec fields, defaults, refs, parents, and source paths
-- `graph` emits DOT or JSON graph output for external tools
-
 Acceptance:
 
 - generated Pydantic models enforce ETCM constraints
 - generated objects are immutable by default
 - resolved JSON export is stable under repeated runs
 - conversion refuses unvalidated graphs unless `force=True`
+
+## Post-Stage 6: CLI Pipeline Follow-Up
+
+Add a small CLI that mirrors the Python pipeline instead of exposing every
+internal inspection view as a separate command.
+
+Commands:
+
+```bash
+etcm resolve configs/train.etcm#smoke --format json
+etcm validate configs/train.etcm#smoke --format json
+etcm validate configs/train.etcm#smoke --short
+etcm load configs/train.etcm#smoke --target dict
+etcm load configs/train.etcm#smoke --target dataclass
+etcm load configs/train.etcm#smoke --target pydantic
+```
+
+Behavior:
+
+- `resolve` prints the unresolved `ResolvedGraph.to_dict()` payload.
+- `validate` prints the graph after validation, with `validated=True`.
+- `validate --short` prints only `OK: <selector>`.
+- `load` runs the full pipeline and prints the materialized config object as
+  JSON after building the selected target.
+- `inspect` and `graph` are not part of the current public CLI; graph
+  visualization can be reconsidered as later tooling.
+
+Acceptance:
+
+- CLI commands remain thin wrappers over public Python APIs.
+- all successful object outputs are JSON serializable for shell workflows.
+- invalid selectors or validation failures print ETCM diagnostics to stderr and
+  exit non-zero.
 
 ## Phase 7: Bridges And Adoption
 
@@ -327,5 +343,5 @@ CLI:
 - successful validate
 - failed validate with source path
 - JSON resolve
-- inspect output includes spec, implementation, parents, and refs
-- graph output includes typed edges
+- JSON load for `dict`, `dataclass`, and `pydantic` targets
+- `validate --short` status output

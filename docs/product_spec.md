@@ -14,8 +14,9 @@ pip install etcm
 Then:
 
 ```bash
+etcm resolve configs/train.etcm#smoke --format json
 etcm validate configs/train.etcm#smoke
-etcm resolve configs/train.etcm#smoke
+etcm load configs/train.etcm#smoke --target pydantic
 python -c 'from etcm import load; print(load("configs/train.etcm#smoke"))'
 ```
 
@@ -221,7 +222,7 @@ V0 should include:
 - spec-owned override policy
 - validation errors with source path and graph path
 - generated Pydantic models
-- `load()`, `validate`, `resolve`, `inspect`, and `graph`
+- `load()`, `validate`, and `resolve`
 - resolved JSON export for reproducibility
 
 V0 should not include:
@@ -245,7 +246,7 @@ ETCM is useful when a user can:
 - get a precise error for a bad reference or invalid override
 - load a Pydantic object without writing a Pydantic schema by hand
 - save a resolved graph that explains what actually ran
-- inspect graph nodes and source locations from the CLI
+- build a JSON config object from the CLI for scripts and shell workflows
 
 The early "no-brain pip install" benchmark is:
 
