@@ -73,6 +73,7 @@ Acceptance:
 ## Phase 2: Public API And Module Boundaries
 
 Define the package surface before implementing behavior.
+The Stage 2 scaffold notes live in [stage2/](stage2/).
 
 Planned modules:
 

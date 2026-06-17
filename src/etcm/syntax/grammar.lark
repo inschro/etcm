@@ -1,0 +1,16 @@
+start: item*
+
+?item: spec_stub | spec_ref_stub | impl_stub
+
+spec_stub: "spec" NAME ":" _NL
+spec_ref_stub: "$spec" ":" PATH _NL
+impl_stub: "impl" NAME ":" _NL
+
+PATH: /[A-Za-z0-9_\.\/:-]+/
+
+%import common.CNAME -> NAME
+%import common.WS_INLINE
+%ignore WS_INLINE
+_NL: /(\r?\n)+/
+COMMENT: /#[^\n]*/
+%ignore COMMENT

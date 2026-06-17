@@ -1,0 +1,7 @@
+spec DataConfig:
+  train_file: Path = Field(path_exists="must_exist", path_kind="file")
+  retries: int = Field(default=2, gt=0)
+
+impl smoke:
+  train_file: "data/smoke.txt"
+  retries: 2
