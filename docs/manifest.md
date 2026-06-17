@@ -297,7 +297,7 @@ ETCM processing is deterministic and observable:
 7. Apply explicit overrides under spec-owned policy.
 8. Validate field constraints and reference assignability.
 9. Materialize a typed graph.
-10. Emit requested views: Pydantic, dataclass, dict, JSON Schema, graph.
+10. Emit requested views: Pydantic, dataclass, dict, and graph.
 
 Each stage should be separately inspectable by CLI tools.
 
@@ -320,7 +320,8 @@ V0 generated representations:
 - `resolve`: node and edge metadata for inspection and tooling
 
 Pydantic is the first target because it already gives Python projects strong
-runtime validation and JSON Schema export.
+runtime validation and a familiar model surface. Direct JSON Schema export from
+ETCM specs is a later adoption feature.
 
 ## CLI
 

@@ -2,14 +2,16 @@
 
 Stage 7 completes the first usable CLI wrapper over the Python API.
 
-The next stage should focus on adoption-oriented capabilities rather than
+The next stage should focus on standalone package installability rather than
 expanding the CLI command surface by default:
 
-- publish or installation smoke tests from a built wheel
+- package metadata for wheel, local checkout, and Git URL installs
+- installation smoke tests from a built wheel
 - real example configs outside the test fixture tree
-- JSON Schema export from ETCM specs
-- migration examples for existing YAML/Pydantic projects
-- optional graph visualization only if a concrete workflow needs it
+- install docs that make the current non-PyPI distribution path clear
+
+Defer JSON Schema export, migration examples, publishing automation, and graph
+visualization until the standalone install path is proven.
 
 Keep the CLI thin. Parser, resolver, validation, conversion, and serialization
 contracts should remain owned by package APIs.

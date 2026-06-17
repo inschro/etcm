@@ -61,14 +61,35 @@ etcm validate configs/train.etcm#smoke --short
 etcm load configs/train.etcm#smoke --target pydantic
 ```
 
+## Install
+
+ETCM is currently scoped as a standalone Python package installable from a
+built wheel, a local checkout, or a Git URL. Public PyPI publishing is deferred
+until the release process is finalized.
+
+```bash
+uv build
+python -m pip install dist/etcm-0.1.0-py3-none-any.whl
+```
+
+After installation, the CLI and Python API can be smoke-tested against the
+example configs:
+
+```bash
+etcm validate examples/ml/train.etcm#smoke --short
+etcm load examples/ml/train.etcm#smoke --target dict
+python -c 'from etcm import load; print(load("examples/ml/train.etcm#smoke", target="dict")["run_name"])'
+```
+
 ## Current Status
 
 This repository is implemented through the generated-view API stage, with thin
-CLI wrappers over the same public Python APIs. The docs define the product
-direction and remaining v0 implementation scope.
+CLI wrappers over the same public Python APIs. The next milestone is standalone
+packaging, install smoke coverage, and real examples for consuming projects.
 
 - [Manifest](docs/manifest.md)
 - [Product Spec](docs/product_spec.md)
+- [Install Guide](docs/install.md)
 - [CLI Reference](docs/cli.md)
 - [Implementation Roadmap](docs/roadmap.md)
 - [Stage 1 Architecture Notes](docs/stage1/README.md)

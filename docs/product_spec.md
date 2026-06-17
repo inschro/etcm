@@ -5,10 +5,14 @@
 ETCM should become the boring default for projects where configuration is part
 of the system architecture.
 
-The first adoption promise:
+The first adoption promise is a no-drama install into an existing Python
+project. For the current standalone milestone, that means wheel, local checkout,
+or Git URL installation:
 
 ```bash
-pip install etcm
+python -m pip install dist/etcm-0.1.0-py3-none-any.whl
+python -m pip install .
+python -m pip install "git+https://example.com/your-org/etcm.git"
 ```
 
 Then:

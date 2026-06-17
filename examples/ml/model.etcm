@@ -1,0 +1,14 @@
+spec ModelConfig:
+  name: str = Field(default="tiny-lm")
+  layers: int = Field(default=4, gt=0)
+  hidden_size: int = Field(default=128, gt=0)
+
+impl tiny:
+  name: "tiny-lm"
+  layers: 4
+  hidden_size: 128
+
+impl base:
+  name: "base-lm"
+  layers: 12
+  hidden_size: 768

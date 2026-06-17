@@ -262,9 +262,34 @@ Acceptance:
 - invalid selectors or validation failures print ETCM diagnostics to stderr and
   exit non-zero.
 
-## Phase 8: Bridges And Adoption
+## Phase 8: Standalone Packaging And Examples
 
-Only after the core is credible:
+Make ETCM installable as a standalone tool before adding migration or bridge
+features.
+
+Deliverables:
+
+- package metadata suitable for wheel, local checkout, and Git URL installs
+- intentional source distribution contents without stage planning or test
+  fixture bulk
+- package resources preserved in built wheels, including `grammar.lark` and
+  `py.typed`
+- real example configs outside the test fixture tree
+- install documentation for wheel, local checkout, and Git URL workflows
+- install smoke coverage that imports `etcm`, runs `etcm --help`, and validates
+  an example config from an installed wheel
+
+Acceptance:
+
+- `uv build` creates a wheel and source distribution with the expected contents
+- a fresh virtual environment can install the built wheel and run the CLI
+- example configs validate and load through both CLI and Python API
+- Apache-2.0 license metadata is present
+- public PyPI publishing remains deferred until explicitly chosen
+
+## Phase 9: Bridges And Adoption
+
+Only after ETCM is easy to install into another project:
 
 - import a subset of YAML registry files like the ANF builder uses
 - generate `.etcm` skeletons from Pydantic models
