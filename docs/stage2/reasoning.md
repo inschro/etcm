@@ -26,8 +26,9 @@ behavior because users may mistake it for a working resolver.
 Fixtures make language decisions concrete. They also prevent parser work from
 silently drifting away from the manifest.
 
-Stage 2 creates only the first fixtures. Stage 3 will make parser tests consume
-them and add golden outputs.
+Stage 2 creates only the first fixtures. Stage 3 will turn them into a full
+fixture and golden-output contract. Stage 4 will make parser tests consume that
+contract.
 
 ## Why No CLI Yet
 
@@ -47,4 +48,3 @@ Resolver behavior depends on:
 
 Implementing it now would either duplicate future parser work or invent mock
 semantics. Stage 2 should only create the namespace and placeholder settings.
-

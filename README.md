@@ -67,3 +67,4 @@ v0 implementation scope before package code is written.
 - [Implementation Roadmap](docs/roadmap.md)
 - [Stage 1 Architecture Notes](docs/stage1/README.md)
 - [Stage 2 Scaffold Notes](docs/stage2/README.md)
+- [Stage 3 Fixture Contract Notes](docs/stage3/README.md)

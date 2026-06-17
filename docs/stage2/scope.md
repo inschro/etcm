@@ -2,9 +2,9 @@
 
 ## Goal
 
-Create enough structure that Stage 3 can add parser behavior against fixtures
-instead of inventing package layout, public APIs, and data contracts at the same
-time.
+Create enough structure that Stage 3 can complete the fixture and golden-output
+contract, and that Stage 4 can add parser behavior against that contract instead
+of inventing package layout, public APIs, and data contracts at the same time.
 
 ## Included
 
@@ -19,7 +19,8 @@ Stage 2 includes:
 - fixture directories and first fixture files
 - tests for importability, placeholders, frozen dataclasses, selector parsing,
   and fixture presence
-- documentation for the handoff into parser implementation
+- documentation for the handoff into the fixture contract and later parser
+  implementation
 
 ## Excluded
 
@@ -37,4 +38,3 @@ Stage 2 excludes:
 If a change requires deciding ETCM language semantics beyond the current docs,
 it belongs in Stage 3 or later. Stage 2 may name the data structure where that
 semantic result will live, but should not implement the semantic behavior.
-

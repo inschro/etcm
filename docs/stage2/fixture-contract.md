@@ -2,7 +2,7 @@
 
 Stage 2 creates the first fixture tree. These fixtures are not expected to be
 fully parsed yet. They define the target language examples and failure cases
-that Stage 3 parser work must satisfy.
+that Stage 3 will formalize and that Stage 4 parser work must satisfy.
 
 ## Directory Layout
 
@@ -76,5 +76,5 @@ Stage 2 tests should only verify:
 - fixture files are non-empty
 - golden README exists
 
-Parser correctness starts in Stage 3.
-
+The full fixture and golden-output contract starts in Stage 3. Parser
+correctness starts in Stage 4.

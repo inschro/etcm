@@ -116,6 +116,7 @@ Acceptance:
 ## Phase 3: Fixtures And Test Contract
 
 Create the test corpus before the parser implementation.
+The Stage 3 fixture contract notes live in [stage3/](stage3/).
 
 Fixture groups:
 
