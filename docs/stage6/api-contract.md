@@ -22,8 +22,8 @@ selector -> resolve() -> graph -> validate() -> validated graph -> convert()
 
 - `resolve(selector, *, path_exists="allow_missing") -> ResolvedGraph`
 - `validate(graph: ResolvedGraph) -> ResolvedGraph`
-- `convert(graph, *, target="pydantic", force=False) -> object`
-- `load(selector, *, target="pydantic", path_exists="allow_missing") -> object`
+- `convert(graph, *, target="pydantic", force=False) -> Any`
+- `load(selector, *, target="pydantic", path_exists="allow_missing") -> Any`
 
 `Resolver` exposes the same methods for callers that want reusable settings.
 
@@ -36,3 +36,7 @@ selector -> resolve() -> graph -> validate() -> validated graph -> convert()
 - `force=True` bypasses only the validated-graph guard; it does not bypass field
   policies or constraints.
 - `target` values are `pydantic`, `dataclass`, and `dict`.
+- `load()` and `convert()` are typed as `Any` because the selected generated
+  view is a runtime object. ETCM validation is the source of truth at this
+  boundary; callers that need static field checking must provide Python-visible
+  types separately.

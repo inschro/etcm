@@ -85,7 +85,7 @@ class Resolver:
         if self.path_exists not in ("allow_missing", "must_exist"):
             raise ValueError("path_exists must be 'allow_missing' or 'must_exist'")
 
-    def load(self, selector: str, *, target: ViewTarget = "pydantic") -> object:
+    def load(self, selector: str, *, target: ViewTarget = "pydantic") -> Any:
         return self.convert(self.validate(self.resolve(selector)), target=target)
 
     def resolve(self, selector: str) -> ResolvedGraph:
@@ -101,7 +101,7 @@ class Resolver:
         *,
         target: ViewTarget = "pydantic",
         force: bool = False,
-    ) -> object:
+    ) -> Any:
         from etcm.codegen import convert
 
         return convert(graph, target=target, force=force)
@@ -955,7 +955,7 @@ def load(
     *,
     target: ViewTarget = "pydantic",
     path_exists: PathExistsPolicy = "allow_missing",
-) -> object:
+) -> Any:
     return Resolver(path_exists=path_exists).load(selector, target=target)
 
 
@@ -976,7 +976,7 @@ def convert(
     *,
     target: ViewTarget = "pydantic",
     force: bool = False,
-) -> object:
+) -> Any:
     return Resolver().convert(graph, target=target, force=force)
 
 

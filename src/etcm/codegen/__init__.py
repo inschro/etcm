@@ -20,7 +20,7 @@ def convert(
     *,
     target: ViewTarget = "pydantic",
     force: bool = False,
-) -> object:
+) -> Any:
     if target not in ("pydantic", "dataclass", "dict"):
         raise ValueError("target must be one of: pydantic, dataclass, dict")
     if not graph.validated and not force:

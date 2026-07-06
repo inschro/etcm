@@ -53,6 +53,13 @@ graph = validate(graph)
 cfg = convert(graph, target="pydantic")
 ```
 
+Typing note: `load()` and `convert()` return `Any`. ETCM validates the config
+before materializing it, but the returned object is a dynamic boundary for
+pyright, Pylance, and mypy. This makes attribute access ergonomic without
+repeated `cast(Any, ...)` calls. Static checkers will not catch misspelled
+fields or incompatible field usage after that boundary unless your project
+provides Python-visible types separately.
+
 CLI:
 
 ```bash

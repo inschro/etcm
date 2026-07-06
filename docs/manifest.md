@@ -314,7 +314,7 @@ cfg = load("experiments/train.etcm#imagenet", target="pydantic")
 
 V0 generated representations:
 
-- `pydantic`: default Python validation and IDE-friendly object view
+- `pydantic`: default Python validation and object-style runtime view
 - `dataclass`: lightweight typed object view
 - `dict`: JSON/YAML-compatible resolved payload
 - `resolve`: node and edge metadata for inspection and tooling
