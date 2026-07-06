@@ -69,6 +69,7 @@ CLI:
 etcm resolve configs/train.etcm#TrainRun:smoke --format json
 etcm validate configs/train.etcm#TrainRun:smoke
 etcm validate configs/train.etcm#TrainRun:smoke --short
+etcm validate-all configs/
 etcm load configs/train.etcm#TrainRun:smoke --target pydantic
 ```
 

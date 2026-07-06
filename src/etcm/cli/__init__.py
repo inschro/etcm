@@ -3,15 +3,17 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from collections.abc import Mapping, Sequence
-from dataclasses import asdict, is_dataclass
+from collections.abc import Iterable, Mapping, Sequence
+from dataclasses import asdict, dataclass, is_dataclass
 from pathlib import Path
 from typing import Any, cast
 
 from etcm import Resolver
 from etcm.codegen import ViewTarget
 from etcm.errors import Diagnostic, ETCMError
+from etcm.ir import Document, ImplDef
 from etcm.resolve import PathExistsPolicy
+from etcm.syntax import parse_file
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -46,6 +48,34 @@ def build_parser() -> argparse.ArgumentParser:
         help="output format",
     )
 
+    validate_all_parser = subcommands.add_parser(
+        "validate-all",
+        help="validate all ETCM implementations under paths",
+    )
+    validate_all_parser.add_argument(
+        "paths",
+        nargs="*",
+        help="ETCM files or directories to scan; defaults to the current directory",
+    )
+    _add_path_exists_argument(validate_all_parser)
+    validate_all_parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="print one status line per discovered implementation",
+    )
+    validate_all_parser.add_argument(
+        "--quiet",
+        action="store_true",
+        help="print only the final summary",
+    )
+    validate_all_parser.add_argument(
+        "--format",
+        choices=("text", "json"),
+        default="text",
+        help="output format",
+    )
+
     load_parser = subcommands.add_parser("load", help="print built config object JSON")
     _add_selector_argument(load_parser)
     _add_path_exists_argument(load_parser)
@@ -68,6 +98,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _cmd_resolve(args)
         if args.command == "validate":
             return _cmd_validate(args)
+        if args.command == "validate-all":
+            return _cmd_validate_all(args)
         if args.command == "load":
             return _cmd_load(args)
     except ETCMError as exc:
@@ -103,6 +135,23 @@ def _cmd_validate(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_validate_all(args: argparse.Namespace) -> int:
+    resolver = _resolver_from_args(args)
+    results = _validate_all_results(
+        paths=tuple(Path(path) for path in args.paths) or (Path.cwd(),),
+        resolver=resolver,
+    )
+    if args.format == "json":
+        _write_json(_validate_all_json_payload(results))
+    else:
+        _write_validate_all_text(
+            results,
+            verbose=bool(args.verbose),
+            quiet=bool(args.quiet),
+        )
+    return 1 if any(not result.ok for result in results) else 0
+
+
 def _cmd_resolve(args: argparse.Namespace) -> int:
     graph = _resolver_from_args(args).resolve(str(args.selector))
     _write_json(graph.to_dict())
@@ -119,6 +168,167 @@ def _cmd_load(args: argparse.Namespace) -> int:
 def _resolver_from_args(args: argparse.Namespace) -> Resolver:
     path_exists = cast(PathExistsPolicy, args.path_exists)
     return Resolver(path_exists=path_exists)
+
+
+@dataclass(frozen=True)
+class _ValidationResult:
+    artifact: str
+    ok: bool
+    diagnostic: Diagnostic | None = None
+
+
+def _validate_all_results(
+    *,
+    paths: tuple[Path, ...],
+    resolver: Resolver,
+) -> list[_ValidationResult]:
+    results: list[_ValidationResult] = []
+    existing_paths: list[Path] = []
+    for path in paths:
+        resolved = path.resolve()
+        if resolved.exists():
+            existing_paths.append(resolved)
+            continue
+        results.append(
+            _ValidationResult(
+                artifact=path.as_posix(),
+                ok=False,
+                diagnostic=Diagnostic(
+                    code="E_MISSING_SELECTOR",
+                    message=f"Validation path does not exist: {path}",
+                    source_path=resolved,
+                ),
+            )
+        )
+
+    for source_path in _discover_etcm_files(tuple(existing_paths)):
+        try:
+            document = parse_file(source_path)
+            selectors = tuple(_document_selectors(document))
+        except ETCMError as exc:
+            results.append(
+                _ValidationResult(
+                    artifact=source_path.as_posix(),
+                    ok=False,
+                    diagnostic=exc.diagnostic,
+                )
+            )
+            continue
+
+        for selector in selectors:
+            try:
+                resolver.validate(resolver.resolve(selector))
+            except ETCMError as exc:
+                results.append(
+                    _ValidationResult(
+                        artifact=selector,
+                        ok=False,
+                        diagnostic=exc.diagnostic,
+                    )
+                )
+            else:
+                results.append(_ValidationResult(artifact=selector, ok=True))
+    return results
+
+
+def _discover_etcm_files(paths: tuple[Path, ...]) -> tuple[Path, ...]:
+    files: dict[Path, None] = {}
+    for path in paths:
+        resolved = path.resolve()
+        if resolved.is_dir():
+            for file_path in sorted(resolved.rglob("*.etcm")):
+                if file_path.is_file():
+                    files[file_path.resolve()] = None
+        elif resolved.is_file() and resolved.suffix == ".etcm":
+            files[resolved] = None
+    return tuple(sorted(files))
+
+
+def _document_selectors(document: Document) -> Iterable[str]:
+    source = document.source_path.resolve()
+    if document.spec_ref is not None:
+        spec_name = document.spec_ref.selector.spec
+        if spec_name is None:
+            return (
+                f"{source.as_posix()}#{implementation.name}"
+                for implementation in document.implementations
+            )
+        return (
+            _selector_text(source, spec_name, implementation)
+            for implementation in document.implementations
+        )
+    return (
+        _selector_text(source, spec.name, implementation)
+        for spec in document.specs
+        for implementation in spec.implementations
+    )
+
+
+def _selector_text(source_path: Path, spec_name: str, implementation: ImplDef) -> str:
+    return f"{source_path.as_posix()}#{spec_name}:{implementation.name}"
+
+
+def _write_validate_all_text(
+    results: Sequence[_ValidationResult],
+    *,
+    verbose: bool,
+    quiet: bool,
+) -> None:
+    failures = [result for result in results if not result.ok]
+    if not quiet:
+        if verbose:
+            for result in results:
+                status = "OK" if result.ok else "FAIL"
+                sys.stdout.write(f"{status}: {result.artifact}\n")
+                if result.diagnostic is not None:
+                    sys.stdout.write(f"{_format_diagnostic(result.diagnostic)}\n")
+        elif failures:
+            for result in failures:
+                sys.stdout.write(f"FAIL: {result.artifact}\n")
+                if result.diagnostic is not None:
+                    sys.stdout.write(f"{_format_diagnostic(result.diagnostic)}\n")
+    sys.stdout.write(f"{_validate_all_summary(results)}\n")
+
+
+def _validate_all_summary(results: Sequence[_ValidationResult]) -> str:
+    total = len(results)
+    failures = sum(1 for result in results if not result.ok)
+    return f"{total} total, {total - failures} OK, {failures} fail"
+
+
+def _validate_all_json_payload(results: Sequence[_ValidationResult]) -> dict[str, Any]:
+    total = len(results)
+    failures = sum(1 for result in results if not result.ok)
+    return {
+        "total": total,
+        "ok": total - failures,
+        "fail": failures,
+        "results": [
+            {
+                "artifact": result.artifact,
+                "ok": result.ok,
+                "diagnostic": _diagnostic_payload(result.diagnostic)
+                if result.diagnostic is not None
+                else None,
+            }
+            for result in results
+        ],
+    }
+
+
+def _diagnostic_payload(diagnostic: Diagnostic) -> dict[str, Any]:
+    return {
+        "code": diagnostic.code,
+        "message": diagnostic.message,
+        "source_path": diagnostic.source_path,
+        "line": diagnostic.line,
+        "column": diagnostic.column,
+        "end_line": diagnostic.end_line,
+        "end_column": diagnostic.end_column,
+        "selector": diagnostic.selector,
+        "graph_path": diagnostic.graph_path,
+        "details": diagnostic.details,
+    }
 
 
 def _loaded_json_payload(value: object) -> Any:
