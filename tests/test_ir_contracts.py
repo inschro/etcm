@@ -32,17 +32,28 @@ def test_source_span_is_frozen() -> None:
 
 
 def test_selector_parse_with_implementation() -> None:
-    selector = Selector.parse("configs/train.etcm#smoke")
+    selector = Selector.parse("configs/train.etcm#TrainRun:smoke")
 
     assert selector.path == Path("configs/train.etcm")
+    assert selector.spec == "TrainRun"
     assert selector.implementation == "smoke"
-    assert selector.raw == "configs/train.etcm#smoke"
+    assert selector.raw == "configs/train.etcm#TrainRun:smoke"
+
+
+def test_selector_parse_with_spec_fragment() -> None:
+    selector = Selector.parse("configs/train.etcm#TrainRun")
+
+    assert selector.path == Path("configs/train.etcm")
+    assert selector.spec == "TrainRun"
+    assert selector.implementation is None
+    assert selector.raw == "configs/train.etcm#TrainRun"
 
 
 def test_selector_parse_without_implementation() -> None:
     selector = Selector.parse("configs/train.etcm")
 
     assert selector.path == Path("configs/train.etcm")
+    assert selector.spec is None
     assert selector.implementation is None
     assert selector.raw == "configs/train.etcm"
 
@@ -57,14 +68,17 @@ def test_ir_contracts_can_be_instantiated() -> None:
     int_type = TypeExpr(kind="named", name="int")
     literal = LiteralValue(kind="int", value=2)
     field = FieldDef(name="retries", type_expr=int_type, default=literal)
-    spec = SpecDef(name="DataConfig", fields=(field,))
     assignment = Assignment(field_path=("retries",), value=literal)
-    ref = RefAssignment(field_name="model", selector=Selector.parse("models/lm.etcm#tiny"))
+    ref = RefAssignment(
+        field_name="model",
+        selector=Selector.parse("models/lm.etcm#ModelConfig:tiny"),
+    )
     impl = ImplDef(name="smoke", assignments=(assignment, ref))
-    document = Document(source_path=Path("configs/data.etcm"), spec=spec, implementations=(impl,))
+    spec = SpecDef(name="DataConfig", fields=(field,), implementations=(impl,))
+    document = Document(source_path=Path("configs/data.etcm"), specs=(spec,))
 
-    assert document.spec == spec
-    assert document.implementations == (impl,)
+    assert document.specs == (spec,)
+    assert document.specs[0].implementations == (impl,)
     assert field.metadata == {}
 
 
@@ -83,6 +97,6 @@ def test_document_rejects_inline_spec_and_spec_ref_together() -> None:
     with pytest.raises(ValueError, match="either spec or spec_ref"):
         Document(
             source_path=Path("configs/data.etcm"),
-            spec=SpecDef(name="DataConfig"),
-            spec_ref=SpecRef(path=Path("specs/data.etcm")),
+            specs=(SpecDef(name="DataConfig"),),
+            spec_ref=SpecRef(selector=Selector.parse("specs/data.etcm#DataConfig")),
         )

@@ -78,7 +78,10 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 
 def _add_selector_argument(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("selector", help="ETCM selector, such as configs/train.etcm#smoke")
+    parser.add_argument(
+        "selector",
+        help="ETCM selector, such as configs/train.etcm#TrainRun:smoke",
+    )
 
 
 def _add_path_exists_argument(parser: argparse.ArgumentParser) -> None:

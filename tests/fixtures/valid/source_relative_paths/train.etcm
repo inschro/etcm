@@ -1,5 +1,5 @@
 spec TrainRun:
-  data: DataConfig
+  $data: nested/model.etcm#DataConfig
 
-impl default:
-  $data: nested/model.etcm
+  impl default:
+    $data: nested/model.etcm#DataConfig:default

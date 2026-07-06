@@ -1,10 +1,10 @@
 spec TrainRun:
-  $model: model.etcm
+  $model: model.etcm#ModelConfig
   max_steps: int = 10 [>0]
 
-impl smoke:
-  $model: model.etcm#tiny
-  max_steps: 2
+  impl smoke:
+    $model: model.etcm#ModelConfig:tiny
+    max_steps: 2
 
-impl default:
-  $model: model.etcm
+  impl default:
+    $model: model.etcm#ModelConfig:default

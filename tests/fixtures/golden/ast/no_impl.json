@@ -2,6 +2,7 @@
   "items": [
     {
       "field_count": 2,
+      "implementations": [],
       "kind": "spec",
       "name": "OnlySpec",
       "parent": null,

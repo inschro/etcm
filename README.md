@@ -29,16 +29,16 @@ ETCM keeps those relationships explicit, type-checked, and easy to inspect.
 
 ```etcm
 spec TrainRun:
-  model: LMConfig
-  data: DataStream
-  optimizer: Optimizer
+  $model: models/lm.etcm#LMConfig
+  $data: data/streams.etcm#DataStream
+  $optimizer: optimizers/adamw.etcm#Optimizer
   max_steps: int [>0]
 
-impl smoke:
-  $model: models/lm.etcm#tiny
-  $data: data/streams.etcm#smoke
-  $optimizer: optimizers/adamw.etcm#fast
-  max_steps: 2
+  impl smoke:
+    $model: models/lm.etcm#LMConfig:tiny
+    $data: data/streams.etcm#DataStream:smoke
+    $optimizer: optimizers/adamw.etcm#Optimizer:fast
+    max_steps: 2
 ```
 
 Python API:
@@ -46,12 +46,15 @@ Python API:
 ```python
 from etcm import convert, load, resolve, validate
 
-cfg = load("configs/train.etcm#smoke", target="pydantic")
+cfg = load("configs/train.etcm#TrainRun:smoke", target="pydantic")
 
-graph = resolve("configs/train.etcm#smoke")
+graph = resolve("configs/train.etcm#TrainRun:smoke")
 graph = validate(graph)
 cfg = convert(graph, target="pydantic")
 ```
+
+Implementation selectors may use `path#impl` or plain `path` as shorthand only
+when that implementation name is unique across the target file.
 
 Typing note: `load()` and `convert()` return `Any`. ETCM validates the config
 before materializing it, but the returned object is a dynamic boundary for
@@ -63,10 +66,10 @@ provides Python-visible types separately.
 CLI:
 
 ```bash
-etcm resolve configs/train.etcm#smoke --format json
-etcm validate configs/train.etcm#smoke
-etcm validate configs/train.etcm#smoke --short
-etcm load configs/train.etcm#smoke --target pydantic
+etcm resolve configs/train.etcm#TrainRun:smoke --format json
+etcm validate configs/train.etcm#TrainRun:smoke
+etcm validate configs/train.etcm#TrainRun:smoke --short
+etcm load configs/train.etcm#TrainRun:smoke --target pydantic
 ```
 
 ## Install

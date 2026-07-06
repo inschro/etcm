@@ -7,7 +7,7 @@ Stage 5 starts from `parse_document()` output and resolves semantic meaning.
 ```python
 from etcm import Resolver, resolve, validate
 
-graph = resolve("configs/train.etcm#smoke")
+graph = resolve("configs/train.etcm#TrainRun:smoke")
 graph = validate(graph)
 ```
 
@@ -18,7 +18,9 @@ resolve/validate/convert convenience.
 
 - root selector paths resolve relative to the current working directory
 - nested selectors resolve relative to the file that declares the selector
-- omitted implementation fragments resolve to `#default`
+- `path#Spec:impl` selects an exact implementation owner
+- `path#impl` and `path` are context-free implementation shorthands and must
+  be unique across specs in the target file
 - `$spec` imports an external spec unchanged
 - spec inheritance merges parent fields before child fields
 - implementation inheritance applies parent values before local assignments

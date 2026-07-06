@@ -1,5 +1,5 @@
 spec Train:
   epochs: int [>"zero"]
 
-impl default:
-  epochs: 1
+  impl default:
+    epochs: 1

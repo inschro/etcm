@@ -89,19 +89,20 @@ Public API:
 ```python
 from etcm import Resolver, convert, load, resolve, validate
 
-cfg = load("configs/train.etcm#smoke", target="pydantic")
-graph = resolve("configs/train.etcm#smoke")
+cfg = load("configs/train.etcm#TrainRun:smoke", target="pydantic")
+graph = resolve("configs/train.etcm#TrainRun:smoke")
 graph = validate(graph)
 cfg = convert(graph, target="pydantic")
 
 resolver = Resolver(path_exists="must_exist")
-cfg = resolver.load("configs/train.etcm#smoke", target="pydantic")
+cfg = resolver.load("configs/train.etcm#TrainRun:smoke", target="pydantic")
 ```
 
 Core data contracts:
 
-- `Selector`: normalized path plus optional implementation fragment
-- `SpecDef`: name, optional parent spec path, fields, source span
+- `Selector`: normalized path plus optional spec and implementation fragments
+- `SpecDef`: name, optional parent spec selector, fields, owned
+  implementations, source span
 - `SpecRef`: top-level immutable `$spec` reference
 - `ImplDef`: name, optional parent selector, assignments, refs, source span
 - `FieldDef`: name, type expression, default, validation metadata, override
@@ -160,7 +161,7 @@ Parser requirements:
 - keep attached selector fragments such as `path.etcm#impl` distinct from
   comments
 - reject files that define both inline `spec` and top-level `$spec`
-- reject multiple specs in one file
+- allow multiple inline specs in one file
 - reject duplicate field names and duplicate implementation names
 - parse `Path` type annotations and path metadata without performing filesystem
   checks
@@ -237,12 +238,12 @@ internal inspection view as a separate command.
 Commands:
 
 ```bash
-etcm resolve configs/train.etcm#smoke --format json
-etcm validate configs/train.etcm#smoke --format json
-etcm validate configs/train.etcm#smoke --short
-etcm load configs/train.etcm#smoke --target dict
-etcm load configs/train.etcm#smoke --target dataclass
-etcm load configs/train.etcm#smoke --target pydantic
+etcm resolve configs/train.etcm#TrainRun:smoke --format json
+etcm validate configs/train.etcm#TrainRun:smoke --format json
+etcm validate configs/train.etcm#TrainRun:smoke --short
+etcm load configs/train.etcm#TrainRun:smoke --target dict
+etcm load configs/train.etcm#TrainRun:smoke --target dataclass
+etcm load configs/train.etcm#TrainRun:smoke --target pydantic
 ```
 
 Behavior:
@@ -322,7 +323,8 @@ Core parser:
 Resolver:
 
 - relative and absolute selectors
-- omitted fragment defaults to `#default`
+- omitted implementation fragment resolves `default` only when that name is
+  unique in the target file
 - spec inheritance and `$spec` references without fragments
 - YAML-style comments do not consume attached selector fragments
 - `Path` values resolved relative to the declaring config file

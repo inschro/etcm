@@ -1,17 +1,17 @@
 spec TrainRun:
-  $model: model.etcm
-  $runtime: runtime.etcm
+  $model: model.etcm#ModelConfig
+  $runtime: runtime.etcm#RuntimeConfig
   max_steps: int [>0]
   run_name: str = "smoke"
 
-impl smoke:
-  $model: model.etcm#tiny
-  $runtime: runtime.etcm#local
-  max_steps: 2
-  run_name: "smoke"
+  impl smoke:
+    $model: model.etcm#ModelConfig:tiny
+    $runtime: runtime.etcm#RuntimeConfig:local
+    max_steps: 2
+    run_name: "smoke"
 
-impl debug_cuda:
-  $model: model.etcm#base
-  $runtime: runtime.etcm#cuda
-  max_steps: 20
-  run_name: "debug-cuda"
+  impl debug_cuda:
+    $model: model.etcm#ModelConfig:base
+    $runtime: runtime.etcm#RuntimeConfig:cuda
+    max_steps: 20
+    run_name: "debug-cuda"

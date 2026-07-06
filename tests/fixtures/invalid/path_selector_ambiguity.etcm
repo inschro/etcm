@@ -1,5 +1,5 @@
 spec RefConfig:
   model: ModelConfig
 
-impl broken:
-  $model: models/lm.etcm#
+  impl broken:
+    $model: models/lm.etcm#

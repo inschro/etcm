@@ -27,9 +27,9 @@ the key in JSON golden outputs.
 | `E_PARSE_TAB_INDENT` | Parser | A tab was used for indentation in v0. |
 | `E_PARSE_LITERAL` | Parser | Literal syntax is malformed. |
 | `E_PARSE_SELECTOR` | Parser | Selector syntax is malformed or ambiguous. |
-| `E_DUPLICATE_SPEC` | Parser | A document defines more than one inline spec. |
+| `E_DUPLICATE_SPEC` | Parser | A document defines the same inline spec name more than once. |
 | `E_DUPLICATE_FIELD` | Parser | A spec defines the same field more than once. |
-| `E_DUPLICATE_IMPL` | Parser | A document defines the same implementation more than once. |
+| `E_DUPLICATE_IMPL` | Parser | A spec or top-level `$spec` file defines the same implementation more than once. |
 | `E_SPEC_AND_SPEC_REF` | Parser | A document contains both inline `spec` and top-level `$spec`. |
 | `E_MISSING_SELECTOR` | Resolver | A referenced selector cannot be found. |
 | `E_SPEC_CYCLE` | Resolver | Spec inheritance contains a cycle. |

@@ -1,4 +1,4 @@
-$spec: spec.etcm
+$spec: spec.etcm#DataConfig
 
 impl smoke:
   train_file: "data/smoke.txt"

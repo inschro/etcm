@@ -92,7 +92,7 @@
       "graph_path": "root",
       "id": "root",
       "implementation": "smoke",
-      "selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/spec_reuse/variants.etcm#smoke",
+      "selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/spec_reuse/variants.etcm#DataConfig:smoke",
       "source_path": "valid/spec_reuse/variants.etcm",
       "spec_ancestors": [],
       "spec_name": "DataConfig",

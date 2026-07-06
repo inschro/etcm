@@ -3,11 +3,11 @@ spec Runtime:
   metadata: dict[str, str] = {} [override="merge"]
   device: str = "cpu" [override="allow"]
 
-impl base:
-  tags: ["base"]
-  metadata: {"owner": "tests"}
+  impl base:
+    tags: ["base"]
+    metadata: {"owner": "tests"}
 
-impl child <- base:
-  tags: ["child"]
-  metadata: {"mode": "fast"}
-  device: "cuda"
+  impl child <- base:
+    tags: ["child"]
+    metadata: {"mode": "fast"}
+    device: "cuda"

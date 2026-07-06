@@ -15,7 +15,7 @@
           "ref_target": null,
           "source_path": "valid/path_policies/data.etcm",
           "span": {
-            "column": 3,
+            "column": 5,
             "end_column": 1,
             "end_line": 10,
             "line": 9
@@ -34,8 +34,8 @@
           "ref_target": null,
           "source_path": "valid/path_policies/data.etcm",
           "span": {
-            "column": 3,
-            "end_column": 3,
+            "column": 5,
+            "end_column": 5,
             "end_line": 8,
             "line": 7
           },
@@ -53,8 +53,8 @@
           "ref_target": null,
           "source_path": "valid/path_policies/data.etcm",
           "span": {
-            "column": 3,
-            "end_column": 3,
+            "column": 5,
+            "end_column": 5,
             "end_line": 9,
             "line": 8
           },
@@ -75,7 +75,7 @@
           "source_path": "valid/path_policies/data.etcm",
           "span": {
             "column": 3,
-            "end_column": 1,
+            "end_column": 3,
             "end_line": 6,
             "line": 4
           },
@@ -135,7 +135,7 @@
       "graph_path": "root",
       "id": "root",
       "implementation": "default",
-      "selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/path_policies/data.etcm#default",
+      "selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/path_policies/data.etcm#DataConfig:default",
       "source_path": "valid/path_policies/data.etcm",
       "spec_ancestors": [],
       "spec_name": "DataConfig",
@@ -157,7 +157,7 @@
       "resolver_policy": "allow_missing",
       "source_path": "valid/path_policies/data.etcm",
       "span": {
-        "column": 3,
+        "column": 5,
         "end_column": 1,
         "end_line": 10,
         "line": 9
@@ -173,8 +173,8 @@
       "resolver_policy": "allow_missing",
       "source_path": "valid/path_policies/data.etcm",
       "span": {
-        "column": 3,
-        "end_column": 3,
+        "column": 5,
+        "end_column": 5,
         "end_line": 8,
         "line": 7
       }
@@ -189,8 +189,8 @@
       "resolver_policy": "allow_missing",
       "source_path": "valid/path_policies/data.etcm",
       "span": {
-        "column": 3,
-        "end_column": 3,
+        "column": 5,
+        "end_column": 5,
         "end_line": 9,
         "line": 8
       }

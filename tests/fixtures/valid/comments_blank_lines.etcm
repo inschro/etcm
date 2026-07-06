@@ -7,8 +7,8 @@ spec ServiceSettings:
   timeout_seconds: float = 30.0 [>0.0]
   label: str = "prod#primary"
 
-impl prod:
-  environment: "prod" # trailing assignment comment
+  impl prod:
+    environment: "prod" # trailing assignment comment
 
-  timeout_seconds: 10.0
-  label: "service#prod"
+    timeout_seconds: 10.0
+    label: "service#prod"

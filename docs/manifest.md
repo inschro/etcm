@@ -18,7 +18,7 @@ ETCM makes that graph explicit.
 
 ## Design Principles
 
-1. One `.etcm` file defines exactly one spec source.
+1. One `.etcm` file may define multiple spec sources.
 2. Specs are first-class types.
 3. Implementations are first-class instances.
 4. References are explicit and type-checked.
@@ -31,8 +31,10 @@ ETCM makes that graph explicit.
 
 ## File Shape
 
-Each `.etcm` file either defines one spec inline or imports one external spec
-with top-level `$spec`. It may define zero or more implementations of that spec.
+Each `.etcm` file either defines one or more specs inline or imports one
+external spec with top-level `$spec`. Inline implementations are owned by the
+spec block they are indented under. Top-level implementations are only valid in
+`$spec` implementation files.
 
 ```etcm
 spec ResNetConfig:
@@ -41,11 +43,11 @@ spec ResNetConfig:
   pretrained: bool = false
   norm: str = "batch" [in ["batch", "layer", "group"]]
 
-impl resnet_18:
-  depth: 18
+  impl resnet_18:
+    depth: 18
 
-impl resnet_50:
-  depth: 50
+  impl resnet_50:
+    depth: 50
 ```
 
 The spec defines structure, defaults, validation, and override policy.
@@ -54,14 +56,19 @@ Implementations provide concrete named configurations.
 Selectors use file fragments:
 
 ```text
-models/resnet.etcm#resnet_50
+models/resnet.etcm#ResNetConfig
+models/resnet.etcm#ResNetConfig:resnet_50
 ```
 
-When the fragment is omitted, ETCM resolves `#default`.
+In implementation positions, `models/resnet.etcm#resnet_50` and
+`models/resnet.etcm` are context-free shorthands for an implementation named
+`resnet_50` or `default`. They are accepted only when that implementation name is
+unique across every spec in the target file.
 
 ETCM comments follow YAML-style `#` rules: `#` starts a comment only at the
 beginning of a line or after whitespace, outside quoted strings. Attached
-selector fragments such as `models/resnet.etcm#resnet_50` are not comments.
+selector fragments such as `models/resnet.etcm#ResNetConfig:resnet_50` are not
+comments.
 
 ## Spec Inheritance
 
@@ -78,17 +85,17 @@ spec LRScheduler:
 
 ```etcm
 # schedulers/cosine.etcm
-spec CosineLRScheduler <- schedulers/base.etcm:
+spec CosineLRScheduler <- schedulers/base.etcm#LRScheduler:
   min_lr_ratio: float = 0.0 [>=0.0; <=1.0]
   cycles: float = 0.5 [>0.0]
 
-impl default:
-  warmup_steps: 1000
-  min_lr_ratio: 0.01
+  impl default:
+    warmup_steps: 1000
+    min_lr_ratio: 0.01
 ```
 
-Spec references do not use fragments because each `.etcm` file has exactly one
-spec source.
+Spec references use the same selector form as every other spec position:
+`path/to/file.etcm#SpecName`.
 
 ## Spec Reuse
 
@@ -96,7 +103,7 @@ A file can import a spec without extending it by using top-level `$spec`.
 
 ```etcm
 # optimizers/variants.etcm
-$spec: specs/optimizer.etcm
+$spec: specs/optimizer.etcm#Optimizer
 
 impl adamw_fast:
   type: "adamw"
@@ -112,7 +119,7 @@ the file may define implementations, but it may not add, remove, or modify spec
 fields. Extending a spec requires explicit spec inheritance:
 
 ```etcm
-spec Child <- parent.etcm:
+spec Child <- parent.etcm#Parent:
 ```
 
 ## Implementation Inheritance
@@ -122,20 +129,28 @@ the parent payload, then applies local values according to the target spec's
 override policy.
 
 ```etcm
-impl baseline:
-  depth: 50
-  width: 64
-  norm: "batch"
+spec ResNetConfig:
+  depth: int
+  width: int
+  norm: str = "batch"
 
-impl larger <- baseline:
-  width: 96
+  impl baseline:
+    depth: 50
+    width: 64
+    norm: "batch"
+
+  impl larger <- baseline:
+    width: 96
 ```
 
 Inheritance may also target another file:
 
 ```etcm
-impl custom <- models/resnet.etcm#resnet_50:
-  width: 128
+spec ResNetConfig:
+  width: int
+
+  impl custom <- models/resnet.etcm#ResNetConfig:resnet_50:
+    width: 128
 ```
 
 ## References
@@ -145,13 +160,13 @@ typed relationship, not a raw include.
 
 ```etcm
 spec TrainConfig:
-  model: ResNetConfig
-  scheduler: LRScheduler
+  $model: models/resnet.etcm#ResNetConfig
+  $scheduler: schedulers/cosine.etcm#LRScheduler
   epochs: int = 90 [>0]
 
-impl imagenet:
-  $model: models/resnet.etcm#resnet_50
-  $scheduler: schedulers/cosine.etcm#default
+  impl imagenet:
+    $model: models/resnet.etcm#ResNetConfig:resnet_50
+    $scheduler: schedulers/cosine.etcm#CosineLRScheduler:default
 ```
 
 The compiler validates assignability:
@@ -225,7 +240,7 @@ The resolver also has a default path policy for fields that use
 from etcm import Resolver
 
 resolver = Resolver(path_exists="must_exist")
-cfg = resolver.load("configs/train.etcm#smoke")
+cfg = resolver.load("configs/train.etcm#TrainConfig:smoke")
 ```
 
 This allows a project to be permissive during authoring and strict in CI or

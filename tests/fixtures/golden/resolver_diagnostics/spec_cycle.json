@@ -2,8 +2,8 @@
   "code": "E_SPEC_CYCLE",
   "details": {
     "chain": [
-      "invalid/spec_cycle/a.etcm",
-      "invalid/spec_cycle/b.etcm"
+      "invalid/spec_cycle/a.etcm#A",
+      "invalid/spec_cycle/b.etcm#B"
     ]
   },
   "graph_path": null,

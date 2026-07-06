@@ -18,10 +18,10 @@ python -m pip install "git+https://example.com/your-org/etcm.git"
 Then:
 
 ```bash
-etcm resolve configs/train.etcm#smoke --format json
-etcm validate configs/train.etcm#smoke
-etcm load configs/train.etcm#smoke --target pydantic
-python -c 'from etcm import load; print(load("configs/train.etcm#smoke"))'
+etcm resolve configs/train.etcm#TrainRun:smoke --format json
+etcm validate configs/train.etcm#TrainRun:smoke
+etcm load configs/train.etcm#TrainRun:smoke --target pydantic
+python -c 'from etcm import load; print(load("configs/train.etcm#TrainRun:smoke"))'
 ```
 
 The product should feel obvious for any Python project that currently has:
@@ -43,8 +43,9 @@ The initial idea came from the config builder in
 
 Useful behavior to generalize:
 
-- registry files declare one Python schema and many named artifacts
-- selectors use `path#artifact`, with `#default` when omitted
+- registry files may declare several schemas and named artifacts
+- selectors use `path#Spec` for specs and `path#Spec:artifact` for exact
+  artifacts
 - comments use YAML-style `#` behavior, so attached selector fragments are not
   comments
 - `$ref` composes artifacts across files
@@ -85,19 +86,19 @@ ETCM should keep the operational lessons and remove the duplication.
 
 ```etcm
 spec TrainRun:
-  model: LMConfig
-  data: DataStream
-  optimizer: Optimizer
-  scheduler: LRScheduler | null = null
-  runtime: Runtime
+  $model: models/lm.etcm#LMConfig
+  $data: data/streams.etcm#DataStream
+  $optimizer: optimizers/adamw.etcm#Optimizer
+  $scheduler: schedulers/cosine.etcm#LRScheduler
+  $runtime: runtime/local.etcm#Runtime
   max_steps: int [>0]
 
-impl smoke:
-  $model: models/lm.etcm#tiny
-  $data: data/streams.etcm#smoke
-  $optimizer: optimizers/adamw.etcm#fast
-  $runtime: runtime/local.etcm#cpu
-  max_steps: 2
+  impl smoke:
+    $model: models/lm.etcm#LMConfig:tiny
+    $data: data/streams.etcm#DataStream:smoke
+    $optimizer: optimizers/adamw.etcm#Optimizer:fast
+    $runtime: runtime/local.etcm#Runtime:cpu
+    max_steps: 2
 ```
 
 Why ETCM helps:
@@ -116,13 +117,13 @@ spec Sweep:
   method: str [in ["grid", "random", "bayes"]]
   parameters: dict[str, SweepParameter]
 
-impl lr_search:
-  $target: experiments/train.etcm#baseline
-  metric: "validation.loss"
-  method: "random"
-  parameters:
-    optimizer.lr:
-      values: [1e-4, 3e-4, 1e-3]
+  impl lr_search:
+    $target: experiments/train.etcm#TrainRun:baseline
+    metric: "validation.loss"
+    method: "random"
+    parameters:
+      optimizer.lr:
+        values: [1e-4, 3e-4, 1e-3]
 ```
 
 Sweep support should be layered over the core. The target remains a typed
@@ -138,11 +139,11 @@ spec Runtime:
   gpus_per_node: int = 1 [>=0]
   account: str | null = null [override="deny"]
 
-impl slurm_a100:
-  launcher: "slurm"
-  device: "cuda"
-  nodes: 1
-  gpus_per_node: 4
+  impl slurm_a100:
+    launcher: "slurm"
+    device: "cuda"
+    nodes: 1
+    gpus_per_node: 4
 ```
 
 Why ETCM helps:
@@ -160,10 +161,10 @@ spec ServiceSettings:
   timeout_seconds: float = 30.0 [>0.0]
   credentials_ref: str [override="deny"]
 
-impl prod:
-  environment: "prod"
-  api_base_url: "https://api.example.com"
-  credentials_ref: "vault://services/example/prod"
+  impl prod:
+    environment: "prod"
+    api_base_url: "https://api.example.com"
+    credentials_ref: "vault://services/example/prod"
 ```
 
 ETCM should not manage secrets. It should type-check and protect references to
@@ -195,11 +196,11 @@ spec BatchJob:
   resources: Resources
   retry: RetryPolicy
 
-impl tokenizer_job:
-  image: "registry.example.com/tokenizer:2026-06-17"
-  command: ["python", "-m", "jobs.tokenize"]
-  $resources: infra/resources.etcm#cpu_large
-  $retry: infra/retry.etcm#standard
+  impl tokenizer_job:
+    image: "registry.example.com/tokenizer:2026-06-17"
+    command: ["python", "-m", "jobs.tokenize"]
+    $resources: infra/resources.etcm#Resources:cpu_large
+    $retry: infra/retry.etcm#RetryPolicy:standard
 ```
 
 ETCM gives infra-like configs the same graph identity and validation as ML
@@ -210,17 +211,17 @@ configs without becoming a scheduler.
 V0 should include:
 
 - `.etcm` parser for spec and implementation blocks
-- selector support: `path#impl`, defaulting to `#default`
+- selector support: `path#Spec`, exact `path#Spec:impl`, and unique
+  implementation shorthand `path#impl` or `path`
 - YAML-style comments: `#` starts a comment at line start or after whitespace,
   outside quoted strings
 - top-level `$spec` reuse for implementation-only files
-- fragment-free spec inheritance and `$spec` references because every file has
-  one spec source
+- spec inheritance and `$spec` references by `path#Spec`
 - primitive types: `str`, `int`, `float`, `bool`, `null`, `Path`
 - containers: `list[T]`, `dict[K, V]`
 - field-level path validation with `path_exists` and `path_kind`
 - resolver-level default path existence policy
-- spec references by name and imported selector
+- spec references by imported selector
 - implementation inheritance
 - reference resolution with source identity
 - spec-owned override policy
@@ -243,7 +244,7 @@ V0 should not include:
 
 ETCM is useful when a user can:
 
-- write one spec and several implementations in one file
+- write one or more specs with owned implementations in one file
 - write implementation-only files with top-level `$spec`
 - compose implementations across files with typed refs
 - validate path fields with field-level and resolver-level existence policy

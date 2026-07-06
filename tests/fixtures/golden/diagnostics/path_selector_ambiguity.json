@@ -6,7 +6,7 @@
   "selector": "models/lm.etcm#",
   "source_path": "invalid/path_selector_ambiguity.etcm",
   "span": {
-    "column": 3,
+    "column": 5,
     "end_column": 1,
     "end_line": 6,
     "line": 5

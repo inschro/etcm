@@ -3,12 +3,12 @@ spec RuntimeConfig:
   devices: int = 1 [>0]
   checkpoint_dir: Path [path_exists="allow_missing"; path_kind="dir"]
 
-impl local:
-  accelerator: "cpu"
-  devices: 1
-  checkpoint_dir: "outputs/local"
+  impl local:
+    accelerator: "cpu"
+    devices: 1
+    checkpoint_dir: "outputs/local"
 
-impl cuda:
-  accelerator: "cuda"
-  devices: 2
-  checkpoint_dir: "outputs/cuda"
+  impl cuda:
+    accelerator: "cuda"
+    devices: 2
+    checkpoint_dir: "outputs/cuda"

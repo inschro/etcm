@@ -1,2 +1,5 @@
-spec A <- b.etcm:
+spec A <- b.etcm#B:
   value: int = 1
+
+  impl default:
+    value: 1

@@ -27,6 +27,7 @@ PARSER_VALID_FIXTURES = [
     "valid/impl_inheritance.etcm",
     "valid/inline_spec.etcm",
     "valid/inline_spec_with_defaults.etcm",
+    "valid/multiple_specs.etcm",
     "valid/nested_literals.etcm",
     "valid/no_impl.etcm",
     "valid/spec_inheritance.etcm",
@@ -41,9 +42,7 @@ PARSER_INVALID_FIXTURES = {
     "invalid/malformed_literal.etcm": "E_PARSE_UNEXPECTED_TOKEN",
     "invalid/malformed_syntax.etcm": "E_PARSE_UNEXPECTED_TOKEN",
     "invalid/path_selector_ambiguity.etcm": "E_PARSE_SELECTOR",
-    "invalid/spec_inheritance_fragment.etcm": "E_PARSE_UNEXPECTED_TOKEN",
     "invalid/spec_and_spec_ref.etcm": "E_SPEC_AND_SPEC_REF",
-    "invalid/spec_ref_fragment.etcm": "E_PARSE_UNEXPECTED_TOKEN",
     "invalid/tab_indent.etcm": "E_PARSE_TAB_INDENT",
 }
 
@@ -104,6 +103,9 @@ def _ast_summary(document: SyntaxDocument) -> dict[str, Any]:
                     "name": item.name,
                     "parent": str(item.parent) if item.parent is not None else None,
                     "field_count": len(item.fields),
+                    "implementations": [
+                        _syntax_impl_summary(impl) for impl in item.implementations
+                    ],
                     "span": _span_summary(item.span),
                 }
             )
@@ -111,55 +113,62 @@ def _ast_summary(document: SyntaxDocument) -> dict[str, Any]:
             items.append(
                 {
                     "kind": "spec_ref",
-                    "path": str(item.path),
+                    "selector": item.selector,
                     "span": _span_summary(item.span),
                 }
             )
         elif isinstance(item, SyntaxImpl):
-            items.append(
-                {
-                    "kind": "impl",
-                    "name": item.name,
-                    "parent": item.parent,
-                    "assignment_count": len(item.assignments),
-                    "span": _span_summary(item.span),
-                }
-            )
+            items.append(_syntax_impl_summary(item))
     return {"source_path": str(document.source_path), "items": items}
+
+
+def _syntax_impl_summary(impl: SyntaxImpl) -> dict[str, Any]:
+    return {
+        "kind": "impl",
+        "name": impl.name,
+        "parent": impl.parent,
+        "assignment_count": len(impl.assignments),
+        "span": _span_summary(impl.span),
+    }
 
 
 def _ir_summary(document: Document) -> dict[str, Any]:
     return {
         "source_path": str(document.source_path),
-        "spec": None
-        if document.spec is None
-        else {
-            "name": document.spec.name,
-            "parent": str(document.spec.parent) if document.spec.parent is not None else None,
-            "fields": [
-                {
-                    "name": field.name,
-                    "type": _type_summary(field.type_expr),
-                    "default": _literal_summary(field.default),
-                    "metadata": {
-                        key: _literal_summary(value) for key, value in field.metadata.items()
-                    },
-                    "override": field.override,
-                }
-                for field in document.spec.fields
-            ],
-        },
+        "specs": [_ir_spec_summary(spec) for spec in document.specs],
         "spec_ref": None
         if document.spec_ref is None
-        else {"path": str(document.spec_ref.path)},
-        "implementations": [
-            {
-                "name": impl.name,
-                "parent": impl.parent.raw if impl.parent is not None else None,
-                "assignments": [_assignment_summary(assignment) for assignment in impl.assignments],
-            }
-            for impl in document.implementations
-        ],
+        else {"selector": document.spec_ref.selector.raw},
+        "implementations": [_impl_summary(impl) for impl in document.implementations],
+    }
+
+
+def _ir_spec_summary(spec: Any) -> dict[str, Any]:
+    return {
+        "name": spec.name,
+        "parent": spec.parent.raw if spec.parent is not None else None,
+        "fields": [_field_summary(field) for field in spec.fields],
+        "implementations": [_impl_summary(impl) for impl in spec.implementations],
+    }
+
+
+def _field_summary(field: Any) -> dict[str, Any]:
+    return {
+        "name": field.name,
+        "type": _type_summary(field.type_expr),
+        "default": _literal_summary(field.default),
+        "metadata": {key: _literal_summary(value) for key, value in field.metadata.items()},
+        "override": field.override,
+        "ref_selector": field.ref_selector.raw if field.ref_selector is not None else None,
+        "fields": [_field_summary(child) for child in field.fields],
+    }
+
+
+def _impl_summary(impl: Any) -> dict[str, Any]:
+    return {
+        "name": impl.name,
+        "parent": impl.parent.raw if impl.parent is not None else None,
+        "assignments": [_assignment_summary(assignment) for assignment in impl.assignments],
     }
 
 

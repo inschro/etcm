@@ -4,7 +4,7 @@
     "previous": "First"
   },
   "graph_path": null,
-  "message": "Duplicate spec definition 'Second'.",
+  "message": "Duplicate spec definition 'First'.",
   "selector": null,
   "source_path": "invalid/duplicate_spec.etcm",
   "span": {

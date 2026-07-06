@@ -28,8 +28,8 @@
     }
   ],
   "source_path": "valid/spec_ref_impls.etcm",
-  "spec": null,
   "spec_ref": {
-    "path": "specs/data.etcm"
-  }
+    "selector": "specs/data.etcm#DataConfig"
+  },
+  "specs": []
 }

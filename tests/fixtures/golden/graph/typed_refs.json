@@ -24,8 +24,8 @@
           "ref_target": null,
           "source_path": "valid/typed_refs/train.etcm",
           "span": {
-            "column": 3,
-            "end_column": 1,
+            "column": 5,
+            "end_column": 3,
             "end_line": 9,
             "line": 7
           },
@@ -40,8 +40,8 @@
           "ref_target": "root.model",
           "source_path": "valid/typed_refs/train.etcm",
           "span": {
-            "column": 3,
-            "end_column": 3,
+            "column": 5,
+            "end_column": 5,
             "end_line": 7,
             "line": 6
           },
@@ -63,7 +63,7 @@
           "source_path": "valid/typed_refs/train.etcm",
           "span": {
             "column": 3,
-            "end_column": 1,
+            "end_column": 3,
             "end_line": 5,
             "line": 3
           },
@@ -97,7 +97,7 @@
       "graph_path": "root",
       "id": "root",
       "implementation": "smoke",
-      "selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/typed_refs/train.etcm#smoke",
+      "selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/typed_refs/train.etcm#TrainRun:smoke",
       "source_path": "valid/typed_refs/train.etcm",
       "spec_ancestors": [],
       "spec_name": "TrainRun",
@@ -122,8 +122,8 @@
           "ref_target": null,
           "source_path": "valid/typed_refs/model.etcm",
           "span": {
-            "column": 3,
-            "end_column": 1,
+            "column": 5,
+            "end_column": 3,
             "end_line": 7,
             "line": 5
           },
@@ -141,7 +141,7 @@
           "source_path": "valid/typed_refs/model.etcm",
           "span": {
             "column": 3,
-            "end_column": 1,
+            "end_column": 3,
             "end_line": 4,
             "line": 2
           },
@@ -155,7 +155,7 @@
       "graph_path": "root.model",
       "id": "root.model",
       "implementation": "tiny",
-      "selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/typed_refs/model.etcm#tiny",
+      "selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/typed_refs/model.etcm#ModelConfig:tiny",
       "source_path": "valid/typed_refs/model.etcm",
       "spec_ancestors": [],
       "spec_name": "ModelConfig",

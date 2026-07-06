@@ -3,6 +3,7 @@
   "details": {
     "expected": [
       "DOLLAR",
+      "IMPL",
       "NAME",
       "_DEDENT",
       "_NL"

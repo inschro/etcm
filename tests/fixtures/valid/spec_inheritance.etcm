@@ -1,7 +1,7 @@
-spec CosineLRScheduler <- schedulers/base.etcm:
+spec CosineLRScheduler <- schedulers/base.etcm#LRScheduler:
   min_lr_ratio: float = 0.0 [>=0.0; <=1.0]
   cycles: float = 0.5 [>0.0]
 
-impl default:
-  min_lr_ratio: 0.01
-  cycles: 0.5
+  impl default:
+    min_lr_ratio: 0.01
+    cycles: 0.5

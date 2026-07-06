@@ -1,5 +1,5 @@
 spec First:
   value: int
 
-spec Second:
+spec First:
   value: int

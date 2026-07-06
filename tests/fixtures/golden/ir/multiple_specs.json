@@ -1,0 +1,96 @@
+{
+  "implementations": [],
+  "source_path": "valid/multiple_specs.etcm",
+  "spec_ref": null,
+  "specs": [
+    {
+      "fields": [
+        {
+          "default": {
+            "kind": "int",
+            "value": 100
+          },
+          "fields": [],
+          "metadata": {
+            "ge": {
+              "kind": "int",
+              "value": 0
+            },
+            "ne": {
+              "kind": "int",
+              "value": 200
+            }
+          },
+          "name": "max_steps",
+          "override": "allow",
+          "ref_selector": null,
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "int"
+          }
+        }
+      ],
+      "implementations": [
+        {
+          "assignments": [
+            {
+              "field_path": [
+                "max_steps"
+              ],
+              "kind": "literal",
+              "value": {
+                "kind": "int",
+                "value": 10
+              }
+            }
+          ],
+          "name": "smoke",
+          "parent": null
+        }
+      ],
+      "name": "TrainConfig",
+      "parent": null
+    },
+    {
+      "fields": [
+        {
+          "default": {
+            "kind": "string",
+            "value": "accuracy"
+          },
+          "fields": [],
+          "metadata": {},
+          "name": "metric",
+          "override": "allow",
+          "ref_selector": null,
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "str"
+          }
+        }
+      ],
+      "implementations": [
+        {
+          "assignments": [
+            {
+              "field_path": [
+                "metric"
+              ],
+              "kind": "literal",
+              "value": {
+                "kind": "string",
+                "value": "loss"
+              }
+            }
+          ],
+          "name": "default",
+          "parent": null
+        }
+      ],
+      "name": "EvalConfig",
+      "parent": null
+    }
+  ]
+}

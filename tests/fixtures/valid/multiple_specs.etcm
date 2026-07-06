@@ -1,0 +1,11 @@
+spec TrainConfig:
+  max_steps: int = 100 [>=0; !=200]
+
+  impl smoke:
+    max_steps: 10
+
+spec EvalConfig:
+  metric: str = "accuracy"
+
+  impl default:
+    metric: "loss"

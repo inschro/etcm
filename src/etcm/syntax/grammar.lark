@@ -3,10 +3,10 @@ start: _NL* (item _NL*)+
 ?item: spec | spec_ref | impl
 
 spec: "spec" NAME spec_parent? ":" _NL _INDENT spec_line* _DEDENT
-spec_parent: "<-" PATH
-?spec_line: spec_ref_field | nested_field | field | _NL
+spec_parent: "<-" SELECTOR
+?spec_line: spec_ref_field | nested_field | field | impl | _NL
 
-spec_ref: "$spec" ":" PATH _NL
+spec_ref: "$spec" ":" SELECTOR _NL
 
 impl: "impl" NAME impl_parent? ":" _NL _INDENT impl_line* _DEDENT
 impl_parent: "<-" SELECTOR
@@ -17,7 +17,7 @@ ref_assignment: "$" NAME ":" SELECTOR _NL
 value_assignment: field_path ":" value _NL
 field_path: NAME ("." NAME)*
 
-spec_ref_field: "$" NAME ":" PATH field_meta? _NL
+spec_ref_field: "$" NAME ":" SELECTOR field_meta? _NL
 nested_field: NAME ":" field_meta? _NL _INDENT spec_line* _DEDENT
 field: NAME ":" type_expr field_default? field_meta? _NL
 field_default: "=" value
@@ -56,7 +56,7 @@ META_LSQB.2: /\[(?=\s*(?:[><!]|in\b|[A-Za-z_][A-Za-z0-9_]*\s*=))/
 SEMICOLON: ";"
 COMPARE: ">=" | "<=" | "!=" | ">" | "<"
 PATH: /[A-Za-z0-9_\.\/-]+/
-SELECTOR: /[A-Za-z0-9_\.\/-]+#[A-Za-z_][A-Za-z0-9_]*/ | /[A-Za-z0-9_\.\/-]+#/ | /[A-Za-z0-9_\.\/-]+/
+SELECTOR: /[A-Za-z0-9_\.\/-]+#[A-Za-z_][A-Za-z0-9_]*(?::[A-Za-z_][A-Za-z0-9_]*)?/ | /[A-Za-z0-9_\.\/-]+#/ | /[A-Za-z0-9_\.\/-]+/
 
 %declare _INDENT _DEDENT
 %import common.CNAME -> NAME

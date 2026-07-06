@@ -1,6 +1,6 @@
-spec CudaRuntime <- base.etcm:
+spec CudaRuntime <- base.etcm#Runtime:
   gpus: int = 1 [>0]
 
-impl default:
-  device: "cuda"
-  gpus: 2
+  impl default:
+    device: "cuda"
+    gpus: 2

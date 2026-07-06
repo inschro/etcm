@@ -110,6 +110,62 @@ def test_resolver_path_policy_controls_delegated_paths() -> None:
     assert raised.value.diagnostic.graph_path == "root.cache_dir"
 
 
+def test_full_spec_implementation_selector_resolves_from_multi_spec_file() -> None:
+    source = FIXTURES / "valid/multiple_specs.etcm"
+
+    graph = resolve(f"{source}#TrainConfig:smoke")
+
+    root = next(node for node in graph.nodes if node.id == "root")
+    assert root.spec_name == "TrainConfig"
+    assert root.implementation == "smoke"
+    assert root.values["max_steps"] == 10
+
+
+def test_short_implementation_selector_resolves_when_unique() -> None:
+    source = FIXTURES / "valid/multiple_specs.etcm"
+
+    graph = resolve(f"{source}#smoke")
+
+    root = next(node for node in graph.nodes if node.id == "root")
+    assert root.spec_name == "TrainConfig"
+    assert root.selector.endswith("multiple_specs.etcm#TrainConfig:smoke")
+
+
+def test_short_implementation_selector_is_ambiguous_without_type_context(tmp_path: Path) -> None:
+    source = tmp_path / "configs.etcm"
+    source.write_text(
+        "\n".join(
+            [
+                "spec TrainConfig:",
+                "  value: int",
+                "",
+                "  impl default:",
+                "    value: 1",
+                "",
+                "spec EvalConfig:",
+                "  value: int",
+                "",
+                "  impl default:",
+                "    value: 2",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ETCMError) as raised:
+        resolve(str(source))
+
+    assert raised.value.diagnostic.code == "E_MISSING_SELECTOR"
+    assert raised.value.diagnostic.details is not None
+    assert len(raised.value.diagnostic.details["candidates"]) == 2
+
+    graph = resolve(f"{source}#EvalConfig:default")
+    root = next(node for node in graph.nodes if node.id == "root")
+    assert root.spec_name == "EvalConfig"
+    assert root.values["value"] == 2
+
+
 def _read_golden(kind: str, name: str) -> dict[str, Any]:
     path = FIXTURES / "golden" / kind / f"{name}.json"
     return json.loads(path.read_text(encoding="utf-8"))

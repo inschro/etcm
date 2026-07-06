@@ -1,8 +1,8 @@
 spec Runtime:
   seed: int = 0 [override="deny"]
 
-impl base:
-  seed: 1
+  impl base:
+    seed: 1
 
-impl child <- base:
-  seed: 2
+  impl child <- base:
+    seed: 2

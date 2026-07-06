@@ -1,5 +1,5 @@
 spec BadType:
   count: int
 
-impl default:
-  count: "two"
+  impl default:
+    count: "two"

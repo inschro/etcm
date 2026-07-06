@@ -1,77 +1,84 @@
 {
-  "implementations": [
+  "implementations": [],
+  "source_path": "valid/inline_spec.etcm",
+  "spec_ref": null,
+  "specs": [
     {
-      "assignments": [
+      "fields": [
         {
-          "field_path": [
-            "train_file"
-          ],
-          "kind": "literal",
-          "value": {
-            "kind": "string",
-            "value": "data/smoke.txt"
+          "default": null,
+          "fields": [],
+          "metadata": {
+            "path_exists": {
+              "kind": "string",
+              "value": "must_exist"
+            },
+            "path_kind": {
+              "kind": "string",
+              "value": "file"
+            }
+          },
+          "name": "train_file",
+          "override": "allow",
+          "ref_selector": null,
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "Path"
           }
         },
         {
-          "field_path": [
-            "retries"
-          ],
-          "kind": "literal",
-          "value": {
+          "default": {
             "kind": "int",
             "value": 2
+          },
+          "fields": [],
+          "metadata": {
+            "gt": {
+              "kind": "int",
+              "value": 0
+            }
+          },
+          "name": "retries",
+          "override": "allow",
+          "ref_selector": null,
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "int"
           }
         }
       ],
-      "name": "smoke",
+      "implementations": [
+        {
+          "assignments": [
+            {
+              "field_path": [
+                "train_file"
+              ],
+              "kind": "literal",
+              "value": {
+                "kind": "string",
+                "value": "data/smoke.txt"
+              }
+            },
+            {
+              "field_path": [
+                "retries"
+              ],
+              "kind": "literal",
+              "value": {
+                "kind": "int",
+                "value": 2
+              }
+            }
+          ],
+          "name": "smoke",
+          "parent": null
+        }
+      ],
+      "name": "DataConfig",
       "parent": null
     }
-  ],
-  "source_path": "valid/inline_spec.etcm",
-  "spec": {
-    "fields": [
-      {
-        "default": null,
-        "metadata": {
-          "path_exists": {
-            "kind": "string",
-            "value": "must_exist"
-          },
-          "path_kind": {
-            "kind": "string",
-            "value": "file"
-          }
-        },
-        "name": "train_file",
-        "override": "allow",
-        "type": {
-          "args": [],
-          "kind": "named",
-          "name": "Path"
-        }
-      },
-      {
-        "default": {
-          "kind": "int",
-          "value": 2
-        },
-        "metadata": {
-          "gt": {
-            "kind": "int",
-            "value": 0
-          }
-        },
-        "name": "retries",
-        "override": "allow",
-        "type": {
-          "args": [],
-          "kind": "named",
-          "name": "int"
-        }
-      }
-    ],
-    "name": "DataConfig",
-    "parent": null
-  },
-  "spec_ref": null
+  ]
 }

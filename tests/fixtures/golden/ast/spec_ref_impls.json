@@ -2,7 +2,7 @@
   "items": [
     {
       "kind": "spec_ref",
-      "path": "specs/data.etcm",
+      "selector": "specs/data.etcm#DataConfig",
       "span": {
         "column": 1,
         "end_column": 1,

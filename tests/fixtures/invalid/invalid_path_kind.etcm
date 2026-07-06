@@ -1,5 +1,5 @@
 spec BadPath:
   file_path: Path [path_exists="must_exist"; path_kind="file"]
 
-impl default:
-  file_path: "."
+  impl default:
+    file_path: "."

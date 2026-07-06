@@ -22,8 +22,8 @@
           "ref_target": null,
           "source_path": "valid/spec_inheritance_resolver/cuda.etcm",
           "span": {
-            "column": 3,
-            "end_column": 3,
+            "column": 5,
+            "end_column": 5,
             "end_line": 6,
             "line": 5
           },
@@ -41,7 +41,7 @@
           "ref_target": null,
           "source_path": "valid/spec_inheritance_resolver/cuda.etcm",
           "span": {
-            "column": 3,
+            "column": 5,
             "end_column": 1,
             "end_line": 7,
             "line": 6
@@ -82,7 +82,7 @@
           "source_path": "valid/spec_inheritance_resolver/cuda.etcm",
           "span": {
             "column": 3,
-            "end_column": 1,
+            "end_column": 3,
             "end_line": 4,
             "line": 2
           },
@@ -96,7 +96,7 @@
       "graph_path": "root",
       "id": "root",
       "implementation": "default",
-      "selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/spec_inheritance_resolver/cuda.etcm#default",
+      "selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/spec_inheritance_resolver/cuda.etcm#CudaRuntime:default",
       "source_path": "valid/spec_inheritance_resolver/cuda.etcm",
       "spec_ancestors": [
         "Runtime"

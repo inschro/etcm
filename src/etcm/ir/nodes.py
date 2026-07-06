@@ -21,19 +21,32 @@ class SourceSpan:
 @dataclass(frozen=True)
 class Selector:
     path: Path
+    spec: str | None = None
     implementation: str | None = None
     raw: str | None = None
 
     @classmethod
     def parse(cls, raw: str) -> Selector:
-        path_text, separator, implementation = raw.partition("#")
+        path_text, separator, fragment = raw.partition("#")
         if not path_text:
             raise ValueError("selector path must be non-empty")
-        if separator and not implementation:
-            raise ValueError("selector implementation must be non-empty when '#' is used")
+        if separator and not fragment:
+            raise ValueError("selector fragment must be non-empty when '#' is used")
+        spec: str | None = None
+        implementation: str | None = None
+        if separator:
+            spec_text, impl_separator, impl_text = fragment.partition(":")
+            if not spec_text:
+                raise ValueError("selector spec must be non-empty when '#' is used")
+            spec = spec_text
+            if impl_separator:
+                if not impl_text:
+                    raise ValueError("selector implementation must be non-empty when ':' is used")
+                implementation = impl_text
         return cls(
             path=Path(path_text),
-            implementation=implementation if separator else None,
+            spec=spec,
+            implementation=implementation,
             raw=raw,
         )
 
@@ -72,7 +85,7 @@ class FieldDef:
     default: LiteralValue | None = None
     metadata: Mapping[str, LiteralValue] = field(default_factory=dict)
     override: str = "allow"
-    ref_path: Path | None = None
+    ref_selector: Selector | None = None
     fields: tuple[FieldDef, ...] = ()
     span: SourceSpan | None = None
 
@@ -83,14 +96,15 @@ class FieldDef:
 @dataclass(frozen=True)
 class SpecDef:
     name: str
-    parent: Path | None = None
+    parent: Selector | None = None
     fields: tuple[FieldDef, ...] = ()
+    implementations: tuple[ImplDef, ...] = ()
     span: SourceSpan | None = None
 
 
 @dataclass(frozen=True)
 class SpecRef:
-    path: Path
+    selector: Selector
     span: SourceSpan | None = None
 
 
@@ -105,10 +119,10 @@ class ImplDef:
 @dataclass(frozen=True)
 class Document:
     source_path: Path
-    spec: SpecDef | None = None
+    specs: tuple[SpecDef, ...] = ()
     spec_ref: SpecRef | None = None
     implementations: tuple[ImplDef, ...] = ()
 
     def __post_init__(self) -> None:
-        if self.spec is not None and self.spec_ref is not None:
+        if self.specs and self.spec_ref is not None:
             raise ValueError("document may define either spec or spec_ref, not both")

@@ -11,7 +11,7 @@
   "selector": null,
   "source_path": "invalid/constraint_bound.etcm",
   "span": {
-    "column": 3,
+    "column": 5,
     "end_column": 1,
     "end_line": 6,
     "line": 5

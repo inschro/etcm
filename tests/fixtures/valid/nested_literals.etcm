@@ -5,9 +5,9 @@ spec SweepConfig:
   enabled: bool = true
   maybe: null = null
 
-impl lr_search:
-  method: "random"
-  values: [0.0001, 0.0003, 0.001]
-  metadata: {"metric": "loss", "mode": "fast"}
-  enabled: false
-  maybe: null
+  impl lr_search:
+    method: "random"
+    values: [0.0001, 0.0003, 0.001]
+    metadata: {"metric": "loss", "mode": "fast"}
+    enabled: false
+    maybe: null

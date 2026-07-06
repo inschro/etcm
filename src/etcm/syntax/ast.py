@@ -30,7 +30,7 @@ class SyntaxField:
     default: SyntaxLiteral | None = None
     metadata: Mapping[str, SyntaxLiteral] = field(default_factory=dict)
     override: str = "allow"
-    ref_path: Path | None = None
+    ref_selector: str | None = None
     fields: tuple[SyntaxField, ...] = ()
     span: SourceSpan | None = None
 
@@ -41,14 +41,15 @@ class SyntaxField:
 @dataclass(frozen=True)
 class SyntaxSpec:
     name: str
-    parent: Path | None = None
+    parent: str | None = None
     fields: tuple[SyntaxField, ...] = ()
+    implementations: tuple[SyntaxImpl, ...] = ()
     span: SourceSpan | None = None
 
 
 @dataclass(frozen=True)
 class SyntaxSpecRef:
-    path: Path
+    selector: str
     span: SourceSpan | None = None
 
 

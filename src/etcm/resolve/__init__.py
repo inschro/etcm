@@ -18,6 +18,7 @@ from etcm.ir import (
     RefAssignment,
     Selector,
     SourceSpan,
+    SpecDef,
     TypeExpr,
 )
 from etcm.resolve.graph import (
@@ -56,6 +57,18 @@ class _NodeResult:
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "values", MappingProxyType(dict(self.values)))
+
+
+@dataclass(frozen=True)
+class _ImplTarget:
+    source_path: Path
+    spec: _ResolvedSpec
+    implementation: ImplDef
+    selector: str
+
+    @property
+    def key(self) -> tuple[Path, str, str]:
+        return (self.source_path, self.spec.name, self.implementation.name)
 
 
 @dataclass
@@ -116,7 +129,7 @@ class _ResolverState:
     def __init__(self, resolver: Resolver) -> None:
         self._resolver = resolver
         self._documents: dict[Path, Document] = {}
-        self._specs: dict[Path, _ResolvedSpec] = {}
+        self._specs: dict[tuple[Path, str], _ResolvedSpec] = {}
 
     def resolve(self, raw_selector: str) -> ResolvedGraph:
         selector = self._selector_from_raw(raw_selector, Path.cwd() / "__root__.etcm")
@@ -138,42 +151,51 @@ class _ResolverState:
         selector: Selector,
         graph_path: str,
         builder: _GraphBuilder,
-        impl_stack: tuple[tuple[Path, str], ...],
-        ref_stack: tuple[tuple[Path, str], ...],
+        impl_stack: tuple[tuple[Path, str, str], ...],
+        ref_stack: tuple[tuple[Path, str, str], ...],
         cycle_code: str,
     ) -> _NodeResult:
-        source_path = selector.path.resolve()
-        implementation = selector.implementation or "default"
-        key = (source_path, implementation)
+        target = self._resolve_implementation_selector(selector)
+        source_path = target.source_path
+        spec = target.spec
+        impl = target.implementation
+        key = target.key
         if key in impl_stack:
             _raise(
                 cycle_code,
-                f"Cycle while resolving implementation '{implementation}'.",
+                f"Cycle while resolving implementation '{impl.name}'.",
                 source_path=source_path,
-                selector=_selector_text(source_path, implementation),
+                selector=target.selector,
                 graph_path=graph_path,
-                details={"chain": [_selector_text(path, impl) for path, impl in impl_stack]},
+                details={
+                    "chain": [
+                        _selector_text(path, spec_name, impl_name)
+                        for path, spec_name, impl_name in impl_stack
+                    ]
+                },
             )
         if key in ref_stack:
             _raise(
                 "E_REF_CYCLE",
-                f"Reference cycle at implementation '{implementation}'.",
+                f"Reference cycle at implementation '{impl.name}'.",
                 source_path=source_path,
-                selector=_selector_text(source_path, implementation),
+                selector=target.selector,
                 graph_path=graph_path,
-                details={"chain": [_selector_text(path, impl) for path, impl in ref_stack]},
+                details={
+                    "chain": [
+                        _selector_text(path, spec_name, impl_name)
+                        for path, spec_name, impl_name in ref_stack
+                    ]
+                },
             )
 
-        document = self._load_document(source_path)
         builder.sources.add(source_path)
-        spec = self._resolve_spec(source_path, ())
-        impl = self._implementation(document, implementation)
         next_impl_stack = (*impl_stack, key)
 
         values = self._default_values(spec, builder, graph_path)
         parent_result: _NodeResult | None = None
         if impl.parent is not None:
-            parent_selector = self._selector_from_ir(impl.parent, source_path)
+            parent_selector = self._parent_selector(impl.parent, source_path, spec.name)
             parent_result = self._resolve_node(
                 selector=parent_selector,
                 graph_path=f"{graph_path}.__parent",
@@ -208,10 +230,10 @@ class _ResolverState:
         node_id = graph_path
         builder.nodes[node_id] = ResolvedNode(
             id=node_id,
-            selector=_selector_text(source_path, implementation),
+            selector=target.selector,
             spec_name=spec.name,
             spec_ancestors=spec.ancestors,
-            implementation=implementation,
+            implementation=impl.name,
             source_path=source_path,
             graph_path=graph_path,
             fields={name: self._field_schema(field) for name, field in spec.fields.items()},
@@ -232,8 +254,8 @@ class _ResolverState:
         source_path: Path,
         graph_path: str,
         builder: _GraphBuilder,
-        impl_stack: tuple[tuple[Path, str], ...],
-        ref_stack: tuple[tuple[Path, str], ...],
+        impl_stack: tuple[tuple[Path, str, str], ...],
+        ref_stack: tuple[tuple[Path, str, str], ...],
         previous_value: ResolvedValue | None,
     ) -> ResolvedValue:
         if isinstance(assignment, RefAssignment):
@@ -252,7 +274,7 @@ class _ResolverState:
                 graph_path=graph_path,
                 builder=builder,
                 impl_stack=impl_stack,
-                ref_stack=(*ref_stack, (impl_stack[-1][0], impl_stack[-1][1])),
+                ref_stack=(*ref_stack, impl_stack[-1]),
                 cycle_code="E_REF_CYCLE",
             )
             source_node_id = graph_path.rsplit(".", 1)[0] if "." in graph_path else "root"
@@ -345,8 +367,8 @@ class _ResolverState:
         assignments: tuple[Assignment | RefAssignment, ...],
         base_node: ResolvedNode | None,
         base_as_parent: bool,
-        impl_stack: tuple[tuple[Path, str], ...],
-        ref_stack: tuple[tuple[Path, str], ...],
+        impl_stack: tuple[tuple[Path, str, str], ...],
+        ref_stack: tuple[tuple[Path, str, str], ...],
     ) -> _NodeResult:
         spec = _ResolvedSpec(
             name=str(field.type_expr.name),
@@ -451,47 +473,60 @@ class _ResolverState:
         result[field_name] = new_value
         return result
 
-    def _resolve_spec(self, source_path: Path, stack: tuple[Path, ...]) -> _ResolvedSpec:
+    def _resolve_spec(
+        self,
+        source_path: Path,
+        spec_name: str | None,
+        stack: tuple[tuple[Path, str], ...],
+    ) -> _ResolvedSpec:
         source_path = source_path.resolve()
-        cached = self._specs.get(source_path)
+        document = self._load_document(source_path)
+
+        if document.spec_ref is not None:
+            spec = self._resolve_spec_selector(document.spec_ref.selector, source_path, stack)
+            if spec_name is not None and spec.name != spec_name:
+                _raise(
+                    "E_MISSING_SELECTOR",
+                    f"Spec '{spec_name}' not found.",
+                    source_path=source_path,
+                    selector=_selector_text(source_path, spec_name, None),
+                    details={"available": [spec.name]},
+                )
+            return spec
+
+        if not document.specs:
+            _raise("E_MISSING_SELECTOR", "Document has no spec.", source_path=source_path)
+
+        spec_def = self._select_spec(document, source_path, spec_name)
+        key = (source_path, spec_def.name)
+        cached = self._specs.get(key)
         if cached is not None:
             return cached
-        if source_path in stack:
+        if key in stack:
             _raise(
                 "E_SPEC_CYCLE",
                 "Cycle while resolving spec inheritance.",
                 source_path=source_path,
-                details={"chain": [path.as_posix() for path in stack]},
+                details={"chain": [_selector_text(path, name, None) for path, name in stack]},
             )
 
-        document = self._load_document(source_path)
-        if document.spec_ref is not None:
-            ref_path = self._resolve_path(document.spec_ref.path, source_path.parent)
-            spec = self._resolve_spec(ref_path, (*stack, source_path))
-            self._specs[source_path] = spec
-            return spec
-        if document.spec is None:
-            _raise("E_MISSING_SELECTOR", "Document has no spec.", source_path=source_path)
-
-        assert document.spec is not None
         fields: dict[str, FieldDef] = {}
         ancestors: tuple[str, ...] = ()
-        if document.spec.parent is not None:
-            parent_path = self._resolve_path(document.spec.parent, source_path.parent)
-            parent = self._resolve_spec(parent_path, (*stack, source_path))
+        if spec_def.parent is not None:
+            parent = self._resolve_spec_selector(spec_def.parent, source_path, (*stack, key))
             fields.update(parent.fields)
             ancestors = (parent.name, *parent.ancestors)
 
-        for raw_field_def in document.spec.fields:
+        for raw_field_def in spec_def.fields:
             field_def = self._resolve_field_def(
                 raw_field_def,
                 source_path=source_path,
-                stack=stack,
+                stack=(*stack, key),
             )
             if field_def.name in fields:
                 _raise(
                     "E_TYPE_MISMATCH",
-                    f"Spec '{document.spec.name}' redefines inherited field '{field_def.name}'.",
+                    f"Spec '{spec_def.name}' redefines inherited field '{field_def.name}'.",
                     source_path=source_path,
                     span=field_def.span,
                     details={"field": field_def.name},
@@ -499,24 +534,182 @@ class _ResolverState:
             fields[field_def.name] = field_def
 
         spec = _ResolvedSpec(
-            name=document.spec.name,
+            name=spec_def.name,
             source_path=source_path,
             fields=fields,
             ancestors=ancestors,
         )
-        self._specs[source_path] = spec
+        self._specs[key] = spec
         return spec
+
+    def _resolve_spec_selector(
+        self,
+        selector: Selector,
+        declaring_source: Path,
+        stack: tuple[tuple[Path, str], ...],
+    ) -> _ResolvedSpec:
+        resolved = self._selector_from_ir(selector, declaring_source)
+        if resolved.implementation is not None:
+            _raise(
+                "E_MISSING_SELECTOR",
+                "Spec selector cannot include an implementation.",
+                source_path=declaring_source.resolve(),
+                selector=resolved.raw,
+            )
+        return self._resolve_spec(resolved.path, resolved.spec, stack)
+
+    def _resolve_implementation_selector(self, selector: Selector) -> _ImplTarget:
+        source_path = selector.path.resolve()
+        document = self._load_document(source_path)
+
+        if selector.implementation is not None:
+            if selector.spec is None:
+                _raise(
+                    "E_MISSING_SELECTOR",
+                    "Implementation selector must include a spec.",
+                    source_path=source_path,
+                    selector=selector.raw,
+                )
+            spec = self._resolve_spec(source_path, selector.spec, ())
+            implementation = self._implementation_for_spec(
+                document,
+                source_path,
+                spec.name,
+                selector.implementation,
+            )
+            return _ImplTarget(
+                source_path=source_path,
+                spec=spec,
+                implementation=implementation,
+                selector=_selector_text(source_path, spec.name, implementation.name),
+            )
+
+        implementation_name = selector.spec or "default"
+        candidates = self._implementation_candidates(document, source_path, implementation_name)
+        if not candidates:
+            _raise(
+                "E_MISSING_SELECTOR",
+                f"Implementation '{implementation_name}' not found.",
+                source_path=source_path,
+                selector=selector.raw,
+            )
+        if len(candidates) > 1:
+            _raise(
+                "E_MISSING_SELECTOR",
+                f"Implementation selector '{implementation_name}' is ambiguous.",
+                source_path=source_path,
+                selector=selector.raw,
+                details={
+                    "candidates": [
+                        _selector_text(source_path, spec.name, implementation.name)
+                        for spec, implementation in candidates
+                    ]
+                },
+            )
+        spec, implementation = candidates[0]
+        return _ImplTarget(
+            source_path=source_path,
+            spec=spec,
+            implementation=implementation,
+            selector=_selector_text(source_path, spec.name, implementation.name),
+        )
+
+    def _implementation_candidates(
+        self,
+        document: Document,
+        source_path: Path,
+        implementation_name: str,
+    ) -> list[tuple[_ResolvedSpec, ImplDef]]:
+        if document.spec_ref is not None:
+            spec = self._resolve_spec(source_path, None, ())
+            return [
+                (spec, implementation)
+                for implementation in document.implementations
+                if implementation.name == implementation_name
+            ]
+
+        candidates: list[tuple[_ResolvedSpec, ImplDef]] = []
+        for spec_def in document.specs:
+            matches = [
+                implementation
+                for implementation in spec_def.implementations
+                if implementation.name == implementation_name
+            ]
+            if not matches:
+                continue
+            spec = self._resolve_spec(source_path, spec_def.name, ())
+            candidates.extend((spec, implementation) for implementation in matches)
+        return candidates
+
+    def _implementation_for_spec(
+        self,
+        document: Document,
+        source_path: Path,
+        spec_name: str,
+        implementation_name: str,
+    ) -> ImplDef:
+        if document.spec_ref is not None:
+            spec = self._resolve_spec(source_path, spec_name, ())
+            implementations = document.implementations
+            available_specs = [spec.name]
+        else:
+            spec_def = self._select_spec(document, source_path, spec_name)
+            implementations = spec_def.implementations
+            available_specs = [spec.name for spec in document.specs]
+
+        for implementation in implementations:
+            if implementation.name == implementation_name:
+                return implementation
+
+        _raise(
+            "E_MISSING_SELECTOR",
+            f"Implementation '{implementation_name}' not found for spec '{spec_name}'.",
+            source_path=source_path,
+            selector=_selector_text(source_path, spec_name, implementation_name),
+            details={
+                "spec": spec_name,
+                "available_specs": available_specs,
+                "available_implementations": [
+                    implementation.name for implementation in implementations
+                ],
+            },
+        )
+
+    def _select_spec(
+        self,
+        document: Document,
+        source_path: Path,
+        spec_name: str | None,
+    ) -> SpecDef:
+        if spec_name is None:
+            if len(document.specs) == 1:
+                return document.specs[0]
+            _raise(
+                "E_MISSING_SELECTOR",
+                "Spec selector is ambiguous.",
+                source_path=source_path,
+                details={"candidates": [spec.name for spec in document.specs]},
+            )
+        for spec in document.specs:
+            if spec.name == spec_name:
+                return spec
+        _raise(
+            "E_MISSING_SELECTOR",
+            f"Spec '{spec_name}' not found.",
+            source_path=source_path,
+            selector=_selector_text(source_path, spec_name, None),
+            details={"candidates": [spec.name for spec in document.specs]},
+        )
 
     def _resolve_field_def(
         self,
         field: FieldDef,
         *,
         source_path: Path,
-        stack: tuple[Path, ...],
+        stack: tuple[tuple[Path, str], ...],
     ) -> FieldDef:
-        if field.ref_path is not None:
-            ref_path = self._resolve_path(field.ref_path, source_path.parent)
-            target = self._resolve_spec(ref_path, (*stack, source_path))
+        if field.ref_selector is not None:
+            target = self._resolve_spec_selector(field.ref_selector, source_path, stack)
             return replace(field, type_expr=TypeExpr(kind="named", name=target.name))
 
         if field.fields:
@@ -689,17 +882,6 @@ class _ResolverState:
         self._documents[source_path] = document
         return document
 
-    def _implementation(self, document: Document, name: str) -> ImplDef:
-        for implementation in document.implementations:
-            if implementation.name == name:
-                return implementation
-        _raise(
-            "E_MISSING_SELECTOR",
-            f"Implementation '{name}' not found.",
-            source_path=document.source_path.resolve(),
-            selector=_selector_text(document.source_path.resolve(), name),
-        )
-
     def _field(self, spec: _ResolvedSpec, field_name: str, span: SourceSpan | None) -> FieldDef:
         field = spec.fields.get(field_name)
         if field is None:
@@ -718,8 +900,7 @@ class _ResolverState:
         return assignment.field_path[0]
 
     def _selector_from_ir(self, selector: Selector, declaring_source: Path) -> Selector:
-        raw = selector.raw or str(selector.path)
-        return self._selector_from_raw(raw, declaring_source)
+        return self._normalize_selector(selector, declaring_source)
 
     def _selector_from_raw(self, raw: str, declaring_source: Path) -> Selector:
         try:
@@ -731,18 +912,51 @@ class _ResolverState:
                 source_path=declaring_source.resolve(),
                 selector=raw,
             )
+        return self._normalize_selector(selector, declaring_source)
+
+    def _normalize_selector(self, selector: Selector, declaring_source: Path) -> Selector:
         raw_path = str(selector.path)
-        if selector.implementation is None and not self._looks_like_file_path(raw_path):
+        raw = selector.raw or _selector_text(
+            selector.path,
+            selector.spec,
+            selector.implementation,
+        )
+        if (
+            selector.spec is None
+            and selector.implementation is None
+            and not self._looks_like_file_path(raw_path)
+        ):
             return Selector(
                 path=declaring_source.resolve(),
-                implementation=raw_path,
+                spec=raw_path,
                 raw=raw,
             )
         return Selector(
             path=self._resolve_path(selector.path, declaring_source.parent),
-            implementation=selector.implementation or "default",
+            spec=selector.spec,
+            implementation=selector.implementation,
             raw=raw,
         )
+
+    def _parent_selector(
+        self,
+        selector: Selector,
+        source_path: Path,
+        spec_name: str,
+    ) -> Selector:
+        raw_path = str(selector.path)
+        if (
+            selector.spec is None
+            and selector.implementation is None
+            and not self._looks_like_file_path(raw_path)
+        ):
+            return Selector(
+                path=source_path.resolve(),
+                spec=spec_name,
+                implementation=raw_path,
+                raw=selector.raw,
+            )
+        return self._selector_from_ir(selector, source_path)
 
     def _looks_like_file_path(self, raw_path: str) -> bool:
         return "/" in raw_path or "\\" in raw_path or raw_path.endswith(".etcm") or "." in raw_path
@@ -1034,10 +1248,20 @@ def _type_text(type_expr: TypeExpr) -> str:
     return type_expr.kind
 
 
-def _selector_text(source_path: Path, implementation: str | None) -> str:
-    if implementation is None:
-        return source_path.as_posix()
-    return f"{source_path.as_posix()}#{implementation}"
+def _selector_text(
+    source_path: Path,
+    spec: str | None = None,
+    implementation: str | None = None,
+) -> str:
+    text = source_path.as_posix()
+    if spec is not None:
+        text = f"{text}#{spec}"
+        if implementation is not None:
+            text = f"{text}:{implementation}"
+        return text
+    if implementation is not None:
+        return f"{text}#{implementation}"
+    return text
 
 
 def _field_source_path(field: FieldDef, fallback: Path) -> Path:

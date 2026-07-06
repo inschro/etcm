@@ -1,8 +1,8 @@
 spec DuplicateImpl:
   value: int
 
-impl smoke:
-  value: 1
+  impl smoke:
+    value: 1
 
-impl smoke:
-  value: 2
+  impl smoke:
+    value: 2

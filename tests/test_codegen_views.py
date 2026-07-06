@@ -63,34 +63,34 @@ def test_native_spec_ref_and_inline_nested_fields_materialize(tmp_path: Path) ->
     model_path = tmp_path / "model.etcm"
     model_path.write_text(
         "\n".join(
-            [
-                "spec ModelConfig:",
-                "  depth: int = 4",
-                "",
-                "impl tiny:",
-                "  depth: 8",
-                "",
-            ]
-        ),
+                [
+                    "spec ModelConfig:",
+                    "  depth: int = 4",
+                    "",
+                    "  impl tiny:",
+                    "    depth: 8",
+                    "",
+                ]
+            ),
         encoding="utf-8",
     )
     train_path = tmp_path / "train.etcm"
     train_path.write_text(
         "\n".join(
             [
-                "spec TrainRun:",
-                "  $model: model.etcm",
-                "  optimizer:",
-                "    lr: float = 5e-4",
-                "  max_steps: int = 100 [>=0; !=200]",
-                "",
-                "impl smoke:",
-                "  $model: model.etcm#tiny",
-                "  optimizer.lr: 1e-3",
-                "  max_steps: 100",
-                "",
-            ]
-        ),
+                    "spec TrainRun:",
+                    "  $model: model.etcm#ModelConfig",
+                    "  optimizer:",
+                    "    lr: float = 5e-4",
+                    "  max_steps: int = 100 [>=0; !=200]",
+                    "",
+                    "  impl smoke:",
+                    "    $model: model.etcm#ModelConfig:tiny",
+                    "    optimizer.lr: 1e-3",
+                    "    max_steps: 100",
+                    "",
+                ]
+            ),
         encoding="utf-8",
     )
 
@@ -107,15 +107,15 @@ def test_not_equal_constraint_rejects_forbidden_value(tmp_path: Path) -> None:
     config_path = tmp_path / "train.etcm"
     config_path.write_text(
         "\n".join(
-            [
-                "spec TrainRun:",
-                "  max_steps: int = 100 [!=200]",
-                "",
-                "impl bad:",
-                "  max_steps: 200",
-                "",
-            ]
-        ),
+                [
+                    "spec TrainRun:",
+                    "  max_steps: int = 100 [!=200]",
+                    "",
+                    "  impl bad:",
+                    "    max_steps: 200",
+                    "",
+                ]
+            ),
         encoding="utf-8",
     )
     graph = resolve(f"{config_path}#bad")

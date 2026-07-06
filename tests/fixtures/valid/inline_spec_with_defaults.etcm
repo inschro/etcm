@@ -4,7 +4,7 @@ spec RuntimeConfig:
   tags: list[str] = [] [override="append"]
   metadata: dict[str, str] = {} [override="merge"]
 
-impl default:
-  device: "cpu"
-  tags: ["debug"]
-  metadata: {"owner": "tests"}
+  impl default:
+    device: "cpu"
+    tags: ["debug"]
+    metadata: {"owner": "tests"}

@@ -15,7 +15,7 @@
   "selector": null,
   "source_path": "invalid/missing_path_must_exist.etcm",
   "span": {
-    "column": 3,
+    "column": 5,
     "end_column": 1,
     "end_line": 6,
     "line": 5

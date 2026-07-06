@@ -23,8 +23,9 @@ Fixture paths are relative to `tests/fixtures/`.
 | `valid/inline_spec.etcm` | Parser | Inline `spec` with a minimal `impl`. Already present from Stage 2. |
 | `valid/inline_spec_with_defaults.etcm` | Parser | Field defaults, bracket metadata, and override policy metadata. |
 | `valid/spec_ref_impls.etcm` | Parser | Top-level `$spec` with local implementations. Already present from Stage 2. |
-| `valid/spec_inheritance.etcm` | Parser | Spec inheritance by unique spec path without a fragment. |
-| `valid/impl_inheritance.etcm` | Parser | Implementation inheritance by selector with `#impl`. |
+| `valid/spec_inheritance.etcm` | Parser | Spec inheritance by selector. |
+| `valid/impl_inheritance.etcm` | Parser | Implementation inheritance by selector. |
+| `valid/multiple_specs.etcm` | Parser | Multiple spec blocks in one file, each with owned implementations. |
 | `valid/typed_refs/` | Resolver | Cross-file `$field` refs with assignable implementation targets. |
 | `valid/path_policies/` | Resolver | `Path` fields with field-level `must_exist`, `allow_missing`, and delegated resolver policy. |
 | `valid/nested_literals.etcm` | Parser | Lists, mappings, strings, numbers, booleans, null, and trailing commas where allowed. |
@@ -54,16 +55,15 @@ Fixture paths are relative to `tests/fixtures/`.
 | `invalid/invalid_path_kind.etcm` | Resolver | `E_INVALID_PATH`. |
 | `invalid/missing_path_must_exist.etcm` | Resolver | `E_INVALID_PATH`. |
 | `invalid/path_selector_ambiguity.etcm` | Parser | `E_PARSE_SELECTOR`. |
-| `invalid/spec_ref_fragment.etcm` | Parser | `E_PARSE_UNEXPECTED_TOKEN`. |
-| `invalid/spec_inheritance_fragment.etcm` | Parser | `E_PARSE_UNEXPECTED_TOKEN`. |
 
 ## Behavior Coverage
 
 The matrix must cover these v0 behaviors before parser work starts:
 
-- exactly one inline `spec` or one top-level `$spec` per document
-- zero or more `impl` blocks per document
-- spec inheritance uses a unique path and does not require `#`
+- one or more inline `spec` blocks or one top-level `$spec` per document
+- inline `impl` blocks are owned by their containing spec
+- top-level `impl` blocks are only valid with top-level `$spec`
+- spec inheritance uses spec selectors
 - implementation inheritance uses a full selector when needed
 - `$field` refs point to implementation selectors, not arbitrary literals
 - field assignment order is deterministic

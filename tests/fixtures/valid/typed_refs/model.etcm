@@ -1,8 +1,8 @@
 spec ModelConfig:
   depth: int = 12
 
-impl tiny:
-  depth: 4
+  impl tiny:
+    depth: 4
 
-impl default:
-  depth: 12
+  impl default:
+    depth: 12

@@ -1,2 +1,2 @@
-spec B <- a.etcm:
+spec B <- a.etcm#A:
   value: int = 1

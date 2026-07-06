@@ -22,7 +22,7 @@
           "ref_target": null,
           "source_path": "valid/impl_inheritance_resolver/runtime.etcm",
           "span": {
-            "column": 3,
+            "column": 5,
             "end_column": 1,
             "end_line": 14,
             "line": 13
@@ -53,8 +53,8 @@
           "ref_target": null,
           "source_path": "valid/impl_inheritance_resolver/runtime.etcm",
           "span": {
-            "column": 3,
-            "end_column": 3,
+            "column": 5,
+            "end_column": 5,
             "end_line": 13,
             "line": 12
           },
@@ -84,8 +84,8 @@
           "ref_target": null,
           "source_path": "valid/impl_inheritance_resolver/runtime.etcm",
           "span": {
-            "column": 3,
-            "end_column": 3,
+            "column": 5,
+            "end_column": 5,
             "end_line": 12,
             "line": 11
           },
@@ -106,7 +106,7 @@
           "source_path": "valid/impl_inheritance_resolver/runtime.etcm",
           "span": {
             "column": 3,
-            "end_column": 1,
+            "end_column": 3,
             "end_line": 6,
             "line": 4
           },
@@ -177,7 +177,7 @@
       "graph_path": "root",
       "id": "root",
       "implementation": "child",
-      "selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/impl_inheritance_resolver/runtime.etcm#child",
+      "selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/impl_inheritance_resolver/runtime.etcm#Runtime:child",
       "source_path": "valid/impl_inheritance_resolver/runtime.etcm",
       "spec_ancestors": [],
       "spec_name": "Runtime",
@@ -208,7 +208,7 @@
           "source_path": "valid/impl_inheritance_resolver/runtime.etcm",
           "span": {
             "column": 3,
-            "end_column": 1,
+            "end_column": 3,
             "end_line": 6,
             "line": 4
           },
@@ -234,8 +234,8 @@
           "ref_target": null,
           "source_path": "valid/impl_inheritance_resolver/runtime.etcm",
           "span": {
-            "column": 3,
-            "end_column": 1,
+            "column": 5,
+            "end_column": 3,
             "end_line": 10,
             "line": 8
           },
@@ -260,8 +260,8 @@
           "ref_target": null,
           "source_path": "valid/impl_inheritance_resolver/runtime.etcm",
           "span": {
-            "column": 3,
-            "end_column": 3,
+            "column": 5,
+            "end_column": 5,
             "end_line": 8,
             "line": 7
           },
@@ -281,7 +281,7 @@
           "source_path": "valid/impl_inheritance_resolver/runtime.etcm",
           "span": {
             "column": 3,
-            "end_column": 1,
+            "end_column": 3,
             "end_line": 6,
             "line": 4
           },
@@ -352,7 +352,7 @@
       "graph_path": "root.__parent",
       "id": "root.__parent",
       "implementation": "base",
-      "selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/impl_inheritance_resolver/runtime.etcm#base",
+      "selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/impl_inheritance_resolver/runtime.etcm#Runtime:base",
       "source_path": "valid/impl_inheritance_resolver/runtime.etcm",
       "spec_ancestors": [],
       "spec_name": "Runtime",

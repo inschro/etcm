@@ -119,31 +119,35 @@ class _SyntaxBuilder:
 
     def spec(self, tree: Tree[Token]) -> SyntaxSpec:
         name = _required_token(tree, "NAME")
-        parent: Path | None = None
+        parent: str | None = None
         fields: list[SyntaxField] = []
+        implementations: list[SyntaxImpl] = []
 
         for child in tree.children:
             if not isinstance(child, Tree):
                 continue
             if child.data == "spec_parent":
-                parent = Path(str(_required_token(child, "PATH")))
+                parent = self._selector(str(_required_token(child, "SELECTOR")), child)
             elif child.data == "field":
                 fields.append(self.field(child))
             elif child.data == "spec_ref_field":
                 fields.append(self.spec_ref_field(child))
             elif child.data == "nested_field":
                 fields.append(self.nested_field(child))
+            elif child.data == "impl":
+                implementations.append(self.impl(child))
 
         return SyntaxSpec(
             name=str(name),
             parent=parent,
             fields=tuple(fields),
+            implementations=tuple(implementations),
             span=_span(tree, self._source_path),
         )
 
     def spec_ref(self, tree: Tree[Token]) -> SyntaxSpecRef:
         return SyntaxSpecRef(
-            path=Path(str(_required_token(tree, "PATH"))),
+            selector=self._selector(str(_required_token(tree, "SELECTOR")), tree),
             span=_span(tree, self._source_path),
         )
 
@@ -204,7 +208,7 @@ class _SyntaxBuilder:
 
     def spec_ref_field(self, tree: Tree[Token]) -> SyntaxField:
         name = str(_required_token(tree, "NAME"))
-        ref_path = Path(str(_required_token(tree, "PATH")))
+        ref_selector = self._selector(str(_required_token(tree, "SELECTOR")), tree)
         metadata: dict[str, SyntaxLiteral] = {}
         override = "allow"
 
@@ -219,7 +223,7 @@ class _SyntaxBuilder:
             name=name,
             metadata=metadata,
             override=override,
-            ref_path=ref_path,
+            ref_selector=ref_selector,
             span=_span(tree, self._source_path),
         )
 
@@ -392,14 +396,13 @@ class _SyntaxBuilder:
 
 
 def _syntax_to_ir(document: SyntaxDocument) -> Document:
-    spec = next((item for item in document.items if isinstance(item, SyntaxSpec)), None)
     spec_ref = next((item for item in document.items if isinstance(item, SyntaxSpecRef)), None)
     implementations = tuple(
         _impl_to_ir(item) for item in document.items if isinstance(item, SyntaxImpl)
     )
     return Document(
         source_path=document.source_path,
-        spec=_spec_to_ir(spec) if spec is not None else None,
+        specs=tuple(_spec_to_ir(item) for item in document.items if isinstance(item, SyntaxSpec)),
         spec_ref=_spec_ref_to_ir(spec_ref) if spec_ref is not None else None,
         implementations=implementations,
     )
@@ -408,14 +411,15 @@ def _syntax_to_ir(document: SyntaxDocument) -> Document:
 def _spec_to_ir(spec: SyntaxSpec) -> SpecDef:
     return SpecDef(
         name=spec.name,
-        parent=spec.parent,
+        parent=Selector.parse(spec.parent) if spec.parent is not None else None,
         fields=tuple(_field_to_ir(field, spec.name) for field in spec.fields),
+        implementations=tuple(_impl_to_ir(impl) for impl in spec.implementations),
         span=spec.span,
     )
 
 
 def _spec_ref_to_ir(spec_ref: SyntaxSpecRef) -> SpecRef:
-    return SpecRef(path=spec_ref.path, span=spec_ref.span)
+    return SpecRef(selector=Selector.parse(spec_ref.selector), span=spec_ref.span)
 
 
 def _field_to_ir(field: SyntaxField, owner_name: str) -> FieldDef:
@@ -423,7 +427,7 @@ def _field_to_ir(field: SyntaxField, owner_name: str) -> FieldDef:
         TypeExpr(kind="named", name=_nested_type_name(owner_name, field.name))
         if field.fields
         else TypeExpr(kind="named", name="__ref__")
-        if field.ref_path is not None
+        if field.ref_selector is not None
         else _type_to_ir(_required_type_expr(field))
     )
     return FieldDef(
@@ -432,7 +436,7 @@ def _field_to_ir(field: SyntaxField, owner_name: str) -> FieldDef:
         default=_literal_to_ir(field.default) if field.default is not None else None,
         metadata={key: _literal_to_ir(value) for key, value in field.metadata.items()},
         override=field.override,
-        ref_path=field.ref_path,
+        ref_selector=Selector.parse(field.ref_selector) if field.ref_selector is not None else None,
         fields=tuple(_field_to_ir(child, str(type_expr.name)) for child in field.fields),
         span=field.span,
     )
@@ -509,13 +513,25 @@ def _validate_document(document: SyntaxDocument) -> None:
     specs = [item for item in document.items if isinstance(item, SyntaxSpec)]
     spec_refs = [item for item in document.items if isinstance(item, SyntaxSpecRef)]
 
-    if len(specs) > 1:
+    seen_specs: dict[str, SyntaxSpec] = {}
+    for spec in specs:
+        previous = seen_specs.get(spec.name)
+        if previous is not None:
+            _raise(
+                "E_DUPLICATE_SPEC",
+                f"Duplicate spec definition '{spec.name}'.",
+                document.source_path,
+                spec.span,
+                details={"previous": previous.name},
+            )
+        seen_specs[spec.name] = spec
+
+    if specs and any(isinstance(item, SyntaxImpl) for item in document.items):
         _raise(
-            "E_DUPLICATE_SPEC",
-            f"Duplicate spec definition '{specs[1].name}'.",
+            "E_DUPLICATE_IMPL",
+            "Top-level implementations require top-level $spec.",
             document.source_path,
-            specs[1].span,
-            details={"previous": specs[0].name},
+            next(item.span for item in document.items if isinstance(item, SyntaxImpl)),
         )
 
     if specs and spec_refs:
@@ -529,6 +545,7 @@ def _validate_document(document: SyntaxDocument) -> None:
 
     for spec in specs:
         _validate_fields(document.source_path, spec)
+        _validate_impl_group(document.source_path, spec.implementations)
 
     _validate_implementations(document)
 
@@ -561,14 +578,22 @@ def _validate_field_group(
 
 
 def _validate_implementations(document: SyntaxDocument) -> None:
+    if any(isinstance(item, SyntaxSpecRef) for item in document.items):
+        _validate_impl_group(
+            document.source_path,
+            tuple(item for item in document.items if isinstance(item, SyntaxImpl)),
+        )
+
+
+def _validate_impl_group(source_path: Path, implementations: tuple[SyntaxImpl, ...]) -> None:
     seen: dict[str, SyntaxImpl] = {}
-    for impl in (item for item in document.items if isinstance(item, SyntaxImpl)):
+    for impl in implementations:
         previous = seen.get(impl.name)
         if previous is not None:
             _raise(
                 "E_DUPLICATE_IMPL",
                 f"Duplicate implementation '{impl.name}'.",
-                document.source_path,
+                source_path,
                 impl.span,
                 details={
                     "previous_line": previous.span.line if previous.span is not None else None

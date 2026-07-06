@@ -5,11 +5,11 @@ The public API is an orthogonal pipeline:
 ```python
 from etcm import convert, load, resolve, validate
 
-graph = resolve("configs/train.etcm#smoke")
+graph = resolve("configs/train.etcm#TrainRun:smoke")
 graph = validate(graph)
 cfg = convert(graph, target="pydantic")
 
-cfg = load("configs/train.etcm#smoke", target="pydantic")
+cfg = load("configs/train.etcm#TrainRun:smoke", target="pydantic")
 ```
 
 `load()` is the main ergonomic API for application code. It orchestrates:
