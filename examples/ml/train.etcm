@@ -1,8 +1,8 @@
 spec TrainRun:
-  model: ModelConfig
-  runtime: RuntimeConfig
-  max_steps: int = Field(gt=0)
-  run_name: str = Field(default="smoke")
+  $model: model.etcm
+  $runtime: runtime.etcm
+  max_steps: int [>0]
+  run_name: str = "smoke"
 
 impl smoke:
   $model: model.etcm#tiny

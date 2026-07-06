@@ -1,7 +1,7 @@
 spec RuntimeConfig:
-  accelerator: str = Field(default="cpu", choices=["cpu", "cuda"])
-  devices: int = Field(default=1, gt=0)
-  checkpoint_dir: Path = Field(path_exists="allow_missing", path_kind="dir")
+  accelerator: str = "cpu" [in ["cpu", "cuda"]]
+  devices: int = 1 [>0]
+  checkpoint_dir: Path [path_exists="allow_missing"; path_kind="dir"]
 
 impl local:
   accelerator: "cpu"

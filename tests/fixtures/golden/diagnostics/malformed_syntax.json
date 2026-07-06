@@ -2,6 +2,7 @@
   "code": "E_PARSE_UNEXPECTED_TOKEN",
   "details": {
     "expected": [
+      "META_LSQB",
       "NAME",
       "_NL"
     ]

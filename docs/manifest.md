@@ -36,10 +36,10 @@ with top-level `$spec`. It may define zero or more implementations of that spec.
 
 ```etcm
 spec ResNetConfig:
-  depth: int = Field(required=true, choices=[18, 34, 50, 101])
-  width: int = Field(default=64, gt=0)
-  pretrained: bool = Field(default=false)
-  norm: str = Field(default="batch", choices=["batch", "layer", "group"])
+  depth: int [in [18, 34, 50, 101]]
+  width: int = 64 [>0]
+  pretrained: bool = false
+  norm: str = "batch" [in ["batch", "layer", "group"]]
 
 impl resnet_18:
   depth: 18
@@ -72,15 +72,15 @@ inherits from `LRScheduler`.
 ```etcm
 # schedulers/base.etcm
 spec LRScheduler:
-  warmup_steps: int = Field(default=0, ge=0)
-  interval: str = Field(default="step", choices=["step", "epoch"])
+  warmup_steps: int = 0 [>=0]
+  interval: str = "step" [in ["step", "epoch"]]
 ```
 
 ```etcm
 # schedulers/cosine.etcm
 spec CosineLRScheduler <- schedulers/base.etcm:
-  min_lr_ratio: float = Field(default=0.0, ge=0.0, le=1.0)
-  cycles: float = Field(default=0.5, gt=0.0)
+  min_lr_ratio: float = 0.0 [>=0.0; <=1.0]
+  cycles: float = 0.5 [>0.0]
 
 impl default:
   warmup_steps: 1000
@@ -147,7 +147,7 @@ typed relationship, not a raw include.
 spec TrainConfig:
   model: ResNetConfig
   scheduler: LRScheduler
-  epochs: int = Field(default=90, gt=0)
+  epochs: int = 90 [>0]
 
 impl imagenet:
   $model: models/resnet.etcm#resnet_50
@@ -172,10 +172,10 @@ Validation is a first-class language feature.
 
 ```etcm
 spec TrainingConfig:
-  max_steps: int = Field(required=true, gt=0)
-  lr: float = Field(default=3e-4, gt=0.0)
-  optimizer: str = Field(default="adamw", choices=["adamw", "sgd"])
-  dataset_path: Path = Field(path_exists="must_exist", path_kind="file")
+  max_steps: int [>0]
+  lr: float = 3e-4 [>0.0]
+  optimizer: str = "adamw" [in ["adamw", "sgd"]]
+  dataset_path: Path [path_exists="must_exist"; path_kind="file"]
 ```
 
 V0 field metadata:
@@ -198,9 +198,9 @@ V0 field metadata:
 
 ```etcm
 spec DataConfig:
-  input_path: Path = Field(path_exists="must_exist", path_kind="file")
-  output_dir: Path = Field(path_exists="allow_missing", path_kind="dir")
-  cache_path: Path = Field(path_exists="resolver")
+  input_path: Path [path_exists="must_exist"; path_kind="file"]
+  output_dir: Path [path_exists="allow_missing"; path_kind="dir"]
+  cache_path: Path [path_exists="resolver"]
 ```
 
 Path values are resolved relative to the file where the value is declared. A
@@ -241,10 +241,10 @@ Override behavior is part of the spec.
 
 ```etcm
 spec RuntimeConfig:
-  device: str = Field(default="auto", choices=["auto", "cpu", "cuda"])
-  seed: int = Field(default=0, override="deny")
-  tags: list[str] = Field(default=[], override="append")
-  metadata: dict[str, str] = Field(default={}, override="merge")
+  device: str = "auto" [in ["auto", "cpu", "cuda"]]
+  seed: int = 0 [override="deny"]
+  tags: list[str] = [] [override="append"]
+  metadata: dict[str, str] = {} [override="merge"]
 ```
 
 V0 policies:

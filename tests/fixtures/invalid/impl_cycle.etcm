@@ -1,5 +1,5 @@
 spec Loop:
-  value: int = Field(default=1)
+  value: int = 1
 
 impl a <- b:
   value: 1

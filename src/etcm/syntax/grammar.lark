@@ -4,7 +4,7 @@ start: _NL* (item _NL*)+
 
 spec: "spec" NAME spec_parent? ":" _NL _INDENT spec_line* _DEDENT
 spec_parent: "<-" PATH
-?spec_line: field | _NL
+?spec_line: spec_ref_field | nested_field | field | _NL
 
 spec_ref: "$spec" ":" PATH _NL
 
@@ -17,8 +17,14 @@ ref_assignment: "$" NAME ":" SELECTOR _NL
 value_assignment: field_path ":" value _NL
 field_path: NAME ("." NAME)*
 
-field: NAME ":" type_expr field_meta? _NL
-field_meta: "=" "Field" LPAR [meta_pair ("," meta_pair)* ","?] RPAR
+spec_ref_field: "$" NAME ":" PATH field_meta? _NL
+nested_field: NAME ":" field_meta? _NL _INDENT spec_line* _DEDENT
+field: NAME ":" type_expr field_default? field_meta? _NL
+field_default: "=" value
+field_meta: META_LSQB [constraint (SEMICOLON constraint)* SEMICOLON?] RSQB
+?constraint: comparison_constraint | in_constraint | meta_pair
+comparison_constraint: COMPARE value
+in_constraint: "in" value
 meta_pair: NAME "=" value
 
 ?type_expr: union_type
@@ -46,6 +52,9 @@ LSQB: "["
 RSQB: "]"
 LBRACE: "{"
 RBRACE: "}"
+META_LSQB.2: /\[(?=\s*(?:[><!]|in\b|[A-Za-z_][A-Za-z0-9_]*\s*=))/
+SEMICOLON: ";"
+COMPARE: ">=" | "<=" | "!=" | ">" | "<"
 PATH: /[A-Za-z0-9_\.\/-]+/
 SELECTOR: /[A-Za-z0-9_\.\/-]+#[A-Za-z_][A-Za-z0-9_]*/ | /[A-Za-z0-9_\.\/-]+#/ | /[A-Za-z0-9_\.\/-]+/
 

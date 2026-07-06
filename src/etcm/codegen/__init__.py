@@ -50,6 +50,10 @@ class _Materializer:
         for edge in graph.edges:
             if edge.kind == "ref" and len(edge.field_path) == 1:
                 self._ref_targets[(edge.source, edge.field_path[0])] = edge.target
+        for node in graph.nodes:
+            for field_name, value in node.field_values.items():
+                if value.ref_target is not None:
+                    self._ref_targets[(node.id, field_name)] = value.ref_target
         self._class_names = self._class_name_map()
         self._dataclass_types: dict[str, type[Any]] = {}
         self._pydantic_types: dict[str, type[Any]] = {}

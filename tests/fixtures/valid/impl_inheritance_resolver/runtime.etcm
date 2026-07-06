@@ -1,7 +1,7 @@
 spec Runtime:
-  tags: list[str] = Field(default=[], override="append")
-  metadata: dict[str, str] = Field(default={}, override="merge")
-  device: str = Field(default="cpu", override="allow")
+  tags: list[str] = [] [override="append"]
+  metadata: dict[str, str] = {} [override="merge"]
+  device: str = "cpu" [override="allow"]
 
 impl base:
   tags: ["base"]

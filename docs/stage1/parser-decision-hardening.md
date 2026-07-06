@@ -46,7 +46,7 @@ Interpretation:
 Stage 2 gate:
 
 - Do not finalize Lark until fixture tests cover blank lines, comments,
-  indentation, nested literals, selector paths, `Field(...)`, and malformed
+  indentation, nested literals, selector paths, bracket metadata, and malformed
   indentation.
 
 ## pyparsing Alternative Smoke Test

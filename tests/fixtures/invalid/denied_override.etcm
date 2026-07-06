@@ -1,5 +1,5 @@
 spec Runtime:
-  seed: int = Field(default=0, override="deny")
+  seed: int = 0 [override="deny"]
 
 impl base:
   seed: 1

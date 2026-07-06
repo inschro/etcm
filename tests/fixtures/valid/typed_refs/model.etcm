@@ -1,5 +1,5 @@
 spec ModelConfig:
-  depth: int = Field(default=12)
+  depth: int = 12
 
 impl tiny:
   depth: 4

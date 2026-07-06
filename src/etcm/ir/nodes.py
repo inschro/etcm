@@ -72,6 +72,8 @@ class FieldDef:
     default: LiteralValue | None = None
     metadata: Mapping[str, LiteralValue] = field(default_factory=dict)
     override: str = "allow"
+    ref_path: Path | None = None
+    fields: tuple[FieldDef, ...] = ()
     span: SourceSpan | None = None
 
     def __post_init__(self) -> None:

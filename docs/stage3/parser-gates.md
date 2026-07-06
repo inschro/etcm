@@ -27,7 +27,7 @@ Stage 4 parser work should implement:
 - literal assignments
 - `$field` reference assignments
 - type expressions
-- `Field(...)` metadata
+- direct defaults and bracket metadata
 - comments and blank lines
 - source spans for definitions, assignments, refs, and literals
 

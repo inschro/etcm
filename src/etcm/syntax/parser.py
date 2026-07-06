@@ -46,7 +46,7 @@ class ETCMIndenter(Indenter):
 
     @property
     def OPEN_PAREN_types(self) -> list[str]:
-        return ["LPAR", "LSQB", "LBRACE"]
+        return ["LPAR", "LSQB", "META_LSQB", "LBRACE"]
 
     @property
     def CLOSE_PAREN_types(self) -> list[str]:
@@ -129,6 +129,10 @@ class _SyntaxBuilder:
                 parent = Path(str(_required_token(child, "PATH")))
             elif child.data == "field":
                 fields.append(self.field(child))
+            elif child.data == "spec_ref_field":
+                fields.append(self.spec_ref_field(child))
+            elif child.data == "nested_field":
+                fields.append(self.nested_field(child))
 
         return SyntaxSpec(
             name=str(name),
@@ -177,9 +181,10 @@ class _SyntaxBuilder:
                 continue
             if child.data in {"union_type", "generic_type", "named_type"}:
                 type_expr = self.type_expr(child)
+            elif child.data == "field_default":
+                default = self.literal(_required_tree(child))
             elif child.data == "field_meta":
                 meta = self.field_meta(child)
-                default = meta.pop("default", None)
                 override_literal = meta.pop("override", None)
                 if override_literal is not None:
                     override = str(override_literal.value)
@@ -197,13 +202,70 @@ class _SyntaxBuilder:
             span=_span(tree, self._source_path),
         )
 
+    def spec_ref_field(self, tree: Tree[Token]) -> SyntaxField:
+        name = str(_required_token(tree, "NAME"))
+        ref_path = Path(str(_required_token(tree, "PATH")))
+        metadata: dict[str, SyntaxLiteral] = {}
+        override = "allow"
+
+        for child in tree.children:
+            if isinstance(child, Tree) and child.data == "field_meta":
+                metadata = self.field_meta(child)
+                override_literal = metadata.pop("override", None)
+                if override_literal is not None:
+                    override = str(override_literal.value)
+
+        return SyntaxField(
+            name=name,
+            metadata=metadata,
+            override=override,
+            ref_path=ref_path,
+            span=_span(tree, self._source_path),
+        )
+
+    def nested_field(self, tree: Tree[Token]) -> SyntaxField:
+        name = str(_required_token(tree, "NAME"))
+        metadata: dict[str, SyntaxLiteral] = {}
+        override = "allow"
+        fields: list[SyntaxField] = []
+
+        for child in tree.children:
+            if not isinstance(child, Tree):
+                continue
+            if child.data == "field_meta":
+                metadata = self.field_meta(child)
+                override_literal = metadata.pop("override", None)
+                if override_literal is not None:
+                    override = str(override_literal.value)
+            elif child.data == "field":
+                fields.append(self.field(child))
+            elif child.data == "spec_ref_field":
+                fields.append(self.spec_ref_field(child))
+            elif child.data == "nested_field":
+                fields.append(self.nested_field(child))
+
+        return SyntaxField(
+            name=name,
+            metadata=metadata,
+            override=override,
+            fields=tuple(fields),
+            span=_span(tree, self._source_path),
+        )
+
     def field_meta(self, tree: Tree[Token]) -> dict[str, SyntaxLiteral]:
         metadata: dict[str, SyntaxLiteral] = {}
         for child in tree.children:
-            if isinstance(child, Tree) and child.data == "meta_pair":
-                key = str(_required_token(child, "NAME"))
-                value_tree = _required_tree(child)
-                metadata[key] = self.literal(value_tree)
+            if not isinstance(child, Tree):
+                continue
+            if child.data == "meta_pair":
+                metadata[str(_required_token(child, "NAME"))] = self.literal(
+                    _required_tree(child)
+                )
+            elif child.data == "comparison_constraint":
+                key = _comparison_key(str(_required_token(child, "COMPARE")))
+                metadata[key] = self.literal(_required_tree(child))
+            elif child.data == "in_constraint":
+                metadata["choices"] = self.literal(_required_tree(child))
         return metadata
 
     def value_assignment(self, tree: Tree[Token]) -> SyntaxAssignment:
@@ -347,7 +409,7 @@ def _spec_to_ir(spec: SyntaxSpec) -> SpecDef:
     return SpecDef(
         name=spec.name,
         parent=spec.parent,
-        fields=tuple(_field_to_ir(field) for field in spec.fields),
+        fields=tuple(_field_to_ir(field, spec.name) for field in spec.fields),
         span=spec.span,
     )
 
@@ -356,13 +418,22 @@ def _spec_ref_to_ir(spec_ref: SyntaxSpecRef) -> SpecRef:
     return SpecRef(path=spec_ref.path, span=spec_ref.span)
 
 
-def _field_to_ir(field: SyntaxField) -> FieldDef:
+def _field_to_ir(field: SyntaxField, owner_name: str) -> FieldDef:
+    type_expr = (
+        TypeExpr(kind="named", name=_nested_type_name(owner_name, field.name))
+        if field.fields
+        else TypeExpr(kind="named", name="__ref__")
+        if field.ref_path is not None
+        else _type_to_ir(_required_type_expr(field))
+    )
     return FieldDef(
         name=field.name,
-        type_expr=_type_to_ir(field.type_expr),
+        type_expr=type_expr,
         default=_literal_to_ir(field.default) if field.default is not None else None,
         metadata={key: _literal_to_ir(value) for key, value in field.metadata.items()},
         override=field.override,
+        ref_path=field.ref_path,
+        fields=tuple(_field_to_ir(child, str(type_expr.name)) for child in field.fields),
         span=field.span,
     )
 
@@ -398,6 +469,26 @@ def _type_to_ir(type_expr: SyntaxTypeExpr) -> TypeExpr:
         name=type_expr.name,
         args=tuple(_type_to_ir(arg) for arg in type_expr.args),
     )
+
+
+def _required_type_expr(field: SyntaxField) -> SyntaxTypeExpr:
+    if field.type_expr is None:
+        raise AssertionError(f"field '{field.name}' is missing type expression")
+    return field.type_expr
+
+
+def _nested_type_name(owner_name: str, field_name: str) -> str:
+    return f"{owner_name}_{field_name}"
+
+
+def _comparison_key(operator: str) -> str:
+    return {
+        ">": "gt",
+        ">=": "ge",
+        "<": "lt",
+        "<=": "le",
+        "!=": "ne",
+    }[operator]
 
 
 def _literal_to_ir(literal: SyntaxLiteral) -> LiteralValue:
@@ -443,13 +534,21 @@ def _validate_document(document: SyntaxDocument) -> None:
 
 
 def _validate_fields(source_path: Path, spec: SyntaxSpec) -> None:
+    _validate_field_group(source_path, spec.name, spec.fields)
+
+
+def _validate_field_group(
+    source_path: Path,
+    owner_name: str,
+    fields: tuple[SyntaxField, ...],
+) -> None:
     seen: dict[str, SyntaxField] = {}
-    for field in spec.fields:
+    for field in fields:
         previous = seen.get(field.name)
         if previous is not None:
             _raise(
                 "E_DUPLICATE_FIELD",
-                f"Duplicate field '{field.name}' in spec '{spec.name}'.",
+                f"Duplicate field '{field.name}' in spec '{owner_name}'.",
                 source_path,
                 field.span,
                 details={
@@ -457,6 +556,8 @@ def _validate_fields(source_path: Path, spec: SyntaxSpec) -> None:
                 },
             )
         seen[field.name] = field
+        if field.fields:
+            _validate_field_group(source_path, f"{owner_name}.{field.name}", field.fields)
 
 
 def _validate_implementations(document: SyntaxDocument) -> None:

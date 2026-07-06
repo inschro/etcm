@@ -88,9 +88,9 @@ spec TrainRun:
   model: LMConfig
   data: DataStream
   optimizer: Optimizer
-  scheduler: LRScheduler | null = Field(default=null)
+  scheduler: LRScheduler | null = null
   runtime: Runtime
-  max_steps: int = Field(gt=0)
+  max_steps: int [>0]
 
 impl smoke:
   $model: models/lm.etcm#tiny
@@ -113,7 +113,7 @@ Why ETCM helps:
 spec Sweep:
   target: TrainRun
   metric: str
-  method: str = Field(choices=["grid", "random", "bayes"])
+  method: str [in ["grid", "random", "bayes"]]
   parameters: dict[str, SweepParameter]
 
 impl lr_search:
@@ -132,11 +132,11 @@ implementation, and parameter paths must be validated against the target graph.
 
 ```etcm
 spec Runtime:
-  launcher: str = Field(choices=["local", "torchrun", "slurm"])
-  device: str = Field(choices=["auto", "cpu", "cuda"])
-  nodes: int = Field(default=1, gt=0)
-  gpus_per_node: int = Field(default=1, ge=0)
-  account: str | null = Field(default=null, override="deny")
+  launcher: str [in ["local", "torchrun", "slurm"]]
+  device: str [in ["auto", "cpu", "cuda"]]
+  nodes: int = 1 [>0]
+  gpus_per_node: int = 1 [>=0]
+  account: str | null = null [override="deny"]
 
 impl slurm_a100:
   launcher: "slurm"
@@ -155,10 +155,10 @@ Why ETCM helps:
 
 ```etcm
 spec ServiceSettings:
-  environment: str = Field(choices=["dev", "staging", "prod"])
+  environment: str [in ["dev", "staging", "prod"]]
   api_base_url: str
-  timeout_seconds: float = Field(default=30.0, gt=0.0)
-  credentials_ref: str = Field(override="deny")
+  timeout_seconds: float = 30.0 [>0.0]
+  credentials_ref: str [override="deny"]
 
 impl prod:
   environment: "prod"
@@ -173,9 +173,9 @@ secret providers.
 
 ```etcm
 spec DataConfig:
-  train_file: Path = Field(path_exists="must_exist", path_kind="file")
-  output_dir: Path = Field(path_exists="allow_missing", path_kind="dir")
-  cache_dir: Path = Field(path_exists="resolver", path_kind="dir")
+  train_file: Path [path_exists="must_exist"; path_kind="file"]
+  output_dir: Path [path_exists="allow_missing"; path_kind="dir"]
+  cache_dir: Path [path_exists="resolver"; path_kind="dir"]
 ```
 
 Why ETCM helps:

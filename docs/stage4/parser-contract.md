@@ -22,7 +22,7 @@ from etcm.syntax import parse_document, parse_file, parse_syntax
 - `impl` blocks
 - spec inheritance by fragment-free path
 - implementation inheritance by selector
-- field declarations with type expressions and `Field(...)` metadata
+- field declarations with type expressions, direct defaults, and bracket metadata
 - literal assignments
 - `$field` reference assignments
 - inline strings, numbers, booleans, nulls, lists, and mappings

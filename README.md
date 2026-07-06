@@ -32,7 +32,7 @@ spec TrainRun:
   model: LMConfig
   data: DataStream
   optimizer: Optimizer
-  max_steps: int = Field(gt=0)
+  max_steps: int [>0]
 
 impl smoke:
   $model: models/lm.etcm#tiny

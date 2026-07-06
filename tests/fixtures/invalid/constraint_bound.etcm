@@ -1,5 +1,5 @@
 spec Train:
-  epochs: int = Field(gt=0)
+  epochs: int [>0]
 
 impl default:
   epochs: 0

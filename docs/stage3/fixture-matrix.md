@@ -21,7 +21,7 @@ Fixture paths are relative to `tests/fixtures/`.
 | Fixture | First layer | Purpose |
 | --- | --- | --- |
 | `valid/inline_spec.etcm` | Parser | Inline `spec` with a minimal `impl`. Already present from Stage 2. |
-| `valid/inline_spec_with_defaults.etcm` | Parser | Field defaults, `Field(...)` metadata, and override policy metadata. |
+| `valid/inline_spec_with_defaults.etcm` | Parser | Field defaults, bracket metadata, and override policy metadata. |
 | `valid/spec_ref_impls.etcm` | Parser | Top-level `$spec` with local implementations. Already present from Stage 2. |
 | `valid/spec_inheritance.etcm` | Parser | Spec inheritance by unique spec path without a fragment. |
 | `valid/impl_inheritance.etcm` | Parser | Implementation inheritance by selector with `#impl`. |

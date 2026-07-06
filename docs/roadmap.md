@@ -153,7 +153,7 @@ The Stage 4 parser core notes live in [stage4/](stage4/).
 Parser requirements:
 
 - parse `spec`, top-level `$spec`, `impl`, field declarations, refs, inheritance,
-  literals, type expressions, and `Field(...)` metadata
+  literals, type expressions, direct defaults, and bracket metadata
 - preserve source location for every definition, assignment, ref, and literal
 - support YAML-style `#` comments and trailing commas where specified by the
   grammar decision

@@ -19,8 +19,8 @@ tests/fixtures/
 
 ```etcm
 spec DataConfig:
-  train_file: Path = Field(path_exists="must_exist", path_kind="file")
-  retries: int = Field(default=2, gt=0)
+  train_file: Path [path_exists="must_exist"; path_kind="file"]
+  retries: int = 2 [>0]
 
 impl smoke:
   train_file: "data/smoke.txt"

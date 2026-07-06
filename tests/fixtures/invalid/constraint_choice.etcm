@@ -1,5 +1,5 @@
 spec Runtime:
-  device: str = Field(choices=["cpu", "cuda"])
+  device: str [in ["cpu", "cuda"]]
 
 impl default:
   device: "tpu"

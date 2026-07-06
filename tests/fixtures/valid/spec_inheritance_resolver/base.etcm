@@ -1,2 +1,2 @@
 spec Runtime:
-  device: str = Field(default="cpu")
+  device: str = "cpu"

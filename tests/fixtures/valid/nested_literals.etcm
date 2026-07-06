@@ -1,9 +1,9 @@
 spec SweepConfig:
-  method: str = Field(choices=["grid", "random"])
+  method: str [in ["grid", "random"]]
   values: list[float]
   metadata: dict[str, str]
-  enabled: bool = Field(default=true)
-  maybe: null = Field(default=null)
+  enabled: bool = true
+  maybe: null = null
 
 impl lr_search:
   method: "random"

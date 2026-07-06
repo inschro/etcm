@@ -1,8 +1,8 @@
 spec RuntimeConfig:
-  device: str = Field(default="auto", choices=["auto", "cpu", "cuda"])
-  seed: int = Field(default=0, override="deny")
-  tags: list[str] = Field(default=[], override="append")
-  metadata: dict[str, str] = Field(default={}, override="merge")
+  device: str = "auto" [in ["auto", "cpu", "cuda"]]
+  seed: int = 0 [override="deny"]
+  tags: list[str] = [] [override="append"]
+  metadata: dict[str, str] = {} [override="merge"]
 
 impl default:
   device: "cpu"

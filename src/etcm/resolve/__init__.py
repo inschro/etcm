@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from dataclasses import field as dataclass_field
 from pathlib import Path
 from types import MappingProxyType
@@ -75,6 +75,11 @@ class _GraphBuilder:
             path_resolution=tuple(self.paths),
             validated=False,
         )
+
+
+def _add_edge(builder: _GraphBuilder, edge: ResolvedEdge) -> None:
+    if edge not in builder.edges:
+        builder.edges.append(edge)
 
 
 @dataclass(frozen=True)
@@ -182,6 +187,7 @@ class _ResolverState:
         for assignment in impl.assignments:
             field_name = self._assignment_field_name(assignment)
             field = self._field(spec, field_name, assignment.span)
+            previous = values.get(field_name)
             new_value = self._assignment_value(
                 assignment=assignment,
                 field=field,
@@ -190,6 +196,7 @@ class _ResolverState:
                 builder=builder,
                 impl_stack=next_impl_stack,
                 ref_stack=ref_stack,
+                previous_value=previous,
             )
             values = self._apply_value(
                 values=values,
@@ -227,8 +234,18 @@ class _ResolverState:
         builder: _GraphBuilder,
         impl_stack: tuple[tuple[Path, str], ...],
         ref_stack: tuple[tuple[Path, str], ...],
+        previous_value: ResolvedValue | None,
     ) -> ResolvedValue:
         if isinstance(assignment, RefAssignment):
+            if field.fields:
+                _raise(
+                    "E_TYPE_MISMATCH",
+                    f"Nested field '{field.name}' cannot be assigned with a reference.",
+                    source_path=source_path,
+                    span=assignment.span,
+                    graph_path=graph_path,
+                    details={"field": field.name},
+                )
             child_selector = self._selector_from_ir(assignment.selector, source_path)
             child = self._resolve_node(
                 selector=child_selector,
@@ -239,7 +256,10 @@ class _ResolverState:
                 cycle_code="E_REF_CYCLE",
             )
             source_node_id = graph_path.rsplit(".", 1)[0] if "." in graph_path else "root"
-            builder.edges.append(ResolvedEdge("ref", source_node_id, child.node_id, (field.name,)))
+            _add_edge(
+                builder,
+                ResolvedEdge("ref", source_node_id, child.node_id, (field.name,)),
+            )
             return ResolvedValue(
                 value={"$ref": child.node_id},
                 source_path=source_path,
@@ -249,12 +269,54 @@ class _ResolverState:
             )
 
         if len(assignment.field_path) != 1:
+            if not field.fields:
+                _raise(
+                    "E_TYPE_MISMATCH",
+                    "Nested assignment paths are only valid for inline nested spec fields.",
+                    source_path=source_path,
+                    span=assignment.span,
+                    graph_path=graph_path,
+                )
+            child = self._resolve_inline_node(
+                field=field,
+                source_path=source_path,
+                graph_path=graph_path,
+                builder=builder,
+                assignments=(
+                    Assignment(
+                        field_path=assignment.field_path[1:],
+                        value=assignment.value,
+                        span=assignment.span,
+                    ),
+                ),
+                base_node=self._node_from_value(previous_value, builder),
+                base_as_parent=previous_value.origin == "parent"
+                if previous_value is not None
+                else False,
+                impl_stack=impl_stack,
+                ref_stack=ref_stack,
+            )
+            source_node_id = graph_path.rsplit(".", 1)[0] if "." in graph_path else "root"
+            _add_edge(
+                builder,
+                ResolvedEdge("ref", source_node_id, child.node_id, (field.name,)),
+            )
+            return ResolvedValue(
+                value={"$ref": child.node_id},
+                source_path=source_path,
+                span=assignment.span,
+                origin="local",
+                ref_target=child.node_id,
+            )
+
+        if field.fields:
             _raise(
                 "E_TYPE_MISMATCH",
-                "Nested assignment paths are not supported in Stage 6.",
+                f"Nested field '{field.name}' requires a child assignment path.",
                 source_path=source_path,
                 span=assignment.span,
                 graph_path=graph_path,
+                details={"field": field.name},
             )
         value = self._materialize_literal(
             literal=assignment.value,
@@ -272,6 +334,75 @@ class _ResolverState:
             origin="local",
             literal=assignment.value,
         )
+
+    def _resolve_inline_node(
+        self,
+        *,
+        field: FieldDef,
+        source_path: Path,
+        graph_path: str,
+        builder: _GraphBuilder,
+        assignments: tuple[Assignment | RefAssignment, ...],
+        base_node: ResolvedNode | None,
+        base_as_parent: bool,
+        impl_stack: tuple[tuple[Path, str], ...],
+        ref_stack: tuple[tuple[Path, str], ...],
+    ) -> _NodeResult:
+        spec = _ResolvedSpec(
+            name=str(field.type_expr.name),
+            source_path=_field_source_path(field, source_path),
+            fields={child.name: child for child in field.fields},
+        )
+        if base_node is None:
+            values = self._default_values(spec, builder, graph_path)
+        elif base_as_parent:
+            values = {name: value.as_parent() for name, value in base_node.field_values.items()}
+        else:
+            values = dict(base_node.field_values)
+
+        for assignment in assignments:
+            field_name = self._assignment_field_name(assignment)
+            child_field = self._field(spec, field_name, assignment.span)
+            previous = values.get(field_name)
+            new_value = self._assignment_value(
+                assignment=assignment,
+                field=child_field,
+                source_path=source_path,
+                graph_path=f"{graph_path}.{field_name}",
+                builder=builder,
+                impl_stack=impl_stack,
+                ref_stack=ref_stack,
+                previous_value=previous,
+            )
+            values = self._apply_value(
+                values=values,
+                field=child_field,
+                field_name=field_name,
+                new_value=new_value,
+            )
+
+        builder.nodes[graph_path] = ResolvedNode(
+            id=graph_path,
+            selector=graph_path,
+            spec_name=spec.name,
+            spec_ancestors=spec.ancestors,
+            implementation="inline",
+            source_path=spec.source_path,
+            graph_path=graph_path,
+            fields={name: self._field_schema(child) for name, child in spec.fields.items()},
+            field_values=values,
+            values={name: value.value for name, value in values.items()},
+        )
+        return _NodeResult(node_id=graph_path, spec=spec, values=values)
+
+    def _node_from_value(
+        self,
+        value: ResolvedValue | None,
+        builder: _GraphBuilder,
+    ) -> ResolvedNode | None:
+        if value is None or value.ref_target is None:
+            return None
+        return builder.nodes.get(value.ref_target)
 
     def _apply_value(
         self,
@@ -351,7 +482,12 @@ class _ResolverState:
             fields.update(parent.fields)
             ancestors = (parent.name, *parent.ancestors)
 
-        for field_def in document.spec.fields:
+        for raw_field_def in document.spec.fields:
+            field_def = self._resolve_field_def(
+                raw_field_def,
+                source_path=source_path,
+                stack=stack,
+            )
             if field_def.name in fields:
                 _raise(
                     "E_TYPE_MISMATCH",
@@ -371,6 +507,29 @@ class _ResolverState:
         self._specs[source_path] = spec
         return spec
 
+    def _resolve_field_def(
+        self,
+        field: FieldDef,
+        *,
+        source_path: Path,
+        stack: tuple[Path, ...],
+    ) -> FieldDef:
+        if field.ref_path is not None:
+            ref_path = self._resolve_path(field.ref_path, source_path.parent)
+            target = self._resolve_spec(ref_path, (*stack, source_path))
+            return replace(field, type_expr=TypeExpr(kind="named", name=target.name))
+
+        if field.fields:
+            return replace(
+                field,
+                fields=tuple(
+                    self._resolve_field_def(child, source_path=source_path, stack=stack)
+                    for child in field.fields
+                ),
+            )
+
+        return field
+
     def _default_values(
         self,
         spec: _ResolvedSpec,
@@ -379,6 +538,27 @@ class _ResolverState:
     ) -> dict[str, ResolvedValue]:
         values: dict[str, ResolvedValue] = {}
         for name, field_def in spec.fields.items():
+            if field_def.fields:
+                child = self._resolve_inline_node(
+                    field=field_def,
+                    source_path=spec.source_path,
+                    graph_path=f"{graph_path}.{name}",
+                    builder=builder,
+                    assignments=(),
+                    base_node=None,
+                    base_as_parent=False,
+                    impl_stack=(),
+                    ref_stack=(),
+                )
+                _add_edge(builder, ResolvedEdge("ref", graph_path, child.node_id, (name,)))
+                values[name] = ResolvedValue(
+                    value={"$ref": child.node_id},
+                    source_path=_field_source_path(field_def, spec.source_path),
+                    origin="default",
+                    span=field_def.span,
+                    ref_target=child.node_id,
+                )
+                continue
             if field_def.default is None:
                 continue
             source_path = (
@@ -696,6 +876,8 @@ def _validate_constraints(field: ResolvedField, value: ResolvedValue, graph_path
             _validate_choices(field, value, constraint, graph_path)
         elif name in {"gt", "ge", "lt", "le"}:
             _validate_numeric_bound(field, value, name, constraint, graph_path)
+        elif name == "ne":
+            _validate_not_equal(field, value, constraint, graph_path)
         elif name in {"min_length", "max_length"}:
             _validate_length_bound(field, value, name, constraint, graph_path)
         elif name == "regex":
@@ -733,6 +915,16 @@ def _validate_numeric_bound(
     )
     if not ok:
         _constraint_failed(field, value, name, bound, graph_path)
+
+
+def _validate_not_equal(
+    field: ResolvedField,
+    value: ResolvedValue,
+    forbidden: object,
+    graph_path: str,
+) -> None:
+    if value.value == forbidden:
+        _constraint_failed(field, value, "ne", forbidden, graph_path)
 
 
 def _validate_length_bound(
@@ -846,6 +1038,12 @@ def _selector_text(source_path: Path, implementation: str | None) -> str:
     if implementation is None:
         return source_path.as_posix()
     return f"{source_path.as_posix()}#{implementation}"
+
+
+def _field_source_path(field: FieldDef, fallback: Path) -> Path:
+    if field.span is not None:
+        return field.span.source_path.resolve()
+    return fallback
 
 
 def _invalid_override(field: ResolvedField, value: ResolvedValue, graph_path: str) -> NoReturn:

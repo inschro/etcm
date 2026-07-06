@@ -26,10 +26,12 @@ class SyntaxLiteral:
 @dataclass(frozen=True)
 class SyntaxField:
     name: str
-    type_expr: SyntaxTypeExpr
+    type_expr: SyntaxTypeExpr | None = None
     default: SyntaxLiteral | None = None
     metadata: Mapping[str, SyntaxLiteral] = field(default_factory=dict)
     override: str = "allow"
+    ref_path: Path | None = None
+    fields: tuple[SyntaxField, ...] = ()
     span: SourceSpan | None = None
 
     def __post_init__(self) -> None:
