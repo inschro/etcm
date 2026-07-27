@@ -17,9 +17,11 @@ without implementing semantic resolution.
 
 `Selector`
 
-- `path: Path`
+- `path: Path | None`
+- `spec: str | None`
 - `implementation: str | None`
 - `raw: str | None`
+- `target: Literal["spec", "implementation"]`
 
 `Document`
 
@@ -70,6 +72,7 @@ Stage 2 can keep literal and type shells simple:
 - All IR dataclasses are frozen.
 - Collections are tuples or mappings treated as immutable by convention.
 - IR does not normalize cross-file semantics.
+- Selector shape determines its target kind; path-only and bare-name selectors
+  are invalid.
 - IR stores unresolved values and source spans for later resolver stages.
 - Duplicate checks may be deferred unless local construction makes them trivial.
-

@@ -19,7 +19,7 @@
           "assignment_count": 1,
           "kind": "impl",
           "name": "wider",
-          "parent": "baseline",
+          "parent": ":baseline",
           "span": {
             "column": 3,
             "end_column": 3,
@@ -31,7 +31,7 @@
           "assignment_count": 1,
           "kind": "impl",
           "name": "external",
-          "parent": "models/base.etcm#resnet_50",
+          "parent": "models/base.etcm#ModelConfig:resnet_50",
           "span": {
             "column": 3,
             "end_column": 1,

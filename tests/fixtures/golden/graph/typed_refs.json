@@ -165,7 +165,7 @@
     }
   ],
   "path_resolution": [],
-  "root_selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/typed_refs/train.etcm#smoke",
+  "root_selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/typed_refs/train.etcm#TrainRun:smoke",
   "sources": [
     "valid/typed_refs/model.etcm",
     "valid/typed_refs/train.etcm"

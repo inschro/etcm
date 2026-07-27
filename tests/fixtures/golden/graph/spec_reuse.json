@@ -120,7 +120,7 @@
       }
     }
   ],
-  "root_selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/spec_reuse/variants.etcm#smoke",
+  "root_selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/spec_reuse/variants.etcm#DataConfig:smoke",
   "sources": [
     "valid/spec_reuse/spec.etcm",
     "valid/spec_reuse/variants.etcm"

@@ -109,7 +109,7 @@
     }
   ],
   "path_resolution": [],
-  "root_selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/spec_inheritance_resolver/cuda.etcm",
+  "root_selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/spec_inheritance_resolver/cuda.etcm#CudaRuntime:default",
   "sources": [
     "valid/spec_inheritance_resolver/base.etcm",
     "valid/spec_inheritance_resolver/cuda.etcm"

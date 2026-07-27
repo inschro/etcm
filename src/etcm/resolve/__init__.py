@@ -132,8 +132,8 @@ class _ResolverState:
         self._specs: dict[tuple[Path, str], _ResolvedSpec] = {}
 
     def resolve(self, raw_selector: str) -> ResolvedGraph:
-        selector = self._selector_from_raw(raw_selector, Path.cwd() / "__root__.etcm")
-        builder = _GraphBuilder(root_selector=raw_selector)
+        selector = self._selector_from_raw(raw_selector)
+        builder = _GraphBuilder(root_selector=self._canonical_selector(selector))
         self._resolve_node(
             selector=selector,
             graph_path="root",
@@ -195,7 +195,11 @@ class _ResolverState:
         values = self._default_values(spec, builder, graph_path)
         parent_result: _NodeResult | None = None
         if impl.parent is not None:
-            parent_selector = self._parent_selector(impl.parent, source_path, spec.name)
+            parent_selector = self._selector_from_ir(
+                impl.parent,
+                source_path,
+                active_spec=spec.name,
+            )
             parent_result = self._resolve_node(
                 selector=parent_selector,
                 graph_path=f"{graph_path}.__parent",
@@ -219,6 +223,7 @@ class _ResolverState:
                 impl_stack=next_impl_stack,
                 ref_stack=ref_stack,
                 previous_value=previous,
+                active_spec=spec.name,
             )
             values = self._apply_value(
                 values=values,
@@ -257,6 +262,7 @@ class _ResolverState:
         impl_stack: tuple[tuple[Path, str, str], ...],
         ref_stack: tuple[tuple[Path, str, str], ...],
         previous_value: ResolvedValue | None,
+        active_spec: str,
     ) -> ResolvedValue:
         if isinstance(assignment, RefAssignment):
             if field.fields:
@@ -268,7 +274,11 @@ class _ResolverState:
                     graph_path=graph_path,
                     details={"field": field.name},
                 )
-            child_selector = self._selector_from_ir(assignment.selector, source_path)
+            child_selector = self._selector_from_ir(
+                assignment.selector,
+                source_path,
+                active_spec=active_spec,
+            )
             child = self._resolve_node(
                 selector=child_selector,
                 graph_path=graph_path,
@@ -395,6 +405,7 @@ class _ResolverState:
                 impl_stack=impl_stack,
                 ref_stack=ref_stack,
                 previous_value=previous,
+                active_spec=spec.name,
             )
             values = self._apply_value(
                 values=values,
@@ -476,29 +487,11 @@ class _ResolverState:
     def _resolve_spec(
         self,
         source_path: Path,
-        spec_name: str | None,
+        spec_name: str,
         stack: tuple[tuple[Path, str], ...],
     ) -> _ResolvedSpec:
         source_path = source_path.resolve()
-        document = self._load_document(source_path)
-
-        if document.spec_ref is not None:
-            spec = self._resolve_spec_selector(document.spec_ref.selector, source_path, stack)
-            if spec_name is not None and spec.name != spec_name:
-                _raise(
-                    "E_MISSING_SELECTOR",
-                    f"Spec '{spec_name}' not found.",
-                    source_path=source_path,
-                    selector=_selector_text(source_path, spec_name, None),
-                    details={"available": [spec.name]},
-                )
-            return spec
-
-        if not document.specs:
-            _raise("E_MISSING_SELECTOR", "Document has no spec.", source_path=source_path)
-
-        spec_def = self._select_spec(document, source_path, spec_name)
-        key = (source_path, spec_def.name)
+        key = (source_path, spec_name)
         cached = self._specs.get(key)
         if cached is not None:
             return cached
@@ -507,8 +500,33 @@ class _ResolverState:
                 "E_SPEC_CYCLE",
                 "Cycle while resolving spec inheritance.",
                 source_path=source_path,
-                details={"chain": [_selector_text(path, name, None) for path, name in stack]},
+                details={"chain": [_selector_text(path, name) for path, name in stack]},
             )
+
+        document = self._load_document(source_path)
+
+        if document.spec_ref is not None:
+            spec = self._resolve_spec_selector(
+                document.spec_ref.selector,
+                source_path,
+                (*stack, key),
+                require_path=True,
+            )
+            if spec.name != spec_name:
+                _raise(
+                    "E_MISSING_SELECTOR",
+                    f"Spec '{spec_name}' not found.",
+                    source_path=source_path,
+                    selector=_selector_text(source_path, spec_name, None),
+                    details={"available": [spec.name]},
+                )
+            self._specs[key] = spec
+            return spec
+
+        if not document.specs:
+            _raise("E_MISSING_SELECTOR", "Document has no spec.", source_path=source_path)
+
+        spec_def = self._select_spec(document, source_path, spec_name)
 
         fields: dict[str, FieldDef] = {}
         ancestors: tuple[str, ...] = ()
@@ -547,99 +565,50 @@ class _ResolverState:
         selector: Selector,
         declaring_source: Path,
         stack: tuple[tuple[Path, str], ...],
+        *,
+        require_path: bool = False,
     ) -> _ResolvedSpec:
-        resolved = self._selector_from_ir(selector, declaring_source)
-        if resolved.implementation is not None:
+        if selector.target != "spec":
             _raise(
                 "E_MISSING_SELECTOR",
-                "Spec selector cannot include an implementation.",
+                "This position requires a spec selector such as 'path.etcm#Spec' or '#Spec'.",
                 source_path=declaring_source.resolve(),
-                selector=resolved.raw,
+                selector=selector.raw,
             )
+        resolved = self._normalize_selector(
+            selector,
+            declaring_source=declaring_source,
+            active_spec=None,
+            require_path=require_path,
+        )
+        if resolved.path is None or resolved.spec is None:
+            raise AssertionError("normalized spec selector is incomplete")
         return self._resolve_spec(resolved.path, resolved.spec, stack)
 
     def _resolve_implementation_selector(self, selector: Selector) -> _ImplTarget:
+        if selector.target != "implementation":
+            _raise(
+                "E_MISSING_SELECTOR",
+                "This position requires an implementation selector ending in ':implementation'.",
+                selector=selector.raw,
+            )
+        if selector.path is None or selector.spec is None or selector.implementation is None:
+            raise AssertionError("normalized implementation selector is incomplete")
         source_path = selector.path.resolve()
         document = self._load_document(source_path)
-
-        if selector.implementation is not None:
-            if selector.spec is None:
-                _raise(
-                    "E_MISSING_SELECTOR",
-                    "Implementation selector must include a spec.",
-                    source_path=source_path,
-                    selector=selector.raw,
-                )
-            spec = self._resolve_spec(source_path, selector.spec, ())
-            implementation = self._implementation_for_spec(
-                document,
-                source_path,
-                spec.name,
-                selector.implementation,
-            )
-            return _ImplTarget(
-                source_path=source_path,
-                spec=spec,
-                implementation=implementation,
-                selector=_selector_text(source_path, spec.name, implementation.name),
-            )
-
-        implementation_name = selector.spec or "default"
-        candidates = self._implementation_candidates(document, source_path, implementation_name)
-        if not candidates:
-            _raise(
-                "E_MISSING_SELECTOR",
-                f"Implementation '{implementation_name}' not found.",
-                source_path=source_path,
-                selector=selector.raw,
-            )
-        if len(candidates) > 1:
-            _raise(
-                "E_MISSING_SELECTOR",
-                f"Implementation selector '{implementation_name}' is ambiguous.",
-                source_path=source_path,
-                selector=selector.raw,
-                details={
-                    "candidates": [
-                        _selector_text(source_path, spec.name, implementation.name)
-                        for spec, implementation in candidates
-                    ]
-                },
-            )
-        spec, implementation = candidates[0]
+        spec = self._resolve_spec(source_path, selector.spec, ())
+        implementation = self._implementation_for_spec(
+            document,
+            source_path,
+            spec.name,
+            selector.implementation,
+        )
         return _ImplTarget(
             source_path=source_path,
             spec=spec,
             implementation=implementation,
             selector=_selector_text(source_path, spec.name, implementation.name),
         )
-
-    def _implementation_candidates(
-        self,
-        document: Document,
-        source_path: Path,
-        implementation_name: str,
-    ) -> list[tuple[_ResolvedSpec, ImplDef]]:
-        if document.spec_ref is not None:
-            spec = self._resolve_spec(source_path, None, ())
-            return [
-                (spec, implementation)
-                for implementation in document.implementations
-                if implementation.name == implementation_name
-            ]
-
-        candidates: list[tuple[_ResolvedSpec, ImplDef]] = []
-        for spec_def in document.specs:
-            matches = [
-                implementation
-                for implementation in spec_def.implementations
-                if implementation.name == implementation_name
-            ]
-            if not matches:
-                continue
-            spec = self._resolve_spec(source_path, spec_def.name, ())
-            candidates.extend((spec, implementation) for implementation in matches)
-        return candidates
 
     def _implementation_for_spec(
         self,
@@ -679,17 +648,8 @@ class _ResolverState:
         self,
         document: Document,
         source_path: Path,
-        spec_name: str | None,
+        spec_name: str,
     ) -> SpecDef:
-        if spec_name is None:
-            if len(document.specs) == 1:
-                return document.specs[0]
-            _raise(
-                "E_MISSING_SELECTOR",
-                "Spec selector is ambiguous.",
-                source_path=source_path,
-                details={"candidates": [spec.name for spec in document.specs]},
-            )
         for spec in document.specs:
             if spec.name == spec_name:
                 return spec
@@ -899,67 +859,86 @@ class _ResolverState:
             return assignment.field_name
         return assignment.field_path[0]
 
-    def _selector_from_ir(self, selector: Selector, declaring_source: Path) -> Selector:
-        return self._normalize_selector(selector, declaring_source)
+    def _selector_from_ir(
+        self,
+        selector: Selector,
+        declaring_source: Path,
+        *,
+        active_spec: str | None,
+    ) -> Selector:
+        return self._normalize_selector(
+            selector,
+            declaring_source=declaring_source,
+            active_spec=active_spec,
+        )
 
-    def _selector_from_raw(self, raw: str, declaring_source: Path) -> Selector:
+    def _selector_from_raw(self, raw: str) -> Selector:
         try:
             selector = Selector.parse(raw)
         except ValueError as exc:
             _raise(
                 "E_MISSING_SELECTOR",
-                str(exc),
-                source_path=declaring_source.resolve(),
+                f"Invalid root selector '{raw}': {exc}.",
                 selector=raw,
             )
-        return self._normalize_selector(selector, declaring_source)
-
-    def _normalize_selector(self, selector: Selector, declaring_source: Path) -> Selector:
-        raw_path = str(selector.path)
-        raw = selector.raw or _selector_text(
-            selector.path,
-            selector.spec,
-            selector.implementation,
-        )
-        if (
-            selector.spec is None
-            and selector.implementation is None
-            and not self._looks_like_file_path(raw_path)
-        ):
-            return Selector(
-                path=declaring_source.resolve(),
-                spec=raw_path,
-                raw=raw,
+        if selector.target != "implementation":
+            _raise(
+                "E_MISSING_SELECTOR",
+                "Root selectors must use 'path.etcm#Spec:implementation'.",
+                selector=raw,
             )
-        return Selector(
-            path=self._resolve_path(selector.path, declaring_source.parent),
-            spec=selector.spec,
-            implementation=selector.implementation,
-            raw=raw,
+        if selector.path is None:
+            _raise(
+                "E_MISSING_SELECTOR",
+                "Root selectors must include a '.etcm' file path.",
+                selector=raw,
+            )
+        return self._normalize_selector(
+            selector,
+            declaring_source=Path.cwd() / "__root__.etcm",
+            active_spec=None,
+            require_path=True,
         )
 
-    def _parent_selector(
+    def _normalize_selector(
         self,
         selector: Selector,
-        source_path: Path,
-        spec_name: str,
+        *,
+        declaring_source: Path,
+        active_spec: str | None,
+        require_path: bool = False,
     ) -> Selector:
-        raw_path = str(selector.path)
-        if (
-            selector.spec is None
-            and selector.implementation is None
-            and not self._looks_like_file_path(raw_path)
-        ):
-            return Selector(
-                path=source_path.resolve(),
-                spec=spec_name,
-                implementation=raw_path,
-                raw=selector.raw,
-            )
-        return self._selector_from_ir(selector, source_path)
+        if selector.path is None:
+            if require_path:
+                _raise(
+                    "E_MISSING_SELECTOR",
+                    "This selector position requires a '.etcm' file path.",
+                    source_path=declaring_source.resolve(),
+                    selector=selector.raw,
+                )
+            path = declaring_source.resolve()
+        else:
+            path = self._resolve_path(selector.path, declaring_source.parent)
 
-    def _looks_like_file_path(self, raw_path: str) -> bool:
-        return "/" in raw_path or "\\" in raw_path or raw_path.endswith(".etcm") or "." in raw_path
+        spec = selector.spec or active_spec
+        if spec is None:
+            _raise(
+                "E_MISSING_SELECTOR",
+                "The ':implementation' shortcut requires an active spec.",
+                source_path=declaring_source.resolve(),
+                selector=selector.raw,
+            )
+        return Selector(
+            path=path,
+            spec=spec,
+            implementation=selector.implementation,
+            raw=selector.raw,
+        )
+
+    def _canonical_selector(self, selector: Selector) -> str:
+        if selector.path is None or selector.spec is None:
+            raise AssertionError("normalized selector is incomplete")
+        return _selector_text(selector.path, selector.spec, selector.implementation)
 
     def _resolve_path(self, path: Path, base: Path) -> Path:
         if path.is_absolute():

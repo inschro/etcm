@@ -60,15 +60,15 @@ models/resnet.etcm#ResNetConfig
 models/resnet.etcm#ResNetConfig:resnet_50
 ```
 
-In implementation positions, `models/resnet.etcm#resnet_50` and
-`models/resnet.etcm` are context-free shorthands for an implementation named
-`resnet_50` or `default`. They are accepted only when that implementation name is
-unique across every spec in the target file.
+The selector shape determines its target. A spec selector ends at the spec
+name; an implementation selector always includes `:implementation`, including
+`:default`. Same-file selectors omit the path as `#Spec` or
+`#Spec:implementation`. Within an active spec, `:implementation` is the concise
+form for one of that spec's local implementations.
 
-ETCM comments follow YAML-style `#` rules: `#` starts a comment only at the
-beginning of a line or after whitespace, outside quoted strings. Attached
-selector fragments such as `models/resnet.etcm#ResNetConfig:resnet_50` are not
-comments.
+ETCM comments follow YAML-style `#` rules outside selector positions and quoted
+strings: `#` starts a comment at line start or after whitespace. Where the
+grammar expects a selector, `#Spec` instead begins a same-file selector.
 
 ## Spec Inheritance
 
@@ -139,7 +139,7 @@ spec ResNetConfig:
     width: 64
     norm: "batch"
 
-  impl larger <- baseline:
+  impl larger <- :baseline:
     width: 96
 ```
 
@@ -324,7 +324,7 @@ schema definitions in Python just to get validation.
 ```python
 from etcm import load
 
-cfg = load("experiments/train.etcm#imagenet", target="pydantic")
+cfg = load("experiments/train.etcm#TrainConfig:imagenet", target="pydantic")
 ```
 
 V0 generated representations:
@@ -343,18 +343,18 @@ ETCM specs is a later adoption feature.
 V0 command intent:
 
 ```bash
-etcm resolve experiments/train.etcm#imagenet --format json
-etcm validate experiments/train.etcm#imagenet
-etcm validate experiments/train.etcm#imagenet --short
-etcm load experiments/train.etcm#imagenet --target pydantic
+etcm resolve experiments/train.etcm#TrainConfig:imagenet --format json
+etcm validate experiments/train.etcm#TrainConfig:imagenet
+etcm validate experiments/train.etcm#TrainConfig:imagenet --short
+etcm load experiments/train.etcm#TrainConfig:imagenet --target pydantic
 ```
 
 Later extensions:
 
 ```bash
-etcm sweep experiments/train.etcm#baseline
-etcm submit experiments/train.etcm#baseline
-etcm bindings experiments/train.etcm --target pydantic
+etcm sweep experiments/train.etcm#TrainConfig:baseline
+etcm submit experiments/train.etcm#TrainConfig:baseline
+etcm bindings experiments/train.etcm#TrainConfig --target pydantic
 ```
 
 ## Non-Goals

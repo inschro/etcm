@@ -19,7 +19,7 @@ def test_resolver_rejects_unknown_path_policy() -> None:
 
 
 def test_resolve_validate_convert_pipeline() -> None:
-    selector = str(FIXTURES / "valid/typed_refs/train.etcm#smoke")
+    selector = str(FIXTURES / "valid/typed_refs/train.etcm#TrainRun:smoke")
 
     graph = resolve(selector)
     assert graph.validated is False
@@ -30,7 +30,7 @@ def test_resolve_validate_convert_pipeline() -> None:
 
 
 def test_load_orchestrates_full_pipeline() -> None:
-    selector = str(FIXTURES / "valid/typed_refs/train.etcm#smoke")
+    selector = str(FIXTURES / "valid/typed_refs/train.etcm#TrainRun:smoke")
 
     cfg = load(selector, target="dict")
 
@@ -38,7 +38,7 @@ def test_load_orchestrates_full_pipeline() -> None:
 
 
 def test_convert_requires_validated_graph_unless_forced() -> None:
-    graph = resolve(str(FIXTURES / "valid/typed_refs/train.etcm#smoke"))
+    graph = resolve(str(FIXTURES / "valid/typed_refs/train.etcm#TrainRun:smoke"))
 
     with pytest.raises(ETCMError, match="unvalidated graph"):
         convert(graph, target="dict")
@@ -47,7 +47,9 @@ def test_convert_requires_validated_graph_unless_forced() -> None:
 
 
 def test_convert_rejects_unknown_target() -> None:
-    graph = validate(resolve(str(FIXTURES / "valid/typed_refs/train.etcm#smoke")))
+    graph = validate(
+        resolve(str(FIXTURES / "valid/typed_refs/train.etcm#TrainRun:smoke"))
+    )
 
     with pytest.raises(ValueError, match="target"):
         convert(graph, target="yaml")  # type: ignore[arg-type]

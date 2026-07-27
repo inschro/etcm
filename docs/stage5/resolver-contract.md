@@ -18,9 +18,14 @@ resolve/validate/convert convenience.
 
 - root selector paths resolve relative to the current working directory
 - nested selectors resolve relative to the file that declares the selector
-- `path#Spec:impl` selects an exact implementation owner
-- `path#impl` and `path` are context-free implementation shorthands and must
-  be unique across specs in the target file
+- root selectors require `path.etcm#Spec:impl`
+- spec selectors use `path.etcm#Spec` or same-file `#Spec`
+- implementation selectors use `path.etcm#Spec:impl`, same-file `#Spec:impl`,
+  or active-spec `:impl`
+- relative and absolute paths are accepted, and every selector path ends in
+  `.etcm`
+- selectors never infer a spec, search for a unique implementation, or infer
+  an implementation named `default`
 - `$spec` imports an external spec unchanged
 - spec inheritance merges parent fields before child fields
 - implementation inheritance applies parent values before local assignments

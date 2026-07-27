@@ -2,7 +2,7 @@ spec Node:
   child: Node
 
   impl a:
-    $child: node.etcm#b
+    $child: :b
 
   impl b:
-    $child: node.etcm#a
+    $child: :a

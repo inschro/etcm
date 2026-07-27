@@ -37,13 +37,13 @@ primitives:
 ```python
 from etcm import Resolver, convert, load, resolve, validate
 
-cfg = load("configs/train.etcm#smoke", target="pydantic")
-graph = resolve("configs/train.etcm#smoke")
+cfg = load("configs/train.etcm#TrainRun:smoke", target="pydantic")
+graph = resolve("configs/train.etcm#TrainRun:smoke")
 graph = validate(graph)
 cfg = convert(graph, target="pydantic")
 
 resolver = Resolver(path_exists="must_exist")
-cfg = resolver.load("configs/train.etcm#smoke", target="pydantic")
+cfg = resolver.load("configs/train.etcm#TrainRun:smoke", target="pydantic")
 ```
 
 Rules:
@@ -58,7 +58,8 @@ Use immutable dataclasses for the first IR:
 
 - `SourceSpan`: file, line, column, end line, end column, start offset, end
   offset
-- `Selector`: path plus optional implementation fragment
+- `Selector`: optional document path, spec, optional implementation, raw text,
+  and target kind
 - `Document`: source file, one inline `SpecDef` or one top-level `SpecRef`,
   implementation definitions
 - `SpecDef`: name, optional parent spec path, fields, source span

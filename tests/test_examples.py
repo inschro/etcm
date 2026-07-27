@@ -13,7 +13,7 @@ EXAMPLES = ROOT / "examples"
 
 
 def test_ml_example_validates_from_cli(capsys: pytest.CaptureFixture[str]) -> None:
-    selector = str(EXAMPLES / "ml/train.etcm#smoke")
+    selector = str(EXAMPLES / "ml/train.etcm#TrainRun:smoke")
 
     exit_code = main(["validate", selector, "--short"])
 
@@ -24,7 +24,10 @@ def test_ml_example_validates_from_cli(capsys: pytest.CaptureFixture[str]) -> No
 
 
 def test_ml_example_loads_as_dict() -> None:
-    cfg = cast(dict[str, Any], load(str(EXAMPLES / "ml/train.etcm#smoke"), target="dict"))
+    cfg = cast(
+        dict[str, Any],
+        load(str(EXAMPLES / "ml/train.etcm#TrainRun:smoke"), target="dict"),
+    )
 
     assert cfg["run_name"] == "smoke"
     assert cfg["max_steps"] == 2

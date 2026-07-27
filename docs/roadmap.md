@@ -100,7 +100,8 @@ cfg = resolver.load("configs/train.etcm#TrainRun:smoke", target="pydantic")
 
 Core data contracts:
 
-- `Selector`: normalized path plus optional spec and implementation fragments
+- `Selector`: optional document path, required or active spec identity, optional
+  implementation, raw text, and target kind
 - `SpecDef`: name, optional parent spec selector, fields, owned
   implementations, source span
 - `SpecRef`: top-level immutable `$spec` reference
@@ -158,8 +159,8 @@ Parser requirements:
 - preserve source location for every definition, assignment, ref, and literal
 - support YAML-style `#` comments and trailing commas where specified by the
   grammar decision
-- keep attached selector fragments such as `path.etcm#impl` distinct from
-  comments
+- keep selector fragments such as `path.etcm#Spec:impl` and `#Spec:impl`
+  distinct from comments
 - reject files that define both inline `spec` and top-level `$spec`
 - allow multiple inline specs in one file
 - reject duplicate field names and duplicate implementation names
@@ -323,10 +324,10 @@ Core parser:
 Resolver:
 
 - relative and absolute selectors
-- omitted implementation fragment resolves `default` only when that name is
-  unique in the target file
-- spec inheritance and `$spec` references without fragments
-- YAML-style comments do not consume attached selector fragments
+- implementation selectors always include an explicit implementation,
+  including `:default`
+- spec inheritance and `$spec` references use exact spec selectors
+- YAML-style comments do not consume attached or same-file selector fragments
 - `Path` values resolved relative to the declaring config file
 - `Path` fields with resolver default `allow_missing`
 - `Path` fields with resolver default `must_exist`

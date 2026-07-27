@@ -18,6 +18,7 @@ from etcm.ir import (
     LiteralValue,
     RefAssignment,
     Selector,
+    SelectorTarget,
     SourceSpan,
     SpecDef,
     SpecRef,
@@ -80,9 +81,8 @@ def build_parser() -> Lark:
 def parse_syntax(text: str, source_path: str | Path = "<string>") -> SyntaxDocument:
     source = Path(source_path)
     _reject_tab_indentation(text, source)
-    stripped_text = _strip_yaml_style_comments(text)
     try:
-        tree = build_parser().parse(stripped_text)
+        tree = build_parser().parse(text)
     except UnexpectedInput as exc:
         raise ETCMError(_diagnostic_from_unexpected(exc, source)) from exc
 
@@ -127,7 +127,11 @@ class _SyntaxBuilder:
             if not isinstance(child, Tree):
                 continue
             if child.data == "spec_parent":
-                parent = self._selector(str(_required_token(child, "SELECTOR")), child)
+                parent = self._selector(
+                    str(_required_token(child, "SELECTOR")),
+                    child,
+                    expected="spec",
+                )
             elif child.data == "field":
                 fields.append(self.field(child))
             elif child.data == "spec_ref_field":
@@ -147,7 +151,12 @@ class _SyntaxBuilder:
 
     def spec_ref(self, tree: Tree[Token]) -> SyntaxSpecRef:
         return SyntaxSpecRef(
-            selector=self._selector(str(_required_token(tree, "SELECTOR")), tree),
+            selector=self._selector(
+                str(_required_token(tree, "SELECTOR")),
+                tree,
+                expected="spec",
+                require_path=True,
+            ),
             span=_span(tree, self._source_path),
         )
 
@@ -160,7 +169,11 @@ class _SyntaxBuilder:
             if not isinstance(child, Tree):
                 continue
             if child.data == "impl_parent":
-                parent = self._selector(str(_required_token(child, "SELECTOR")), child)
+                parent = self._selector(
+                    str(_required_token(child, "SELECTOR")),
+                    child,
+                    expected="implementation",
+                )
             elif child.data == "value_assignment":
                 assignments.append(self.value_assignment(child))
             elif child.data == "ref_assignment":
@@ -208,7 +221,11 @@ class _SyntaxBuilder:
 
     def spec_ref_field(self, tree: Tree[Token]) -> SyntaxField:
         name = str(_required_token(tree, "NAME"))
-        ref_selector = self._selector(str(_required_token(tree, "SELECTOR")), tree)
+        ref_selector = self._selector(
+            str(_required_token(tree, "SELECTOR")),
+            tree,
+            expected="spec",
+        )
         metadata: dict[str, SyntaxLiteral] = {}
         override = "allow"
 
@@ -293,7 +310,11 @@ class _SyntaxBuilder:
 
     def ref_assignment(self, tree: Tree[Token]) -> SyntaxRefAssignment:
         field_name = str(_required_token(tree, "NAME"))
-        selector = self._selector(str(_required_token(tree, "SELECTOR")), tree)
+        selector = self._selector(
+            str(_required_token(tree, "SELECTOR")),
+            tree,
+            expected="implementation",
+        )
         return SyntaxRefAssignment(
             field_name=field_name,
             selector=selector,
@@ -380,13 +401,32 @@ class _SyntaxBuilder:
             return str(py_ast.literal_eval(str(tree.children[0])))
         raise AssertionError(f"unsupported map key: {tree.data}")
 
-    def _selector(self, raw: str, node: Tree[Token]) -> str:
+    def _selector(
+        self,
+        raw: str,
+        node: Tree[Token],
+        *,
+        expected: SelectorTarget,
+        require_path: bool = False,
+    ) -> str:
         try:
-            Selector.parse(raw)
+            selector = Selector.parse(raw)
+            if selector.target != expected:
+                required_form = (
+                    "path.etcm#Spec or #Spec"
+                    if expected == "spec"
+                    else (
+                        "path.etcm#Spec:implementation, "
+                        "#Spec:implementation, or :implementation"
+                    )
+                )
+                raise ValueError(f"expected {expected} selector ({required_form})")
+            if require_path and selector.path is None:
+                raise ValueError("this selector position requires a file path")
         except ValueError as exc:
             _raise(
                 "E_PARSE_SELECTOR",
-                f"Invalid selector '{raw}'.",
+                f"Invalid {expected} selector '{raw}': {exc}.",
                 self._source_path,
                 _span(node, self._source_path),
                 selector=raw,
@@ -630,41 +670,6 @@ def _reject_tab_indentation(text: str, source_path: Path) -> None:
                 )
             if char != " ":
                 break
-
-
-def _strip_yaml_style_comments(text: str) -> str:
-    lines: list[str] = []
-    for line in text.splitlines(keepends=True):
-        lines.append(_strip_yaml_style_comment_from_line(line))
-    return "".join(lines)
-
-
-def _strip_yaml_style_comment_from_line(line: str) -> str:
-    in_string = False
-    escaped = False
-    chars = list(line)
-
-    for index, char in enumerate(chars):
-        if in_string:
-            if escaped:
-                escaped = False
-            elif char == "\\":
-                escaped = True
-            elif char == '"':
-                in_string = False
-            continue
-
-        if char == '"':
-            in_string = True
-            continue
-
-        if char == "#" and (index == 0 or chars[index - 1] in {" ", "\t"}):
-            for comment_index in range(index, len(chars)):
-                if chars[comment_index] not in {"\n", "\r"}:
-                    chars[comment_index] = " "
-            break
-
-    return "".join(chars)
 
 
 def _diagnostic_from_unexpected(exc: UnexpectedInput, source_path: Path) -> Diagnostic:

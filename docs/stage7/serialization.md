@@ -26,7 +26,7 @@ as JSON.
 For example:
 
 ```bash
-etcm load tests/fixtures/valid/spec_inheritance_resolver/cuda.etcm#default
+etcm load tests/fixtures/valid/spec_inheritance_resolver/cuda.etcm#CudaRuntime:default
 ```
 
 prints:

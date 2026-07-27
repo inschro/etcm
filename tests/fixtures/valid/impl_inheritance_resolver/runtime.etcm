@@ -7,7 +7,7 @@ spec Runtime:
     tags: ["base"]
     metadata: {"owner": "tests"}
 
-  impl child <- base:
+  impl child <- :base:
     tags: ["child"]
     metadata: {"mode": "fast"}
     device: "cuda"

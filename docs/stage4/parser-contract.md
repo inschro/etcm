@@ -28,16 +28,17 @@ from etcm.syntax import parse_document, parse_file, parse_syntax
 - inline strings, numbers, booleans, nulls, lists, and mappings
 - YAML-style `#` comments, blank lines, and spaces-only indentation
 
-`#` starts a comment only at the beginning of a line or after whitespace,
-outside quoted strings. Attached selector fragments such as
-`models/lm.etcm#LMConfig:tiny` are not comments.
+Outside quoted strings, `#` at line start or after whitespace begins a same-file
+selector where the grammar expects a selector and begins a comment otherwise.
+This keeps `#Spec`, attached fragments such as
+`models/lm.etcm#LMConfig:tiny`, and YAML-style comments unambiguous.
 
 ## Explicit Non-Responsibilities
 
 The parser does not:
 
 - check that referenced files exist
-- resolve implementation shorthand or default selectors
+- resolve selector paths or active-spec `:implementation` selectors
 - resolve refs or inheritance
 - check type assignability
 - enforce path existence or path kind policy

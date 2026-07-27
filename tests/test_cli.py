@@ -14,7 +14,7 @@ FIXTURES = ROOT / "fixtures"
 def test_resolve_command_prints_unvalidated_graph_json(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    selector = str(FIXTURES / "valid/typed_refs/train.etcm#smoke")
+    selector = str(FIXTURES / "valid/typed_refs/train.etcm#TrainRun:smoke")
 
     exit_code = main(["resolve", selector])
 
@@ -30,7 +30,7 @@ def test_resolve_command_prints_unvalidated_graph_json(
 def test_validate_command_prints_validated_graph_json(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    selector = str(FIXTURES / "valid/typed_refs/train.etcm#smoke")
+    selector = str(FIXTURES / "valid/typed_refs/train.etcm#TrainRun:smoke")
 
     exit_code = main(["validate", selector])
 
@@ -43,7 +43,7 @@ def test_validate_command_prints_validated_graph_json(
 
 
 def test_validate_short_reports_success(capsys: pytest.CaptureFixture[str]) -> None:
-    selector = str(FIXTURES / "valid/typed_refs/train.etcm#smoke")
+    selector = str(FIXTURES / "valid/typed_refs/train.etcm#TrainRun:smoke")
 
     exit_code = main(["validate", selector, "--short"])
 
@@ -54,7 +54,7 @@ def test_validate_short_reports_success(capsys: pytest.CaptureFixture[str]) -> N
 
 
 def test_validate_command_reports_diagnostic(capsys: pytest.CaptureFixture[str]) -> None:
-    selector = str(FIXTURES / "invalid/missing_required.etcm")
+    selector = str(FIXTURES / "invalid/missing_required.etcm#MissingRequired:default")
 
     exit_code = main(["validate", selector])
 
@@ -66,7 +66,9 @@ def test_validate_command_reports_diagnostic(capsys: pytest.CaptureFixture[str])
 
 
 def test_load_command_defaults_to_dict_target(capsys: pytest.CaptureFixture[str]) -> None:
-    selector = str(FIXTURES / "valid/spec_inheritance_resolver/cuda.etcm#default")
+    selector = str(
+        FIXTURES / "valid/spec_inheritance_resolver/cuda.etcm#CudaRuntime:default"
+    )
 
     exit_code = main(["load", selector])
 
@@ -81,7 +83,9 @@ def test_load_command_target_modes_emit_json(
     target: str,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    selector = str(FIXTURES / "valid/spec_inheritance_resolver/cuda.etcm#default")
+    selector = str(
+        FIXTURES / "valid/spec_inheritance_resolver/cuda.etcm#CudaRuntime:default"
+    )
 
     exit_code = main(["load", selector, "--target", target])
 
@@ -94,7 +98,7 @@ def test_load_command_target_modes_emit_json(
 def test_load_dataclass_target_serializes_paths_as_strings(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    selector = str(FIXTURES / "valid/path_policies/data.etcm")
+    selector = str(FIXTURES / "valid/path_policies/data.etcm#DataConfig:default")
 
     exit_code = main(["load", selector, "--target", "dataclass"])
 
@@ -109,7 +113,7 @@ def test_load_dataclass_target_serializes_paths_as_strings(
 
 
 def test_load_command_reports_diagnostic(capsys: pytest.CaptureFixture[str]) -> None:
-    selector = str(FIXTURES / "invalid/missing_required.etcm")
+    selector = str(FIXTURES / "invalid/missing_required.etcm#MissingRequired:default")
 
     exit_code = main(["load", selector])
 
@@ -159,7 +163,7 @@ def test_validate_all_enumerates_spec_ref_implementations(
     assert captured.out.endswith("1 total, 1 OK, 0 fail\n")
 
 
-def test_validate_all_enumerates_spec_ref_shorthand(
+def test_validate_all_enumerates_exact_spec_ref(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -178,7 +182,7 @@ def test_validate_all_enumerates_spec_ref_shorthand(
     source.write_text(
         "\n".join(
             [
-                "$spec: spec.etcm",
+                "$spec: spec.etcm#DataConfig",
                 "",
                 "impl smoke:",
                 "  value: 1",
@@ -193,7 +197,7 @@ def test_validate_all_enumerates_spec_ref_shorthand(
     captured = capsys.readouterr()
     assert exit_code == 0
     assert captured.err == ""
-    assert f"OK: {source.resolve().as_posix()}#smoke" in captured.out
+    assert f"OK: {source.resolve().as_posix()}#DataConfig:smoke" in captured.out
     assert captured.out.endswith("1 total, 1 OK, 0 fail\n")
 
 
@@ -332,7 +336,7 @@ def test_removed_commands_fail_argparse(
     command: str,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    selector = str(FIXTURES / "valid/typed_refs/train.etcm#smoke")
+    selector = str(FIXTURES / "valid/typed_refs/train.etcm#TrainRun:smoke")
 
     with pytest.raises(SystemExit) as raised:
         main([command, selector])

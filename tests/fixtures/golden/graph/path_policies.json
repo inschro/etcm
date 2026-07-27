@@ -196,7 +196,7 @@
       }
     }
   ],
-  "root_selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/path_policies/data.etcm",
+  "root_selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/path_policies/data.etcm#DataConfig:default",
   "sources": [
     "valid/path_policies/data.etcm"
   ],

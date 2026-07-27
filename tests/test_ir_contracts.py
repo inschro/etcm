@@ -38,6 +38,7 @@ def test_selector_parse_with_implementation() -> None:
     assert selector.spec == "TrainRun"
     assert selector.implementation == "smoke"
     assert selector.raw == "configs/train.etcm#TrainRun:smoke"
+    assert selector.target == "implementation"
 
 
 def test_selector_parse_with_spec_fragment() -> None:
@@ -47,18 +48,47 @@ def test_selector_parse_with_spec_fragment() -> None:
     assert selector.spec == "TrainRun"
     assert selector.implementation is None
     assert selector.raw == "configs/train.etcm#TrainRun"
+    assert selector.target == "spec"
 
 
-def test_selector_parse_without_implementation() -> None:
-    selector = Selector.parse("configs/train.etcm")
+def test_selector_parse_local_spec() -> None:
+    selector = Selector.parse("#TrainRun")
 
-    assert selector.path == Path("configs/train.etcm")
-    assert selector.spec is None
+    assert selector.path is None
+    assert selector.spec == "TrainRun"
     assert selector.implementation is None
-    assert selector.raw == "configs/train.etcm"
+    assert selector.target == "spec"
 
 
-@pytest.mark.parametrize("raw", ["", "configs/train.etcm#"])
+def test_selector_parse_local_implementation_in_active_spec() -> None:
+    selector = Selector.parse(":smoke")
+
+    assert selector.path is None
+    assert selector.spec is None
+    assert selector.implementation == "smoke"
+    assert selector.target == "implementation"
+
+
+def test_selector_parse_local_implementation_in_named_spec() -> None:
+    selector = Selector.parse("#TrainRun:smoke")
+
+    assert selector.path is None
+    assert selector.spec == "TrainRun"
+    assert selector.implementation == "smoke"
+    assert selector.target == "implementation"
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        "",
+        "configs/train.etcm",
+        "configs/train.etcm#",
+        "configs/train.yaml#TrainRun",
+        "baseline",
+        ":",
+    ],
+)
 def test_selector_parse_rejects_invalid_values(raw: str) -> None:
     with pytest.raises(ValueError):
         Selector.parse(raw)

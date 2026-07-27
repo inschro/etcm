@@ -4,5 +4,5 @@ spec Runtime:
   impl base:
     seed: 1
 
-  impl child <- base:
+  impl child <- :base:
     seed: 2

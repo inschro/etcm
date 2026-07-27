@@ -110,7 +110,7 @@ tests/fixtures/golden/graph/<fixture-name>.json
 
 Required top-level keys:
 
-- `root_selector`
+- canonical absolute `root_selector` in `path.etcm#Spec:implementation` form
 - `nodes`
 - `edges`
 - `sources`

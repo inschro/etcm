@@ -15,5 +15,5 @@ Stage 4 hands Stage 5 a parser that can produce reliable syntax and IR.
 ## Stage 5 Handoff
 
 Stage 5 starts from `Document` values produced by `parse_document()` and owns
-selector loading, default implementation selection, inheritance application,
+selector loading, active-spec expansion, inheritance application,
 reference resolution, path validation, type checking, and graph construction.

@@ -4,7 +4,7 @@ The resolver returns a `ResolvedGraph`.
 
 Required properties:
 
-- stable `root_selector`
+- canonical absolute `root_selector` in `path.etcm#Spec:implementation` form
 - deterministic `nodes`
 - deterministic `edges`
 - normalized `sources`

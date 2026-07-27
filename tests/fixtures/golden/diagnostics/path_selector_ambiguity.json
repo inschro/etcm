@@ -2,7 +2,7 @@
   "code": "E_PARSE_SELECTOR",
   "details": {},
   "graph_path": null,
-  "message": "Invalid selector 'models/lm.etcm#'.",
+  "message": "Invalid implementation selector 'models/lm.etcm#': selector fragment must name a spec.",
   "selector": "models/lm.etcm#",
   "source_path": "invalid/path_selector_ambiguity.etcm",
   "span": {

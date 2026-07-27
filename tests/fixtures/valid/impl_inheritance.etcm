@@ -6,8 +6,8 @@ spec ModelConfig:
     depth: 50
     width: 64
 
-  impl wider <- baseline:
+  impl wider <- :baseline:
     width: 96
 
-  impl external <- models/base.etcm#resnet_50:
+  impl external <- models/base.etcm#ModelConfig:resnet_50:
     width: 128

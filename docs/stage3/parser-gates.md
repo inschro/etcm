@@ -66,8 +66,8 @@ Stage 4 must prove:
 - spec inheritance paths do not require `#`
 - implementation inheritance and refs can still target `#impl`
 - `#` attached to a selector is not a comment
-- `#` starts a comment only at line start or after whitespace, outside quoted
-  strings
+- `#` at line start or after whitespace starts a local selector where a
+  selector is expected and a comment elsewhere, outside quoted strings
 - path-like strings remain literals when quoted
 - selector syntax is unambiguous in `$field` refs and parent declarations
 - filesystem validation is deferred to the resolver

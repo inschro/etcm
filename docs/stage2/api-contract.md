@@ -13,10 +13,10 @@ These imports must work after the scaffold exists.
 ## Placeholder Behavior
 
 ```python
-load("configs/train.etcm#smoke")
-resolve("configs/train.etcm#smoke")
-validate("configs/train.etcm#smoke")
-Resolver().load("configs/train.etcm#smoke")
+load("configs/train.etcm#TrainRun:smoke")
+resolve("configs/train.etcm#TrainRun:smoke")
+validate("configs/train.etcm#TrainRun:smoke")
+Resolver().load("configs/train.etcm#TrainRun:smoke")
 ```
 
 All behavior methods should raise `NotImplementedError` with messages that make
@@ -51,4 +51,3 @@ local and does not require resolver semantics.
 - No public return value may expose Lark objects.
 - Public errors should use ETCM diagnostic types once implemented.
 - Placeholder functions may import only lightweight local modules.
-

@@ -56,7 +56,8 @@ META_LSQB.2: /\[(?=\s*(?:[><!]|in\b|[A-Za-z_][A-Za-z0-9_]*\s*=))/
 SEMICOLON: ";"
 COMPARE: ">=" | "<=" | "!=" | ">" | "<"
 PATH: /[A-Za-z0-9_\.\/-]+/
-SELECTOR: /[A-Za-z0-9_\.\/-]+#[A-Za-z_][A-Za-z0-9_]*(?::[A-Za-z_][A-Za-z0-9_]*)?/ | /[A-Za-z0-9_\.\/-]+#/ | /[A-Za-z0-9_\.\/-]+/
+SELECTOR.3: /[A-Za-z0-9_\.\/-]+#[A-Za-z_][A-Za-z0-9_]*(?::[A-Za-z_][A-Za-z0-9_]*)?/ | /#[A-Za-z_][A-Za-z0-9_]*(?::[A-Za-z_][A-Za-z0-9_]*)?/ | /:[A-Za-z_][A-Za-z0-9_]*/ | /[A-Za-z0-9_\.\/-]+#/ | /[A-Za-z0-9_\.\/-]+/
+COMMENT: /(?<!\S)#[^\r\n]*/
 
 %declare _INDENT _DEDENT
 %import common.CNAME -> NAME
@@ -64,4 +65,5 @@ SELECTOR: /[A-Za-z0-9_\.\/-]+#[A-Za-z_][A-Za-z0-9_]*(?::[A-Za-z_][A-Za-z0-9_]*)?
 %import common.SIGNED_NUMBER
 %import common.WS_INLINE
 %ignore WS_INLINE
+%ignore COMMENT
 _NL: /(\r?\n[ \t]*)+/

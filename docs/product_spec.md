@@ -44,10 +44,10 @@ The initial idea came from the config builder in
 Useful behavior to generalize:
 
 - registry files may declare several schemas and named artifacts
-- selectors use `path#Spec` for specs and `path#Spec:artifact` for exact
-  artifacts
-- comments use YAML-style `#` behavior, so attached selector fragments are not
-  comments
+- selectors use exact `path.etcm#Spec` and
+  `path.etcm#Spec:artifact` identities, with explicit same-file forms
+- comments use YAML-style `#` behavior, with `#Spec` recognized contextually in
+  selector positions
 - `$ref` composes artifacts across files
 - refs resolve relative to the current config file
 - sibling keys beside `$ref` override the referenced payload
@@ -211,12 +211,11 @@ configs without becoming a scheduler.
 V0 should include:
 
 - `.etcm` parser for spec and implementation blocks
-- selector support: `path#Spec`, exact `path#Spec:impl`, and unique
-  implementation shorthand `path#impl` or `path`
-- YAML-style comments: `#` starts a comment at line start or after whitespace,
-  outside quoted strings
+- exact selector support: `path.etcm#Spec`, `#Spec`,
+  `path.etcm#Spec:impl`, `#Spec:impl`, and `:impl`
+- YAML-style comments outside selector positions and quoted strings
 - top-level `$spec` reuse for implementation-only files
-- spec inheritance and `$spec` references by `path#Spec`
+- spec inheritance and `$spec` references by exact spec selector
 - primitive types: `str`, `int`, `float`, `bool`, `null`, `Path`
 - containers: `list[T]`, `dict[K, V]`
 - field-level path validation with `path_exists` and `path_kind`

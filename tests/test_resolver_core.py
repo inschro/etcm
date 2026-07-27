@@ -15,32 +15,68 @@ ROOT = Path(__file__).resolve().parent
 FIXTURES = ROOT / "fixtures"
 
 VALID_RESOLVER_FIXTURES = {
-    "typed_refs": "valid/typed_refs/train.etcm#smoke",
-    "spec_reuse": "valid/spec_reuse/variants.etcm#smoke",
-    "spec_inheritance": "valid/spec_inheritance_resolver/cuda.etcm",
-    "impl_inheritance": "valid/impl_inheritance_resolver/runtime.etcm#child",
-    "path_policies": "valid/path_policies/data.etcm",
-    "source_relative_paths": "valid/source_relative_paths/train.etcm",
+    "typed_refs": "valid/typed_refs/train.etcm#TrainRun:smoke",
+    "spec_reuse": "valid/spec_reuse/variants.etcm#DataConfig:smoke",
+    "spec_inheritance": (
+        "valid/spec_inheritance_resolver/cuda.etcm#CudaRuntime:default"
+    ),
+    "impl_inheritance": (
+        "valid/impl_inheritance_resolver/runtime.etcm#Runtime:child"
+    ),
+    "path_policies": "valid/path_policies/data.etcm#DataConfig:default",
+    "source_relative_paths": (
+        "valid/source_relative_paths/train.etcm#TrainRun:default"
+    ),
 }
 
 INVALID_RESOLVE_FIXTURES = {
-    "missing_selector": ("invalid/missing_selector.etcm", "E_MISSING_SELECTOR"),
-    "spec_cycle": ("invalid/spec_cycle/a.etcm", "E_SPEC_CYCLE"),
-    "impl_cycle": ("invalid/impl_cycle.etcm#a", "E_IMPL_CYCLE"),
-    "ref_cycle": ("invalid/ref_cycle/node.etcm#a", "E_REF_CYCLE"),
+    "missing_selector": (
+        "invalid/missing_selector.etcm#BadRef:default",
+        "E_MISSING_SELECTOR",
+    ),
+    "spec_cycle": ("invalid/spec_cycle/a.etcm#A:default", "E_SPEC_CYCLE"),
+    "impl_cycle": ("invalid/impl_cycle.etcm#Loop:a", "E_IMPL_CYCLE"),
+    "ref_cycle": ("invalid/ref_cycle/node.etcm#Node:a", "E_REF_CYCLE"),
 }
 
 INVALID_VALIDATE_FIXTURES = {
-    "type_mismatch": ("invalid/type_mismatch.etcm", "E_TYPE_MISMATCH"),
-    "missing_required": ("invalid/missing_required.etcm", "E_MISSING_FIELD"),
-    "denied_override": ("invalid/denied_override.etcm#child", "E_INVALID_OVERRIDE"),
-    "invalid_path_kind": ("invalid/invalid_path_kind.etcm", "E_INVALID_PATH"),
-    "missing_path_must_exist": ("invalid/missing_path_must_exist.etcm", "E_INVALID_PATH"),
-    "constraint_choice": ("invalid/constraint_choice.etcm", "E_CONSTRAINT"),
-    "constraint_bound": ("invalid/constraint_bound.etcm", "E_CONSTRAINT"),
-    "constraint_length": ("invalid/constraint_length.etcm", "E_CONSTRAINT"),
-    "constraint_regex": ("invalid/constraint_regex.etcm", "E_CONSTRAINT"),
-    "constraint_malformed": ("invalid/constraint_malformed.etcm", "E_CONSTRAINT"),
+    "type_mismatch": ("invalid/type_mismatch.etcm#BadType:default", "E_TYPE_MISMATCH"),
+    "missing_required": (
+        "invalid/missing_required.etcm#MissingRequired:default",
+        "E_MISSING_FIELD",
+    ),
+    "denied_override": (
+        "invalid/denied_override.etcm#Runtime:child",
+        "E_INVALID_OVERRIDE",
+    ),
+    "invalid_path_kind": (
+        "invalid/invalid_path_kind.etcm#BadPath:default",
+        "E_INVALID_PATH",
+    ),
+    "missing_path_must_exist": (
+        "invalid/missing_path_must_exist.etcm#BadPath:default",
+        "E_INVALID_PATH",
+    ),
+    "constraint_choice": (
+        "invalid/constraint_choice.etcm#Runtime:default",
+        "E_CONSTRAINT",
+    ),
+    "constraint_bound": (
+        "invalid/constraint_bound.etcm#Train:default",
+        "E_CONSTRAINT",
+    ),
+    "constraint_length": (
+        "invalid/constraint_length.etcm#Tags:default",
+        "E_CONSTRAINT",
+    ),
+    "constraint_regex": (
+        "invalid/constraint_regex.etcm#User:default",
+        "E_CONSTRAINT",
+    ),
+    "constraint_malformed": (
+        "invalid/constraint_malformed.etcm#Train:default",
+        "E_CONSTRAINT",
+    ),
 }
 
 
@@ -89,7 +125,7 @@ def test_invalid_validate_fixtures_match_diagnostic_golden(
 
 
 def test_validate_returns_validated_graph_for_valid_graph() -> None:
-    graph = resolve(str(FIXTURES / "valid/typed_refs/train.etcm#smoke"))
+    graph = resolve(str(FIXTURES / "valid/typed_refs/train.etcm#TrainRun:smoke"))
 
     validated = validate(graph)
 
@@ -97,7 +133,7 @@ def test_validate_returns_validated_graph_for_valid_graph() -> None:
 
 
 def test_resolver_path_policy_controls_delegated_paths() -> None:
-    selector = str(FIXTURES / "valid/path_policies/data.etcm")
+    selector = str(FIXTURES / "valid/path_policies/data.etcm#DataConfig:default")
 
     graph = Resolver(path_exists="allow_missing").resolve(selector)
     assert Resolver(path_exists="allow_missing").validate(graph).validated is True
@@ -121,17 +157,17 @@ def test_full_spec_implementation_selector_resolves_from_multi_spec_file() -> No
     assert root.values["max_steps"] == 10
 
 
-def test_short_implementation_selector_resolves_when_unique() -> None:
+def test_short_implementation_selector_is_rejected_even_when_unique() -> None:
     source = FIXTURES / "valid/multiple_specs.etcm"
 
-    graph = resolve(f"{source}#smoke")
+    with pytest.raises(ETCMError) as raised:
+        resolve(f"{source}#smoke")
 
-    root = next(node for node in graph.nodes if node.id == "root")
-    assert root.spec_name == "TrainConfig"
-    assert root.selector.endswith("multiple_specs.etcm#TrainConfig:smoke")
+    assert raised.value.diagnostic.code == "E_MISSING_SELECTOR"
+    assert "path.etcm#Spec:implementation" in raised.value.diagnostic.message
 
 
-def test_short_implementation_selector_is_ambiguous_without_type_context(tmp_path: Path) -> None:
+def test_root_selector_never_infers_default_implementation(tmp_path: Path) -> None:
     source = tmp_path / "configs.etcm"
     source.write_text(
         "\n".join(
@@ -154,11 +190,10 @@ def test_short_implementation_selector_is_ambiguous_without_type_context(tmp_pat
     )
 
     with pytest.raises(ETCMError) as raised:
-        resolve(str(source))
+        resolve(f"{source}#TrainConfig")
 
     assert raised.value.diagnostic.code == "E_MISSING_SELECTOR"
-    assert raised.value.diagnostic.details is not None
-    assert len(raised.value.diagnostic.details["candidates"]) == 2
+    assert "path.etcm#Spec:implementation" in raised.value.diagnostic.message
 
     graph = resolve(f"{source}#EvalConfig:default")
     root = next(node for node in graph.nodes if node.id == "root")

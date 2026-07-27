@@ -368,7 +368,7 @@
     }
   ],
   "path_resolution": [],
-  "root_selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/impl_inheritance_resolver/runtime.etcm#child",
+  "root_selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/impl_inheritance_resolver/runtime.etcm#Runtime:child",
   "sources": [
     "valid/impl_inheritance_resolver/runtime.etcm"
   ],

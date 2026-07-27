@@ -53,8 +53,15 @@ graph = validate(graph)
 cfg = convert(graph, target="pydantic")
 ```
 
-Implementation selectors may use `path#impl` or plain `path` as shorthand only
-when that implementation name is unique across the target file.
+Selectors identify their target without inspecting the target file:
+
+- `path.etcm#Spec` and `#Spec` select cross-file and same-file specs.
+- `path.etcm#Spec:implementation` and `#Spec:implementation` select named
+  implementations.
+- `:implementation` selects an implementation in the active local spec.
+
+Root selectors always use `path.etcm#Spec:implementation`. Implementations
+named `default` are written explicitly as `:default`; ETCM never infers them.
 
 Typing note: `load()` and `convert()` return `Any`. ETCM validates the config
 before materializing it, but the returned object is a dynamic boundary for
@@ -88,9 +95,9 @@ After installation, the CLI and Python API can be smoke-tested against the
 example configs:
 
 ```bash
-etcm validate examples/ml/train.etcm#smoke --short
-etcm load examples/ml/train.etcm#smoke --target dict
-python -c 'from etcm import load; print(load("examples/ml/train.etcm#smoke", target="dict")["run_name"])'
+etcm validate examples/ml/train.etcm#TrainRun:smoke --short
+etcm load examples/ml/train.etcm#TrainRun:smoke --target dict
+python -c 'from etcm import load; print(load("examples/ml/train.etcm#TrainRun:smoke", target="dict")["run_name"])'
 ```
 
 ## Current Status

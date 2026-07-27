@@ -64,7 +64,8 @@ The matrix must cover these v0 behaviors before parser work starts:
 - inline `impl` blocks are owned by their containing spec
 - top-level `impl` blocks are only valid with top-level `$spec`
 - spec inheritance uses spec selectors
-- implementation inheritance uses a full selector when needed
+- implementation inheritance uses exact selectors, including local
+  `:implementation`
 - `$field` refs point to implementation selectors, not arbitrary literals
 - field assignment order is deterministic
 - duplicate definitions fail locally before resolver graph construction

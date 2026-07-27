@@ -17,13 +17,18 @@ FIXTURES = ROOT / "fixtures"
 
 
 def test_load_dict_materializes_nested_refs() -> None:
-    cfg = load(str(FIXTURES / "valid/typed_refs/train.etcm#smoke"), target="dict")
+    cfg = load(
+        str(FIXTURES / "valid/typed_refs/train.etcm#TrainRun:smoke"),
+        target="dict",
+    )
 
     assert cfg == {"max_steps": 2, "model": {"depth": 4}}
 
 
 def test_convert_dataclass_materializes_frozen_nested_objects() -> None:
-    graph = validate(resolve(str(FIXTURES / "valid/typed_refs/train.etcm#smoke")))
+    graph = validate(
+        resolve(str(FIXTURES / "valid/typed_refs/train.etcm#TrainRun:smoke"))
+    )
 
     cfg: Any = convert(graph, target="dataclass")
 
@@ -35,7 +40,9 @@ def test_convert_dataclass_materializes_frozen_nested_objects() -> None:
 
 
 def test_convert_pydantic_materializes_frozen_nested_objects() -> None:
-    graph = validate(resolve(str(FIXTURES / "valid/typed_refs/train.etcm#smoke")))
+    graph = validate(
+        resolve(str(FIXTURES / "valid/typed_refs/train.etcm#TrainRun:smoke"))
+    )
 
     cfg: Any = convert(graph, target="pydantic")
 
@@ -47,7 +54,7 @@ def test_convert_pydantic_materializes_frozen_nested_objects() -> None:
 
 
 def test_path_values_materialize_as_strings_for_dict_and_paths_for_objects() -> None:
-    selector = str(FIXTURES / "valid/path_policies/data.etcm")
+    selector = str(FIXTURES / "valid/path_policies/data.etcm#DataConfig:default")
 
     dict_cfg = cast(dict[str, Any], load(selector, target="dict"))
     dataclass_cfg: Any = load(selector, target="dataclass")
@@ -94,7 +101,7 @@ def test_native_spec_ref_and_inline_nested_fields_materialize(tmp_path: Path) ->
         encoding="utf-8",
     )
 
-    cfg = load(f"{train_path}#smoke", target="dict")
+    cfg = load(f"{train_path}#TrainRun:smoke", target="dict")
 
     assert cfg == {
         "model": {"depth": 8},
@@ -118,14 +125,14 @@ def test_not_equal_constraint_rejects_forbidden_value(tmp_path: Path) -> None:
             ),
         encoding="utf-8",
     )
-    graph = resolve(f"{config_path}#bad")
+    graph = resolve(f"{config_path}#TrainRun:bad")
 
     with pytest.raises(ETCMError, match="constraint 'ne'"):
         validate(graph)
 
 
 def test_convert_requires_validated_graph_unless_forced() -> None:
-    graph = resolve(str(FIXTURES / "valid/typed_refs/train.etcm#smoke"))
+    graph = resolve(str(FIXTURES / "valid/typed_refs/train.etcm#TrainRun:smoke"))
 
     with pytest.raises(ETCMError, match="unvalidated graph"):
         convert(graph, target="dict")
@@ -134,7 +141,9 @@ def test_convert_requires_validated_graph_unless_forced() -> None:
 
 
 def test_pydantic_schema_summary_matches_golden() -> None:
-    graph = validate(resolve(str(FIXTURES / "valid/typed_refs/train.etcm#smoke")))
+    graph = validate(
+        resolve(str(FIXTURES / "valid/typed_refs/train.etcm#TrainRun:smoke"))
+    )
 
     assert pydantic_schema_summary(graph) == _read_golden("pydantic", "typed_refs")
 

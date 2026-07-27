@@ -44,8 +44,8 @@ meta_pair: NAME "=" value
 list: "[" [value ("," value)* ","?] "]"
 mapping: "{" [map_pair ("," map_pair)* ","?] "}"
 map_pair: NAME ":" value
-selector: PATH ["#" NAME]
-PATH: /[A-Za-z0-9_\.\/:-]+/
+selector: SELECTOR
+SELECTOR: /[A-Za-z0-9_\.\/-]+#[A-Za-z_][A-Za-z0-9_]*(?::[A-Za-z_][A-Za-z0-9_]*)?/
 %import common.CNAME -> NAME
 %import common.ESCAPED_STRING
 %import common.SIGNED_NUMBER
@@ -57,10 +57,10 @@ COMMENT: /#[^\n]*/
 
 sample = '''
 # sample
-$spec: specs/data.etcm
+$spec: specs/data.etcm#DataConfig
 
 impl smoke:
-  $model: models/lm.etcm#tiny
+  $model: models/lm.etcm#ModelConfig:tiny
   data_path: "data/smoke.txt"
 '''
 parser = Lark(grammar, parser='lalr', propagate_positions=True, maybe_placeholders=False)

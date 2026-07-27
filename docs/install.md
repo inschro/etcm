@@ -40,7 +40,7 @@ installed package and CLI:
 
 ```bash
 etcm --help
-etcm validate examples/ml/train.etcm#smoke --short
-etcm load examples/ml/train.etcm#smoke --target dict
-python -c 'from etcm import load; print(load("examples/ml/train.etcm#smoke", target="dict")["run_name"])'
+etcm validate examples/ml/train.etcm#TrainRun:smoke --short
+etcm load examples/ml/train.etcm#TrainRun:smoke --target dict
+python -c 'from etcm import load; print(load("examples/ml/train.etcm#TrainRun:smoke", target="dict")["run_name"])'
 ```

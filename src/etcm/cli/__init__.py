@@ -249,10 +249,7 @@ def _document_selectors(document: Document) -> Iterable[str]:
     if document.spec_ref is not None:
         spec_name = document.spec_ref.selector.spec
         if spec_name is None:
-            return (
-                f"{source.as_posix()}#{implementation.name}"
-                for implementation in document.implementations
-            )
+            raise AssertionError("$spec selector is missing its spec name")
         return (
             _selector_text(source, spec_name, implementation)
             for implementation in document.implementations
