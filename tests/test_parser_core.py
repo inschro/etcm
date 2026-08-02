@@ -30,6 +30,7 @@ PARSER_VALID_FIXTURES = [
     "valid/multiple_specs.etcm",
     "valid/nested_literals.etcm",
     "valid/no_impl.etcm",
+    "valid/parameter_relations/training.etcm",
     "valid/spec_inheritance.etcm",
     "valid/spec_ref_impls.etcm",
 ]
@@ -157,10 +158,38 @@ def _field_summary(field: Any) -> dict[str, Any]:
         "name": field.name,
         "type": _type_summary(field.type_expr),
         "default": _literal_summary(field.default),
+        "derived": _expression_summary(field.derived),
+        "constraints": [
+            {
+                "left": _expression_summary(constraint.left),
+                "operator": constraint.operator,
+                "right": _expression_summary(constraint.right),
+                "raw": constraint.raw,
+            }
+            for constraint in field.constraints
+        ],
         "metadata": {key: _literal_summary(value) for key, value in field.metadata.items()},
         "override": field.override,
         "ref_selector": field.ref_selector.raw if field.ref_selector is not None else None,
         "fields": [_field_summary(child) for child in field.fields],
+    }
+
+
+def _expression_summary(expression: Any | None) -> dict[str, Any] | None:
+    if expression is None:
+        return None
+    return {
+        "kind": expression.kind,
+        "operator": expression.operator,
+        "literal": _literal_summary(expression.literal),
+        "reference": None
+        if expression.reference is None
+        else {
+            "parts": list(expression.reference.parts),
+            "raw": expression.reference.raw,
+        },
+        "operands": [_expression_summary(operand) for operand in expression.operands],
+        "raw": expression.raw,
     }
 
 

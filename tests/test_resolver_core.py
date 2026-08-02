@@ -24,6 +24,9 @@ VALID_RESOLVER_FIXTURES = {
         "valid/impl_inheritance_resolver/runtime.etcm#Runtime:child"
     ),
     "path_policies": "valid/path_policies/data.etcm#DataConfig:default",
+    "parameter_relations": (
+        "valid/parameter_relations/training.etcm#TrainingConfig:distributed"
+    ),
     "source_relative_paths": (
         "valid/source_relative_paths/train.etcm#TrainRun:default"
     ),
@@ -37,6 +40,10 @@ INVALID_RESOLVE_FIXTURES = {
     "spec_cycle": ("invalid/spec_cycle/a.etcm#A:default", "E_SPEC_CYCLE"),
     "impl_cycle": ("invalid/impl_cycle.etcm#Loop:a", "E_IMPL_CYCLE"),
     "ref_cycle": ("invalid/ref_cycle/node.etcm#Node:a", "E_REF_CYCLE"),
+    "constraint_malformed": (
+        "invalid/constraint_malformed.etcm#Train:default",
+        "E_EXPRESSION_TYPE",
+    ),
 }
 
 INVALID_VALIDATE_FIXTURES = {
@@ -71,10 +78,6 @@ INVALID_VALIDATE_FIXTURES = {
     ),
     "constraint_regex": (
         "invalid/constraint_regex.etcm#User:default",
-        "E_CONSTRAINT",
-    ),
-    "constraint_malformed": (
-        "invalid/constraint_malformed.etcm#Train:default",
         "E_CONSTRAINT",
     ),
 }
@@ -209,7 +212,7 @@ def _read_golden(kind: str, name: str) -> dict[str, Any]:
 def _diagnostic_summary(diagnostic: Diagnostic) -> dict[str, Any]:
     return {
         "code": diagnostic.code,
-        "message": diagnostic.message,
+        "message": _relative_string(diagnostic.message),
         "source_path": _relative(diagnostic.source_path),
         "span": {
             "line": diagnostic.line,
@@ -217,7 +220,9 @@ def _diagnostic_summary(diagnostic: Diagnostic) -> dict[str, Any]:
             "end_line": diagnostic.end_line,
             "end_column": diagnostic.end_column,
         },
-        "selector": diagnostic.selector,
+        "selector": _relative_string(diagnostic.selector)
+        if diagnostic.selector is not None
+        else None,
         "graph_path": diagnostic.graph_path,
         "details": _normalize_details(diagnostic.details),
     }
@@ -228,7 +233,7 @@ def _normalize_details(details: Any) -> Any:
         return {}
     if isinstance(details, Mapping):
         return {key: _normalize_details(value) for key, value in details.items()}
-    if isinstance(details, list):
+    if isinstance(details, tuple | list):
         return [_normalize_details(value) for value in details]
     if isinstance(details, str):
         return _relative_string(details)
@@ -242,6 +247,8 @@ def _relative(path: Path | None) -> str | None:
 
 
 def _relative_string(value: str) -> str:
+    fixture_prefix = FIXTURES.resolve().as_posix()
+    value = value.replace(f"{fixture_prefix}/", "")
     try:
         return Path(value).resolve().relative_to(FIXTURES).as_posix()
     except ValueError:

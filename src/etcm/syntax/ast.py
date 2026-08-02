@@ -4,7 +4,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any
+from typing import Any, Literal
 
 from etcm.ir import SourceSpan
 
@@ -24,10 +24,39 @@ class SyntaxLiteral:
 
 
 @dataclass(frozen=True)
+class SyntaxParameterReference:
+    parts: tuple[str, ...]
+    raw: str
+    span: SourceSpan | None = None
+
+
+@dataclass(frozen=True)
+class SyntaxExpression:
+    kind: Literal["literal", "reference", "current", "unary", "binary"]
+    operator: str | None = None
+    literal: SyntaxLiteral | None = None
+    reference: SyntaxParameterReference | None = None
+    operands: tuple[SyntaxExpression, ...] = ()
+    raw: str | None = None
+    span: SourceSpan | None = None
+
+
+@dataclass(frozen=True)
+class SyntaxComparisonConstraint:
+    left: SyntaxExpression
+    operator: str
+    right: SyntaxExpression
+    raw: str
+    span: SourceSpan | None = None
+
+
+@dataclass(frozen=True)
 class SyntaxField:
     name: str
     type_expr: SyntaxTypeExpr | None = None
     default: SyntaxLiteral | None = None
+    derived: SyntaxExpression | None = None
+    constraints: tuple[SyntaxComparisonConstraint, ...] = ()
     metadata: Mapping[str, SyntaxLiteral] = field(default_factory=dict)
     override: str = "allow"
     ref_selector: str | None = None

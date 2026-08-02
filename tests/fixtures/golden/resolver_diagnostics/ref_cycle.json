@@ -8,7 +8,7 @@
   },
   "graph_path": "root.child.child",
   "message": "Cycle while resolving implementation 'a'.",
-  "selector": "/home/ingo/code_stuff/etcm/tests/fixtures/invalid/ref_cycle/node.etcm#Node:a",
+  "selector": "invalid/ref_cycle/node.etcm#Node:a",
   "source_path": "invalid/ref_cycle/node.etcm",
   "span": {
     "column": null,

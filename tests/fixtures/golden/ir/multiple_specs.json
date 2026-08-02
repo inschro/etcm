@@ -6,21 +6,61 @@
     {
       "fields": [
         {
+          "constraints": [
+            {
+              "left": {
+                "kind": "current",
+                "literal": null,
+                "operands": [],
+                "operator": null,
+                "raw": null,
+                "reference": null
+              },
+              "operator": ">=",
+              "raw": ">=0",
+              "right": {
+                "kind": "literal",
+                "literal": {
+                  "kind": "int",
+                  "value": 0
+                },
+                "operands": [],
+                "operator": null,
+                "raw": "0",
+                "reference": null
+              }
+            },
+            {
+              "left": {
+                "kind": "current",
+                "literal": null,
+                "operands": [],
+                "operator": null,
+                "raw": null,
+                "reference": null
+              },
+              "operator": "!=",
+              "raw": "!=200",
+              "right": {
+                "kind": "literal",
+                "literal": {
+                  "kind": "int",
+                  "value": 200
+                },
+                "operands": [],
+                "operator": null,
+                "raw": "200",
+                "reference": null
+              }
+            }
+          ],
           "default": {
             "kind": "int",
             "value": 100
           },
+          "derived": null,
           "fields": [],
-          "metadata": {
-            "ge": {
-              "kind": "int",
-              "value": 0
-            },
-            "ne": {
-              "kind": "int",
-              "value": 200
-            }
-          },
+          "metadata": {},
           "name": "max_steps",
           "override": "allow",
           "ref_selector": null,
@@ -55,10 +95,12 @@
     {
       "fields": [
         {
+          "constraints": [],
           "default": {
             "kind": "string",
             "value": "accuracy"
           },
+          "derived": null,
           "fields": [],
           "metadata": {},
           "name": "metric",

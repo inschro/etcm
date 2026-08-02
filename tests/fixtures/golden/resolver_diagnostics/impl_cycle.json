@@ -8,7 +8,7 @@
   },
   "graph_path": "root.__parent.__parent",
   "message": "Cycle while resolving implementation 'a'.",
-  "selector": "/home/ingo/code_stuff/etcm/tests/fixtures/invalid/impl_cycle.etcm#Loop:a",
+  "selector": "invalid/impl_cycle.etcm#Loop:a",
   "source_path": "invalid/impl_cycle.etcm",
   "span": {
     "column": null,

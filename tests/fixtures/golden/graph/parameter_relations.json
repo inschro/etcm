@@ -1,0 +1,1602 @@
+{
+  "edges": [
+    {
+      "field_path": [
+        "dataloader"
+      ],
+      "kind": "ref",
+      "source": "root",
+      "target": "root.dataloader"
+    },
+    {
+      "field_path": [
+        "limits"
+      ],
+      "kind": "ref",
+      "source": "root",
+      "target": "root.limits"
+    },
+    {
+      "field_path": [
+        "sampler"
+      ],
+      "kind": "ref",
+      "source": "root.dataloader",
+      "target": "root.dataloader.sampler"
+    }
+  ],
+  "nodes": [
+    {
+      "field_values": {
+        "aligned_batch": {
+          "literal": {
+            "kind": "int",
+            "value": 32
+          },
+          "local_value": null,
+          "origin": "local",
+          "overrode_parent": false,
+          "parent_value": null,
+          "ref_target": null,
+          "source_path": "valid/parameter_relations/training.etcm",
+          "span": {
+            "column": 5,
+            "end_column": 1,
+            "end_line": 26,
+            "line": 25
+          },
+          "value": 32
+        },
+        "copied_child_total": {
+          "derived_expression": {
+            "kind": "reference",
+            "raw": "@dataloader.aligned_local_batch",
+            "reference": {
+              "parts": [
+                "dataloader",
+                "aligned_local_batch"
+              ],
+              "raw": "@dataloader.aligned_local_batch",
+              "span": {
+                "column": 30,
+                "end_column": 61,
+                "end_line": 16,
+                "line": 16
+              }
+            },
+            "span": {
+              "column": 30,
+              "end_column": 61,
+              "end_line": 16,
+              "line": 16
+            }
+          },
+          "literal": null,
+          "local_value": null,
+          "origin": "derived",
+          "overrode_parent": false,
+          "parent_value": null,
+          "ref_target": null,
+          "source_path": "valid/parameter_relations/training.etcm",
+          "span": {
+            "column": 30,
+            "end_column": 61,
+            "end_line": 16,
+            "line": 16
+          },
+          "value": 12
+        },
+        "copied_inline_total": {
+          "derived_expression": {
+            "kind": "reference",
+            "raw": "@limits.doubled_minimum",
+            "reference": {
+              "parts": [
+                "limits",
+                "doubled_minimum"
+              ],
+              "raw": "@limits.doubled_minimum",
+              "span": {
+                "column": 31,
+                "end_column": 54,
+                "end_line": 17,
+                "line": 17
+              }
+            },
+            "span": {
+              "column": 31,
+              "end_column": 54,
+              "end_line": 17,
+              "line": 17
+            }
+          },
+          "literal": null,
+          "local_value": null,
+          "origin": "derived",
+          "overrode_parent": false,
+          "parent_value": null,
+          "ref_target": null,
+          "source_path": "valid/parameter_relations/training.etcm",
+          "span": {
+            "column": 31,
+            "end_column": 54,
+            "end_line": 17,
+            "line": 17
+          },
+          "value": 32
+        },
+        "copied_seed": {
+          "derived_expression": {
+            "kind": "reference",
+            "raw": "@dataloader.sampler.seed",
+            "reference": {
+              "parts": [
+                "dataloader",
+                "sampler",
+                "seed"
+              ],
+              "raw": "@dataloader.sampler.seed",
+              "span": {
+                "column": 23,
+                "end_column": 47,
+                "end_line": 15,
+                "line": 15
+              }
+            },
+            "span": {
+              "column": 23,
+              "end_column": 47,
+              "end_line": 15,
+              "line": 15
+            }
+          },
+          "literal": null,
+          "local_value": null,
+          "origin": "derived",
+          "overrode_parent": false,
+          "parent_value": null,
+          "ref_target": null,
+          "source_path": "valid/parameter_relations/training.etcm",
+          "span": {
+            "column": 23,
+            "end_column": 47,
+            "end_line": 15,
+            "line": 15
+          },
+          "value": 42
+        },
+        "dataloader": {
+          "literal": null,
+          "local_value": null,
+          "origin": "local",
+          "overrode_parent": false,
+          "parent_value": null,
+          "ref_target": "root.dataloader",
+          "source_path": "valid/parameter_relations/training.etcm",
+          "span": {
+            "column": 5,
+            "end_column": 5,
+            "end_line": 23,
+            "line": 22
+          },
+          "value": {
+            "$ref": "root.dataloader"
+          }
+        },
+        "global_batch_size": {
+          "derived_expression": {
+            "kind": "binary",
+            "operands": [
+              {
+                "kind": "binary",
+                "operands": [
+                  {
+                    "kind": "reference",
+                    "raw": "@dataloader.local_batch_size",
+                    "reference": {
+                      "parts": [
+                        "dataloader",
+                        "local_batch_size"
+                      ],
+                      "raw": "@dataloader.local_batch_size",
+                      "span": {
+                        "column": 5,
+                        "end_column": 33,
+                        "end_line": 11,
+                        "line": 11
+                      }
+                    },
+                    "span": {
+                      "column": 5,
+                      "end_column": 33,
+                      "end_line": 11,
+                      "line": 11
+                    }
+                  },
+                  {
+                    "kind": "reference",
+                    "raw": "@gradient_accumulation_steps",
+                    "reference": {
+                      "parts": [
+                        "gradient_accumulation_steps"
+                      ],
+                      "raw": "@gradient_accumulation_steps",
+                      "span": {
+                        "column": 7,
+                        "end_column": 35,
+                        "end_line": 12,
+                        "line": 12
+                      }
+                    },
+                    "span": {
+                      "column": 7,
+                      "end_column": 35,
+                      "end_line": 12,
+                      "line": 12
+                    }
+                  }
+                ],
+                "operator": "*",
+                "raw": "@dataloader.local_batch_size\n    * @gradient_accumulation_steps",
+                "span": {
+                  "column": 5,
+                  "end_column": 35,
+                  "end_line": 12,
+                  "line": 11
+                }
+              },
+              {
+                "kind": "reference",
+                "raw": "@world_size",
+                "reference": {
+                  "parts": [
+                    "world_size"
+                  ],
+                  "raw": "@world_size",
+                  "span": {
+                    "column": 7,
+                    "end_column": 18,
+                    "end_line": 13,
+                    "line": 13
+                  }
+                },
+                "span": {
+                  "column": 7,
+                  "end_column": 18,
+                  "end_line": 13,
+                  "line": 13
+                }
+              }
+            ],
+            "operator": "*",
+            "raw": "@dataloader.local_batch_size\n    * @gradient_accumulation_steps\n    * @world_size",
+            "span": {
+              "column": 5,
+              "end_column": 18,
+              "end_line": 13,
+              "line": 11
+            }
+          },
+          "literal": null,
+          "local_value": null,
+          "origin": "derived",
+          "overrode_parent": false,
+          "parent_value": null,
+          "ref_target": null,
+          "source_path": "valid/parameter_relations/training.etcm",
+          "span": {
+            "column": 5,
+            "end_column": 18,
+            "end_line": 13,
+            "line": 11
+          },
+          "value": 32
+        },
+        "gradient_accumulation_steps": {
+          "literal": {
+            "kind": "int",
+            "value": 2
+          },
+          "local_value": null,
+          "origin": "default",
+          "overrode_parent": false,
+          "parent_value": null,
+          "ref_target": null,
+          "source_path": "valid/parameter_relations/training.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 3,
+            "end_line": 4,
+            "line": 3
+          },
+          "value": 2
+        },
+        "limits": {
+          "literal": null,
+          "local_value": null,
+          "origin": "local",
+          "overrode_parent": false,
+          "parent_value": null,
+          "ref_target": "root.limits",
+          "source_path": "valid/parameter_relations/training.etcm",
+          "span": {
+            "column": 5,
+            "end_column": 5,
+            "end_line": 24,
+            "line": 23
+          },
+          "value": {
+            "$ref": "root.limits"
+          }
+        },
+        "seed_confirmation": {
+          "literal": {
+            "kind": "int",
+            "value": 42
+          },
+          "local_value": null,
+          "origin": "local",
+          "overrode_parent": false,
+          "parent_value": null,
+          "ref_target": null,
+          "source_path": "valid/parameter_relations/training.etcm",
+          "span": {
+            "column": 5,
+            "end_column": 5,
+            "end_line": 25,
+            "line": 24
+          },
+          "value": 42
+        },
+        "world_size": {
+          "literal": {
+            "kind": "int",
+            "value": 4
+          },
+          "local_value": null,
+          "origin": "default",
+          "overrode_parent": false,
+          "parent_value": null,
+          "ref_target": null,
+          "source_path": "valid/parameter_relations/training.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 3,
+            "end_line": 6,
+            "line": 4
+          },
+          "value": 4
+        }
+      },
+      "fields": {
+        "aligned_batch": {
+          "constraints": [
+            {
+              "kind": "comparison",
+              "left": {
+                "kind": "binary",
+                "operands": [
+                  {
+                    "kind": "current",
+                    "span": {
+                      "column": 23,
+                      "end_column": 23,
+                      "end_line": 19,
+                      "line": 19
+                    }
+                  },
+                  {
+                    "kind": "reference",
+                    "raw": "@dataloader.sampler.alignment",
+                    "reference": {
+                      "parts": [
+                        "dataloader",
+                        "sampler",
+                        "alignment"
+                      ],
+                      "raw": "@dataloader.sampler.alignment",
+                      "span": {
+                        "column": 25,
+                        "end_column": 54,
+                        "end_line": 19,
+                        "line": 19
+                      }
+                    },
+                    "span": {
+                      "column": 25,
+                      "end_column": 54,
+                      "end_line": 19,
+                      "line": 19
+                    }
+                  }
+                ],
+                "operator": "%",
+                "raw": "% @dataloader.sampler.alignment",
+                "span": {
+                  "column": 23,
+                  "end_column": 54,
+                  "end_line": 19,
+                  "line": 19
+                }
+              },
+              "operator": "==",
+              "raw": "% @dataloader.sampler.alignment == 0",
+              "right": {
+                "kind": "literal",
+                "literal": {
+                  "kind": "int",
+                  "value": 0
+                },
+                "raw": "0",
+                "span": {
+                  "column": 58,
+                  "end_column": 59,
+                  "end_line": 19,
+                  "line": 19
+                }
+              },
+              "span": {
+                "column": 23,
+                "end_column": 59,
+                "end_line": 19,
+                "line": 19
+              }
+            }
+          ],
+          "default": null,
+          "has_default": false,
+          "metadata": {},
+          "name": "aligned_batch",
+          "override": "allow",
+          "required": true,
+          "source_path": "valid/parameter_relations/training.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 3,
+            "end_line": 21,
+            "line": 19
+          },
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "int"
+          }
+        },
+        "copied_child_total": {
+          "default": null,
+          "derived": {
+            "kind": "reference",
+            "raw": "@dataloader.aligned_local_batch",
+            "reference": {
+              "parts": [
+                "dataloader",
+                "aligned_local_batch"
+              ],
+              "raw": "@dataloader.aligned_local_batch",
+              "span": {
+                "column": 30,
+                "end_column": 61,
+                "end_line": 16,
+                "line": 16
+              }
+            },
+            "span": {
+              "column": 30,
+              "end_column": 61,
+              "end_line": 16,
+              "line": 16
+            }
+          },
+          "has_default": false,
+          "metadata": {},
+          "name": "copied_child_total",
+          "override": "allow",
+          "required": false,
+          "source_path": "valid/parameter_relations/training.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 3,
+            "end_line": 17,
+            "line": 16
+          },
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "int"
+          }
+        },
+        "copied_inline_total": {
+          "default": null,
+          "derived": {
+            "kind": "reference",
+            "raw": "@limits.doubled_minimum",
+            "reference": {
+              "parts": [
+                "limits",
+                "doubled_minimum"
+              ],
+              "raw": "@limits.doubled_minimum",
+              "span": {
+                "column": 31,
+                "end_column": 54,
+                "end_line": 17,
+                "line": 17
+              }
+            },
+            "span": {
+              "column": 31,
+              "end_column": 54,
+              "end_line": 17,
+              "line": 17
+            }
+          },
+          "has_default": false,
+          "metadata": {},
+          "name": "copied_inline_total",
+          "override": "allow",
+          "required": false,
+          "source_path": "valid/parameter_relations/training.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 3,
+            "end_line": 18,
+            "line": 17
+          },
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "int"
+          }
+        },
+        "copied_seed": {
+          "default": null,
+          "derived": {
+            "kind": "reference",
+            "raw": "@dataloader.sampler.seed",
+            "reference": {
+              "parts": [
+                "dataloader",
+                "sampler",
+                "seed"
+              ],
+              "raw": "@dataloader.sampler.seed",
+              "span": {
+                "column": 23,
+                "end_column": 47,
+                "end_line": 15,
+                "line": 15
+              }
+            },
+            "span": {
+              "column": 23,
+              "end_column": 47,
+              "end_line": 15,
+              "line": 15
+            }
+          },
+          "has_default": false,
+          "metadata": {},
+          "name": "copied_seed",
+          "override": "allow",
+          "required": false,
+          "source_path": "valid/parameter_relations/training.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 3,
+            "end_line": 16,
+            "line": 15
+          },
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "int"
+          }
+        },
+        "dataloader": {
+          "default": null,
+          "has_default": false,
+          "metadata": {},
+          "name": "dataloader",
+          "override": "allow",
+          "required": true,
+          "source_path": "valid/parameter_relations/training.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 3,
+            "end_line": 3,
+            "line": 2
+          },
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "DataLoaderConfig"
+          }
+        },
+        "global_batch_size": {
+          "default": null,
+          "derived": {
+            "kind": "binary",
+            "operands": [
+              {
+                "kind": "binary",
+                "operands": [
+                  {
+                    "kind": "reference",
+                    "raw": "@dataloader.local_batch_size",
+                    "reference": {
+                      "parts": [
+                        "dataloader",
+                        "local_batch_size"
+                      ],
+                      "raw": "@dataloader.local_batch_size",
+                      "span": {
+                        "column": 5,
+                        "end_column": 33,
+                        "end_line": 11,
+                        "line": 11
+                      }
+                    },
+                    "span": {
+                      "column": 5,
+                      "end_column": 33,
+                      "end_line": 11,
+                      "line": 11
+                    }
+                  },
+                  {
+                    "kind": "reference",
+                    "raw": "@gradient_accumulation_steps",
+                    "reference": {
+                      "parts": [
+                        "gradient_accumulation_steps"
+                      ],
+                      "raw": "@gradient_accumulation_steps",
+                      "span": {
+                        "column": 7,
+                        "end_column": 35,
+                        "end_line": 12,
+                        "line": 12
+                      }
+                    },
+                    "span": {
+                      "column": 7,
+                      "end_column": 35,
+                      "end_line": 12,
+                      "line": 12
+                    }
+                  }
+                ],
+                "operator": "*",
+                "raw": "@dataloader.local_batch_size\n    * @gradient_accumulation_steps",
+                "span": {
+                  "column": 5,
+                  "end_column": 35,
+                  "end_line": 12,
+                  "line": 11
+                }
+              },
+              {
+                "kind": "reference",
+                "raw": "@world_size",
+                "reference": {
+                  "parts": [
+                    "world_size"
+                  ],
+                  "raw": "@world_size",
+                  "span": {
+                    "column": 7,
+                    "end_column": 18,
+                    "end_line": 13,
+                    "line": 13
+                  }
+                },
+                "span": {
+                  "column": 7,
+                  "end_column": 18,
+                  "end_line": 13,
+                  "line": 13
+                }
+              }
+            ],
+            "operator": "*",
+            "raw": "@dataloader.local_batch_size\n    * @gradient_accumulation_steps\n    * @world_size",
+            "span": {
+              "column": 5,
+              "end_column": 18,
+              "end_line": 13,
+              "line": 11
+            }
+          },
+          "has_default": false,
+          "metadata": {},
+          "name": "global_batch_size",
+          "override": "allow",
+          "required": false,
+          "source_path": "valid/parameter_relations/training.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 3,
+            "end_line": 15,
+            "line": 10
+          },
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "int"
+          }
+        },
+        "gradient_accumulation_steps": {
+          "constraints": [
+            {
+              "kind": "comparison",
+              "left": {
+                "kind": "current",
+                "span": {
+                  "column": 41,
+                  "end_column": 43,
+                  "end_line": 3,
+                  "line": 3
+                }
+              },
+              "operator": ">",
+              "raw": ">0",
+              "right": {
+                "kind": "literal",
+                "literal": {
+                  "kind": "int",
+                  "value": 0
+                },
+                "raw": "0",
+                "span": {
+                  "column": 42,
+                  "end_column": 43,
+                  "end_line": 3,
+                  "line": 3
+                }
+              },
+              "span": {
+                "column": 41,
+                "end_column": 43,
+                "end_line": 3,
+                "line": 3
+              }
+            }
+          ],
+          "default": 2,
+          "has_default": true,
+          "metadata": {},
+          "name": "gradient_accumulation_steps",
+          "override": "allow",
+          "required": false,
+          "source_path": "valid/parameter_relations/training.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 3,
+            "end_line": 4,
+            "line": 3
+          },
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "int"
+          }
+        },
+        "limits": {
+          "default": null,
+          "has_default": false,
+          "metadata": {},
+          "name": "limits",
+          "override": "allow",
+          "required": true,
+          "source_path": "valid/parameter_relations/training.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 3,
+            "end_line": 10,
+            "line": 6
+          },
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "TrainingConfig_limits"
+          }
+        },
+        "seed_confirmation": {
+          "constraints": [
+            {
+              "kind": "comparison",
+              "left": {
+                "kind": "current",
+                "span": {
+                  "column": 27,
+                  "end_column": 54,
+                  "end_line": 18,
+                  "line": 18
+                }
+              },
+              "operator": "==",
+              "raw": "== @dataloader.sampler.seed",
+              "right": {
+                "kind": "reference",
+                "raw": "@dataloader.sampler.seed",
+                "reference": {
+                  "parts": [
+                    "dataloader",
+                    "sampler",
+                    "seed"
+                  ],
+                  "raw": "@dataloader.sampler.seed",
+                  "span": {
+                    "column": 30,
+                    "end_column": 54,
+                    "end_line": 18,
+                    "line": 18
+                  }
+                },
+                "span": {
+                  "column": 30,
+                  "end_column": 54,
+                  "end_line": 18,
+                  "line": 18
+                }
+              },
+              "span": {
+                "column": 27,
+                "end_column": 54,
+                "end_line": 18,
+                "line": 18
+              }
+            }
+          ],
+          "default": null,
+          "has_default": false,
+          "metadata": {},
+          "name": "seed_confirmation",
+          "override": "allow",
+          "required": true,
+          "source_path": "valid/parameter_relations/training.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 3,
+            "end_line": 19,
+            "line": 18
+          },
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "int"
+          }
+        },
+        "world_size": {
+          "constraints": [
+            {
+              "kind": "comparison",
+              "left": {
+                "kind": "current",
+                "span": {
+                  "column": 24,
+                  "end_column": 26,
+                  "end_line": 4,
+                  "line": 4
+                }
+              },
+              "operator": ">",
+              "raw": ">0",
+              "right": {
+                "kind": "literal",
+                "literal": {
+                  "kind": "int",
+                  "value": 0
+                },
+                "raw": "0",
+                "span": {
+                  "column": 25,
+                  "end_column": 26,
+                  "end_line": 4,
+                  "line": 4
+                }
+              },
+              "span": {
+                "column": 24,
+                "end_column": 26,
+                "end_line": 4,
+                "line": 4
+              }
+            }
+          ],
+          "default": 4,
+          "has_default": true,
+          "metadata": {},
+          "name": "world_size",
+          "override": "allow",
+          "required": false,
+          "source_path": "valid/parameter_relations/training.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 3,
+            "end_line": 6,
+            "line": 4
+          },
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "int"
+          }
+        }
+      },
+      "graph_path": "root",
+      "id": "root",
+      "implementation": "distributed",
+      "selector": "valid/parameter_relations/training.etcm#TrainingConfig:distributed",
+      "source_path": "valid/parameter_relations/training.etcm",
+      "spec_ancestors": [],
+      "spec_name": "TrainingConfig",
+      "values": {
+        "aligned_batch": 32,
+        "copied_child_total": 12,
+        "copied_inline_total": 32,
+        "copied_seed": 42,
+        "dataloader": {
+          "$ref": "root.dataloader"
+        },
+        "global_batch_size": 32,
+        "gradient_accumulation_steps": 2,
+        "limits": {
+          "$ref": "root.limits"
+        },
+        "seed_confirmation": 42,
+        "world_size": 4
+      }
+    },
+    {
+      "field_values": {
+        "aligned_local_batch": {
+          "derived_expression": {
+            "kind": "binary",
+            "operands": [
+              {
+                "kind": "reference",
+                "raw": "@local_batch_size",
+                "reference": {
+                  "parts": [
+                    "local_batch_size"
+                  ],
+                  "raw": "@local_batch_size",
+                  "span": {
+                    "column": 31,
+                    "end_column": 48,
+                    "end_line": 4,
+                    "line": 4
+                  }
+                },
+                "span": {
+                  "column": 31,
+                  "end_column": 48,
+                  "end_line": 4,
+                  "line": 4
+                }
+              },
+              {
+                "kind": "reference",
+                "raw": "@sampler.alignment",
+                "reference": {
+                  "parts": [
+                    "sampler",
+                    "alignment"
+                  ],
+                  "raw": "@sampler.alignment",
+                  "span": {
+                    "column": 51,
+                    "end_column": 69,
+                    "end_line": 4,
+                    "line": 4
+                  }
+                },
+                "span": {
+                  "column": 51,
+                  "end_column": 69,
+                  "end_line": 4,
+                  "line": 4
+                }
+              }
+            ],
+            "operator": "+",
+            "raw": "@local_batch_size + @sampler.alignment",
+            "span": {
+              "column": 31,
+              "end_column": 69,
+              "end_line": 4,
+              "line": 4
+            }
+          },
+          "literal": null,
+          "local_value": null,
+          "origin": "derived",
+          "overrode_parent": false,
+          "parent_value": null,
+          "ref_target": null,
+          "source_path": "valid/parameter_relations/dataloader.etcm",
+          "span": {
+            "column": 31,
+            "end_column": 69,
+            "end_line": 4,
+            "line": 4
+          },
+          "value": 12
+        },
+        "local_batch_size": {
+          "literal": {
+            "kind": "int",
+            "value": 4
+          },
+          "local_value": null,
+          "origin": "local",
+          "overrode_parent": false,
+          "parent_value": null,
+          "ref_target": null,
+          "source_path": "valid/parameter_relations/dataloader.etcm",
+          "span": {
+            "column": 5,
+            "end_column": 1,
+            "end_line": 9,
+            "line": 8
+          },
+          "value": 4
+        },
+        "sampler": {
+          "literal": null,
+          "local_value": null,
+          "origin": "local",
+          "overrode_parent": false,
+          "parent_value": null,
+          "ref_target": "root.dataloader.sampler",
+          "source_path": "valid/parameter_relations/dataloader.etcm",
+          "span": {
+            "column": 5,
+            "end_column": 5,
+            "end_line": 8,
+            "line": 7
+          },
+          "value": {
+            "$ref": "root.dataloader.sampler"
+          }
+        }
+      },
+      "fields": {
+        "aligned_local_batch": {
+          "default": null,
+          "derived": {
+            "kind": "binary",
+            "operands": [
+              {
+                "kind": "reference",
+                "raw": "@local_batch_size",
+                "reference": {
+                  "parts": [
+                    "local_batch_size"
+                  ],
+                  "raw": "@local_batch_size",
+                  "span": {
+                    "column": 31,
+                    "end_column": 48,
+                    "end_line": 4,
+                    "line": 4
+                  }
+                },
+                "span": {
+                  "column": 31,
+                  "end_column": 48,
+                  "end_line": 4,
+                  "line": 4
+                }
+              },
+              {
+                "kind": "reference",
+                "raw": "@sampler.alignment",
+                "reference": {
+                  "parts": [
+                    "sampler",
+                    "alignment"
+                  ],
+                  "raw": "@sampler.alignment",
+                  "span": {
+                    "column": 51,
+                    "end_column": 69,
+                    "end_line": 4,
+                    "line": 4
+                  }
+                },
+                "span": {
+                  "column": 51,
+                  "end_column": 69,
+                  "end_line": 4,
+                  "line": 4
+                }
+              }
+            ],
+            "operator": "+",
+            "raw": "@local_batch_size + @sampler.alignment",
+            "span": {
+              "column": 31,
+              "end_column": 69,
+              "end_line": 4,
+              "line": 4
+            }
+          },
+          "has_default": false,
+          "metadata": {},
+          "name": "aligned_local_batch",
+          "override": "allow",
+          "required": false,
+          "source_path": "valid/parameter_relations/dataloader.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 3,
+            "end_line": 6,
+            "line": 4
+          },
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "int"
+          }
+        },
+        "local_batch_size": {
+          "constraints": [
+            {
+              "kind": "comparison",
+              "left": {
+                "kind": "current",
+                "span": {
+                  "column": 26,
+                  "end_column": 28,
+                  "end_line": 3,
+                  "line": 3
+                }
+              },
+              "operator": ">",
+              "raw": ">0",
+              "right": {
+                "kind": "literal",
+                "literal": {
+                  "kind": "int",
+                  "value": 0
+                },
+                "raw": "0",
+                "span": {
+                  "column": 27,
+                  "end_column": 28,
+                  "end_line": 3,
+                  "line": 3
+                }
+              },
+              "span": {
+                "column": 26,
+                "end_column": 28,
+                "end_line": 3,
+                "line": 3
+              }
+            }
+          ],
+          "default": null,
+          "has_default": false,
+          "metadata": {},
+          "name": "local_batch_size",
+          "override": "allow",
+          "required": true,
+          "source_path": "valid/parameter_relations/dataloader.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 3,
+            "end_line": 4,
+            "line": 3
+          },
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "int"
+          }
+        },
+        "sampler": {
+          "default": null,
+          "has_default": false,
+          "metadata": {},
+          "name": "sampler",
+          "override": "allow",
+          "required": true,
+          "source_path": "valid/parameter_relations/dataloader.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 3,
+            "end_line": 3,
+            "line": 2
+          },
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "SamplerConfig"
+          }
+        }
+      },
+      "graph_path": "root.dataloader",
+      "id": "root.dataloader",
+      "implementation": "train",
+      "selector": "valid/parameter_relations/dataloader.etcm#DataLoaderConfig:train",
+      "source_path": "valid/parameter_relations/dataloader.etcm",
+      "spec_ancestors": [],
+      "spec_name": "DataLoaderConfig",
+      "values": {
+        "aligned_local_batch": 12,
+        "local_batch_size": 4,
+        "sampler": {
+          "$ref": "root.dataloader.sampler"
+        }
+      }
+    },
+    {
+      "field_values": {
+        "alignment": {
+          "literal": {
+            "kind": "int",
+            "value": 8
+          },
+          "local_value": null,
+          "origin": "local",
+          "overrode_parent": false,
+          "parent_value": null,
+          "ref_target": null,
+          "source_path": "valid/parameter_relations/sampler.etcm",
+          "span": {
+            "column": 5,
+            "end_column": 1,
+            "end_line": 8,
+            "line": 7
+          },
+          "value": 8
+        },
+        "seed": {
+          "literal": {
+            "kind": "int",
+            "value": 42
+          },
+          "local_value": null,
+          "origin": "local",
+          "overrode_parent": false,
+          "parent_value": null,
+          "ref_target": null,
+          "source_path": "valid/parameter_relations/sampler.etcm",
+          "span": {
+            "column": 5,
+            "end_column": 5,
+            "end_line": 7,
+            "line": 6
+          },
+          "value": 42
+        }
+      },
+      "fields": {
+        "alignment": {
+          "constraints": [
+            {
+              "kind": "comparison",
+              "left": {
+                "kind": "current",
+                "span": {
+                  "column": 23,
+                  "end_column": 25,
+                  "end_line": 3,
+                  "line": 3
+                }
+              },
+              "operator": ">",
+              "raw": ">0",
+              "right": {
+                "kind": "literal",
+                "literal": {
+                  "kind": "int",
+                  "value": 0
+                },
+                "raw": "0",
+                "span": {
+                  "column": 24,
+                  "end_column": 25,
+                  "end_line": 3,
+                  "line": 3
+                }
+              },
+              "span": {
+                "column": 23,
+                "end_column": 25,
+                "end_line": 3,
+                "line": 3
+              }
+            }
+          ],
+          "default": 8,
+          "has_default": true,
+          "metadata": {},
+          "name": "alignment",
+          "override": "allow",
+          "required": false,
+          "source_path": "valid/parameter_relations/sampler.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 3,
+            "end_line": 5,
+            "line": 3
+          },
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "int"
+          }
+        },
+        "seed": {
+          "default": null,
+          "has_default": false,
+          "metadata": {},
+          "name": "seed",
+          "override": "allow",
+          "required": true,
+          "source_path": "valid/parameter_relations/sampler.etcm",
+          "span": {
+            "column": 3,
+            "end_column": 3,
+            "end_line": 3,
+            "line": 2
+          },
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "int"
+          }
+        }
+      },
+      "graph_path": "root.dataloader.sampler",
+      "id": "root.dataloader.sampler",
+      "implementation": "fixed",
+      "selector": "valid/parameter_relations/sampler.etcm#SamplerConfig:fixed",
+      "source_path": "valid/parameter_relations/sampler.etcm",
+      "spec_ancestors": [],
+      "spec_name": "SamplerConfig",
+      "values": {
+        "alignment": 8,
+        "seed": 42
+      }
+    },
+    {
+      "field_values": {
+        "doubled_minimum": {
+          "derived_expression": {
+            "kind": "binary",
+            "operands": [
+              {
+                "kind": "reference",
+                "raw": "@minimum_batch",
+                "reference": {
+                  "parts": [
+                    "minimum_batch"
+                  ],
+                  "raw": "@minimum_batch",
+                  "span": {
+                    "column": 29,
+                    "end_column": 43,
+                    "end_line": 8,
+                    "line": 8
+                  }
+                },
+                "span": {
+                  "column": 29,
+                  "end_column": 43,
+                  "end_line": 8,
+                  "line": 8
+                }
+              },
+              {
+                "kind": "literal",
+                "literal": {
+                  "kind": "int",
+                  "value": 2
+                },
+                "raw": "2",
+                "span": {
+                  "column": 46,
+                  "end_column": 47,
+                  "end_line": 8,
+                  "line": 8
+                }
+              }
+            ],
+            "operator": "*",
+            "raw": "@minimum_batch * 2",
+            "span": {
+              "column": 29,
+              "end_column": 47,
+              "end_line": 8,
+              "line": 8
+            }
+          },
+          "literal": null,
+          "local_value": null,
+          "origin": "derived",
+          "overrode_parent": false,
+          "parent_value": null,
+          "ref_target": null,
+          "source_path": "valid/parameter_relations/training.etcm",
+          "span": {
+            "column": 29,
+            "end_column": 47,
+            "end_line": 8,
+            "line": 8
+          },
+          "value": 32
+        },
+        "minimum_batch": {
+          "literal": {
+            "kind": "int",
+            "value": 16
+          },
+          "local_value": null,
+          "origin": "local",
+          "overrode_parent": false,
+          "parent_value": null,
+          "ref_target": null,
+          "source_path": "valid/parameter_relations/training.etcm",
+          "span": {
+            "column": 5,
+            "end_column": 5,
+            "end_line": 24,
+            "line": 23
+          },
+          "value": 16
+        }
+      },
+      "fields": {
+        "doubled_minimum": {
+          "default": null,
+          "derived": {
+            "kind": "binary",
+            "operands": [
+              {
+                "kind": "reference",
+                "raw": "@minimum_batch",
+                "reference": {
+                  "parts": [
+                    "minimum_batch"
+                  ],
+                  "raw": "@minimum_batch",
+                  "span": {
+                    "column": 29,
+                    "end_column": 43,
+                    "end_line": 8,
+                    "line": 8
+                  }
+                },
+                "span": {
+                  "column": 29,
+                  "end_column": 43,
+                  "end_line": 8,
+                  "line": 8
+                }
+              },
+              {
+                "kind": "literal",
+                "literal": {
+                  "kind": "int",
+                  "value": 2
+                },
+                "raw": "2",
+                "span": {
+                  "column": 46,
+                  "end_column": 47,
+                  "end_line": 8,
+                  "line": 8
+                }
+              }
+            ],
+            "operator": "*",
+            "raw": "@minimum_batch * 2",
+            "span": {
+              "column": 29,
+              "end_column": 47,
+              "end_line": 8,
+              "line": 8
+            }
+          },
+          "has_default": false,
+          "metadata": {},
+          "name": "doubled_minimum",
+          "override": "allow",
+          "required": false,
+          "source_path": "valid/parameter_relations/training.etcm",
+          "span": {
+            "column": 5,
+            "end_column": 3,
+            "end_line": 10,
+            "line": 8
+          },
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "int"
+          }
+        },
+        "minimum_batch": {
+          "constraints": [
+            {
+              "kind": "comparison",
+              "left": {
+                "kind": "current",
+                "span": {
+                  "column": 30,
+                  "end_column": 32,
+                  "end_line": 7,
+                  "line": 7
+                }
+              },
+              "operator": ">",
+              "raw": ">0",
+              "right": {
+                "kind": "literal",
+                "literal": {
+                  "kind": "int",
+                  "value": 0
+                },
+                "raw": "0",
+                "span": {
+                  "column": 31,
+                  "end_column": 32,
+                  "end_line": 7,
+                  "line": 7
+                }
+              },
+              "span": {
+                "column": 30,
+                "end_column": 32,
+                "end_line": 7,
+                "line": 7
+              }
+            }
+          ],
+          "default": 16,
+          "has_default": true,
+          "metadata": {},
+          "name": "minimum_batch",
+          "override": "allow",
+          "required": false,
+          "source_path": "valid/parameter_relations/training.etcm",
+          "span": {
+            "column": 5,
+            "end_column": 5,
+            "end_line": 8,
+            "line": 7
+          },
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "int"
+          }
+        }
+      },
+      "graph_path": "root.limits",
+      "id": "root.limits",
+      "implementation": "inline",
+      "selector": "root.limits",
+      "source_path": "valid/parameter_relations/training.etcm",
+      "spec_ancestors": [],
+      "spec_name": "TrainingConfig_limits",
+      "values": {
+        "doubled_minimum": 32,
+        "minimum_batch": 16
+      }
+    }
+  ],
+  "path_resolution": [],
+  "root_selector": "valid/parameter_relations/training.etcm#TrainingConfig:distributed",
+  "sources": [
+    "valid/parameter_relations/dataloader.etcm",
+    "valid/parameter_relations/sampler.etcm",
+    "valid/parameter_relations/training.etcm"
+  ],
+  "validated": false
+}

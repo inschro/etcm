@@ -223,6 +223,8 @@ V0 should include:
 - spec references by imported selector
 - implementation inheritance
 - reference resolution with source identity
+- typed parameter expressions with sibling and dotted child-object references
+- relational validation constraints and dependency-ordered derived parameters
 - spec-owned override policy
 - validation errors with source path and graph path
 - generated Pydantic models
@@ -248,6 +250,7 @@ ETCM is useful when a user can:
 - compose implementations across files with typed refs
 - validate path fields with field-level and resolver-level existence policy
 - get a precise error for a bad reference or invalid override
+- express cross-parameter invariants and computed values without executing Python
 - load a Pydantic object without writing a Pydantic schema by hand
 - save a resolved graph that explains what actually ran
 - build a JSON config object from the CLI for scripts and shell workflows

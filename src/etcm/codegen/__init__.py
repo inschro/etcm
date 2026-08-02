@@ -79,17 +79,29 @@ class _Materializer:
                     "name": self._class_names[node.id],
                     "frozen": True,
                     "fields": [
-                        {
-                            "name": field.name,
-                            "annotation": self._annotation_text(node, field),
-                            "required": True,
-                            "metadata": dict(field.metadata),
-                        }
+                        self._schema_field_summary(node, field)
                         for field in node.fields.values()
                     ],
                 }
             )
         return {"classes": classes}
+
+    def _schema_field_summary(
+        self,
+        node: ResolvedNode,
+        field: ResolvedField,
+    ) -> dict[str, Any]:
+        summary: dict[str, Any] = {
+            "name": field.name,
+            "annotation": self._annotation_text(node, field),
+            "required": True,
+            "metadata": _pydantic_constraints(field),
+        }
+        if field.constraints:
+            summary["constraints"] = [constraint.raw for constraint in field.constraints]
+        if field.derived is not None:
+            summary["derived"] = field.derived.raw
+        return summary
 
     @property
     def _root(self) -> ResolvedNode:
@@ -235,6 +247,19 @@ def _pydantic_constraints(field: ResolvedField) -> dict[str, Any]:
     ):
         if source in field.metadata:
             constraints[target] = field.metadata[source]
+    for constraint in field.constraints:
+        if constraint.left.kind != "current" or constraint.right.kind != "literal":
+            continue
+        if constraint.right.literal is None:
+            continue
+        target = {
+            ">": "gt",
+            ">=": "ge",
+            "<": "lt",
+            "<=": "le",
+        }.get(constraint.operator)
+        if target is not None:
+            constraints[target] = constraint.right.literal.value
     return constraints
 
 

@@ -6,10 +6,12 @@
     {
       "fields": [
         {
+          "constraints": [],
           "default": {
             "kind": "string",
             "value": "auto"
           },
+          "derived": null,
           "fields": [],
           "metadata": {
             "choices": {
@@ -40,10 +42,12 @@
           }
         },
         {
+          "constraints": [],
           "default": {
             "kind": "int",
             "value": 0
           },
+          "derived": null,
           "fields": [],
           "metadata": {},
           "name": "seed",
@@ -56,10 +60,12 @@
           }
         },
         {
+          "constraints": [],
           "default": {
             "kind": "list",
             "value": []
           },
+          "derived": null,
           "fields": [],
           "metadata": {},
           "name": "tags",
@@ -78,10 +84,12 @@
           }
         },
         {
+          "constraints": [],
           "default": {
             "kind": "map",
             "value": []
           },
+          "derived": null,
           "fields": [],
           "metadata": {},
           "name": "metadata",

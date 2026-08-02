@@ -22,6 +22,9 @@
         },
         {
           "annotation": "int",
+          "constraints": [
+            ">0"
+          ],
           "metadata": {
             "gt": 0
           },

@@ -30,8 +30,9 @@ The option sets the resolver default for `Path` fields whose field metadata uses
 
 ## Output
 
-- `resolve --format json` prints `ResolvedGraph.to_dict()` JSON. The graph is
-  resolved but not marked validated.
+- `resolve --format json` prints `ResolvedGraph.to_dict()` JSON. Defaults,
+  references, and derived parameters are resolved, but constraints and path
+  policies have not been validated and `validated` remains `false`.
 - `validate --format json` resolves, validates, and prints graph JSON with
   `validated: true`.
 - `validate --short` resolves and validates, then prints `OK: <selector>` on
@@ -53,3 +54,9 @@ runtime object.
 
 ETCM diagnostics are printed to stderr and exit with code `1`. Invalid CLI
 usage follows normal `argparse` behavior.
+
+Relational validation failures additionally show the written constraint,
+resolved operand values, and substituted evaluation. Attempts to assign a
+derived parameter show its defining expression. See
+[Parameter Relations](parameter-relations.md) for examples and diagnostic
+codes.

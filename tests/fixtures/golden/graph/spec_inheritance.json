@@ -71,11 +71,45 @@
           }
         },
         "gpus": {
+          "constraints": [
+            {
+              "kind": "comparison",
+              "left": {
+                "kind": "current",
+                "span": {
+                  "column": 18,
+                  "end_column": 20,
+                  "end_line": 2,
+                  "line": 2
+                }
+              },
+              "operator": ">",
+              "raw": ">0",
+              "right": {
+                "kind": "literal",
+                "literal": {
+                  "kind": "int",
+                  "value": 0
+                },
+                "raw": "0",
+                "span": {
+                  "column": 19,
+                  "end_column": 20,
+                  "end_line": 2,
+                  "line": 2
+                }
+              },
+              "span": {
+                "column": 18,
+                "end_column": 20,
+                "end_line": 2,
+                "line": 2
+              }
+            }
+          ],
           "default": 1,
           "has_default": true,
-          "metadata": {
-            "gt": 0
-          },
+          "metadata": {},
           "name": "gpus",
           "override": "allow",
           "required": false,
@@ -96,7 +130,7 @@
       "graph_path": "root",
       "id": "root",
       "implementation": "default",
-      "selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/spec_inheritance_resolver/cuda.etcm#CudaRuntime:default",
+      "selector": "valid/spec_inheritance_resolver/cuda.etcm#CudaRuntime:default",
       "source_path": "valid/spec_inheritance_resolver/cuda.etcm",
       "spec_ancestors": [
         "Runtime"
@@ -109,7 +143,7 @@
     }
   ],
   "path_resolution": [],
-  "root_selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/spec_inheritance_resolver/cuda.etcm#CudaRuntime:default",
+  "root_selector": "valid/spec_inheritance_resolver/cuda.etcm#CudaRuntime:default",
   "sources": [
     "valid/spec_inheritance_resolver/base.etcm",
     "valid/spec_inheritance_resolver/cuda.etcm"

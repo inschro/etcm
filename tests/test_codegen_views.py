@@ -127,8 +127,12 @@ def test_not_equal_constraint_rejects_forbidden_value(tmp_path: Path) -> None:
     )
     graph = resolve(f"{config_path}#TrainRun:bad")
 
-    with pytest.raises(ETCMError, match="constraint 'ne'"):
+    with pytest.raises(ETCMError) as raised:
         validate(graph)
+
+    assert raised.value.diagnostic.code == "E_CONSTRAINT"
+    assert raised.value.diagnostic.details is not None
+    assert raised.value.diagnostic.details["constraint"] == "!=200"
 
 
 def test_convert_requires_validated_graph_unless_forced() -> None:

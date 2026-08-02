@@ -289,7 +289,37 @@ Acceptance:
 - Apache-2.0 license metadata is present
 - public PyPI publishing remains deferred until explicitly chosen
 
-## Phase 9: Bridges And Adoption
+## Phase 9: Parameter Relations
+
+Add safe, typed relationships between parameters in one resolved object graph.
+The complete language contract lives in
+[parameter-relations.md](parameter-relations.md).
+
+Deliverables:
+
+- sibling and dotted child-object references using `@name` and `@object.name`
+- traversal through inline nested objects and typed `$field` references
+- ordered relational constraints in `[]`
+- derived values using `:=`, visible immediately after `resolve()`
+- conventional arithmetic precedence, parentheses, and unary numeric operators
+- scalar expression type checking, derived dependency ordering, and cycle
+  detection
+- structured diagnostics with written and resolved evaluations
+- expression and constraint serialization in resolved graph JSON
+
+Acceptance:
+
+- dotted reads such as `@dataloader.sampler.seed` are stable across files
+- relation paths are anchored at the object containing the declaration
+- dictionary/list indexing, Python attributes, calls, conditionals, and Boolean
+  expressions remain rejected
+- implementations cannot assign derived fields
+- inherited source changes recompute derived values rather than copying stale
+  results
+- generated dict, dataclass, and Pydantic views include derived values
+- invalid references and expression types fail before runtime materialization
+
+## Phase 10: Bridges And Adoption
 
 Only after ETCM is easy to install into another project:
 
@@ -349,6 +379,19 @@ Type checking:
 - reference assignability success through spec inheritance
 - reference assignability failure for unrelated specs
 - nullable refs and fields
+
+Parameter relations:
+
+- sibling, forward, inline-object, and multi-level `$field` references
+- validation versus derivation semantics
+- every arithmetic and comparison operator
+- Python-compatible exponentiation, unary precedence, and grouping
+- scalar, nullable, and `Path` equality
+- derived dependency order, inheritance recomputation, and cycle rejection
+- unknown segments, scalar traversal, object terminals, and missing operands
+- safe failures for division by zero, non-finite/complex results, and excessive
+  exponents
+- resolved operand diagnostics and graph serialization
 
 Override policy:
 

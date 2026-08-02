@@ -135,7 +135,7 @@
       "graph_path": "root",
       "id": "root",
       "implementation": "default",
-      "selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/path_policies/data.etcm#DataConfig:default",
+      "selector": "valid/path_policies/data.etcm#DataConfig:default",
       "source_path": "valid/path_policies/data.etcm",
       "spec_ancestors": [],
       "spec_name": "DataConfig",
@@ -196,7 +196,7 @@
       }
     }
   ],
-  "root_selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/path_policies/data.etcm#DataConfig:default",
+  "root_selector": "valid/path_policies/data.etcm#DataConfig:default",
   "sources": [
     "valid/path_policies/data.etcm"
   ],

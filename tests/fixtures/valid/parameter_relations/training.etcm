@@ -1,0 +1,25 @@
+spec TrainingConfig:
+  $dataloader: dataloader.etcm#DataLoaderConfig
+  gradient_accumulation_steps: int = 2 [>0]
+  world_size: int = 4 [>0]
+
+  limits:
+    minimum_batch: int = 16 [>0]
+    doubled_minimum: int := @minimum_batch * 2
+
+  global_batch_size: int :=
+    @dataloader.local_batch_size
+    * @gradient_accumulation_steps
+    * @world_size
+
+  copied_seed: int := @dataloader.sampler.seed
+  copied_child_total: int := @dataloader.aligned_local_batch
+  copied_inline_total: int := @limits.doubled_minimum
+  seed_confirmation: int [== @dataloader.sampler.seed]
+  aligned_batch: int [% @dataloader.sampler.alignment == 0]
+
+  impl distributed:
+    $dataloader: dataloader.etcm#DataLoaderConfig:train
+    limits.minimum_batch: 16
+    seed_confirmation: 42
+    aligned_batch: 32

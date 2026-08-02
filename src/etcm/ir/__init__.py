@@ -1,9 +1,13 @@
 from etcm.ir.nodes import (
     Assignment,
+    ComparisonConstraint,
     Document,
+    Expression,
+    ExpressionKind,
     FieldDef,
     ImplDef,
     LiteralValue,
+    ParameterReference,
     RefAssignment,
     Selector,
     SelectorTarget,
@@ -15,10 +19,14 @@ from etcm.ir.nodes import (
 
 __all__ = [
     "Assignment",
+    "ComparisonConstraint",
     "Document",
+    "Expression",
+    "ExpressionKind",
     "FieldDef",
     "ImplDef",
     "LiteralValue",
+    "ParameterReference",
     "RefAssignment",
     "Selector",
     "SelectorTarget",

@@ -52,11 +52,45 @@
       },
       "fields": {
         "max_steps": {
+          "constraints": [
+            {
+              "kind": "comparison",
+              "left": {
+                "kind": "current",
+                "span": {
+                  "column": 24,
+                  "end_column": 26,
+                  "end_line": 3,
+                  "line": 3
+                }
+              },
+              "operator": ">",
+              "raw": ">0",
+              "right": {
+                "kind": "literal",
+                "literal": {
+                  "kind": "int",
+                  "value": 0
+                },
+                "raw": "0",
+                "span": {
+                  "column": 25,
+                  "end_column": 26,
+                  "end_line": 3,
+                  "line": 3
+                }
+              },
+              "span": {
+                "column": 24,
+                "end_column": 26,
+                "end_line": 3,
+                "line": 3
+              }
+            }
+          ],
           "default": 10,
           "has_default": true,
-          "metadata": {
-            "gt": 0
-          },
+          "metadata": {},
           "name": "max_steps",
           "override": "allow",
           "required": false,
@@ -97,7 +131,7 @@
       "graph_path": "root",
       "id": "root",
       "implementation": "smoke",
-      "selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/typed_refs/train.etcm#TrainRun:smoke",
+      "selector": "valid/typed_refs/train.etcm#TrainRun:smoke",
       "source_path": "valid/typed_refs/train.etcm",
       "spec_ancestors": [],
       "spec_name": "TrainRun",
@@ -155,7 +189,7 @@
       "graph_path": "root.model",
       "id": "root.model",
       "implementation": "tiny",
-      "selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/typed_refs/model.etcm#ModelConfig:tiny",
+      "selector": "valid/typed_refs/model.etcm#ModelConfig:tiny",
       "source_path": "valid/typed_refs/model.etcm",
       "spec_ancestors": [],
       "spec_name": "ModelConfig",
@@ -165,7 +199,7 @@
     }
   ],
   "path_resolution": [],
-  "root_selector": "/home/ingo/code_stuff/etcm/tests/fixtures/valid/typed_refs/train.etcm#TrainRun:smoke",
+  "root_selector": "valid/typed_refs/train.etcm#TrainRun:smoke",
   "sources": [
     "valid/typed_refs/model.etcm",
     "valid/typed_refs/train.etcm"

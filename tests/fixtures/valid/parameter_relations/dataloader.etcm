@@ -1,0 +1,8 @@
+spec DataLoaderConfig:
+  $sampler: sampler.etcm#SamplerConfig
+  local_batch_size: int [>0]
+  aligned_local_batch: int := @local_batch_size + @sampler.alignment
+
+  impl train:
+    $sampler: sampler.etcm#SamplerConfig:fixed
+    local_batch_size: 4

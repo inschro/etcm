@@ -2,7 +2,7 @@
   "code": "E_MISSING_SELECTOR",
   "details": {},
   "graph_path": null,
-  "message": "Selector source file does not exist: /home/ingo/code_stuff/etcm/tests/fixtures/invalid/missing.etcm",
+  "message": "Selector source file does not exist: invalid/missing.etcm",
   "selector": null,
   "source_path": "invalid/missing.etcm",
   "span": {

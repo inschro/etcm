@@ -2,16 +2,21 @@ spec TrainRun:
   $model: model.etcm#ModelConfig
   $runtime: runtime.etcm#RuntimeConfig
   max_steps: int [>0]
+  micro_batch_size: int = 4 [>0]
+  global_batch_size: int := @micro_batch_size * @runtime.devices
+  model_hidden_size: int := @model.hidden_size
   run_name: str = "smoke"
 
   impl smoke:
     $model: model.etcm#ModelConfig:tiny
     $runtime: runtime.etcm#RuntimeConfig:local
     max_steps: 2
+    micro_batch_size: 4
     run_name: "smoke"
 
   impl debug_cuda:
     $model: model.etcm#ModelConfig:base
     $runtime: runtime.etcm#RuntimeConfig:cuda
     max_steps: 20
+    micro_batch_size: 8
     run_name: "debug-cuda"

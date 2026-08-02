@@ -8,6 +8,7 @@ from types import MappingProxyType
 from typing import Any, Literal
 
 SelectorTarget = Literal["spec", "implementation"]
+ExpressionKind = Literal["literal", "reference", "current", "unary", "binary"]
 
 _SELECTOR_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
@@ -106,6 +107,37 @@ class LiteralValue:
 
 
 @dataclass(frozen=True)
+class ParameterReference:
+    parts: tuple[str, ...]
+    raw: str
+    span: SourceSpan | None = None
+
+    def __post_init__(self) -> None:
+        if not self.parts:
+            raise ValueError("parameter reference must contain at least one path segment")
+
+
+@dataclass(frozen=True)
+class Expression:
+    kind: ExpressionKind
+    operator: str | None = None
+    literal: LiteralValue | None = None
+    reference: ParameterReference | None = None
+    operands: tuple[Expression, ...] = ()
+    raw: str | None = None
+    span: SourceSpan | None = None
+
+
+@dataclass(frozen=True)
+class ComparisonConstraint:
+    left: Expression
+    operator: str
+    right: Expression
+    raw: str
+    span: SourceSpan | None = None
+
+
+@dataclass(frozen=True)
 class Assignment:
     field_path: tuple[str, ...]
     value: LiteralValue
@@ -124,6 +156,8 @@ class FieldDef:
     name: str
     type_expr: TypeExpr
     default: LiteralValue | None = None
+    derived: Expression | None = None
+    constraints: tuple[ComparisonConstraint, ...] = ()
     metadata: Mapping[str, LiteralValue] = field(default_factory=dict)
     override: str = "allow"
     ref_selector: Selector | None = None

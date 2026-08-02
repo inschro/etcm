@@ -6,21 +6,61 @@
     {
       "fields": [
         {
+          "constraints": [
+            {
+              "left": {
+                "kind": "current",
+                "literal": null,
+                "operands": [],
+                "operator": null,
+                "raw": null,
+                "reference": null
+              },
+              "operator": ">=",
+              "raw": ">=0.0",
+              "right": {
+                "kind": "literal",
+                "literal": {
+                  "kind": "float",
+                  "value": 0.0
+                },
+                "operands": [],
+                "operator": null,
+                "raw": "0.0",
+                "reference": null
+              }
+            },
+            {
+              "left": {
+                "kind": "current",
+                "literal": null,
+                "operands": [],
+                "operator": null,
+                "raw": null,
+                "reference": null
+              },
+              "operator": "<=",
+              "raw": "<=1.0",
+              "right": {
+                "kind": "literal",
+                "literal": {
+                  "kind": "float",
+                  "value": 1.0
+                },
+                "operands": [],
+                "operator": null,
+                "raw": "1.0",
+                "reference": null
+              }
+            }
+          ],
           "default": {
             "kind": "float",
             "value": 0.0
           },
+          "derived": null,
           "fields": [],
-          "metadata": {
-            "ge": {
-              "kind": "float",
-              "value": 0.0
-            },
-            "le": {
-              "kind": "float",
-              "value": 1.0
-            }
-          },
+          "metadata": {},
           "name": "min_lr_ratio",
           "override": "allow",
           "ref_selector": null,
@@ -31,17 +71,38 @@
           }
         },
         {
+          "constraints": [
+            {
+              "left": {
+                "kind": "current",
+                "literal": null,
+                "operands": [],
+                "operator": null,
+                "raw": null,
+                "reference": null
+              },
+              "operator": ">",
+              "raw": ">0.0",
+              "right": {
+                "kind": "literal",
+                "literal": {
+                  "kind": "float",
+                  "value": 0.0
+                },
+                "operands": [],
+                "operator": null,
+                "raw": "0.0",
+                "reference": null
+              }
+            }
+          ],
           "default": {
             "kind": "float",
             "value": 0.5
           },
+          "derived": null,
           "fields": [],
-          "metadata": {
-            "gt": {
-              "kind": "float",
-              "value": 0.0
-            }
-          },
+          "metadata": {},
           "name": "cycles",
           "override": "allow",
           "ref_selector": null,

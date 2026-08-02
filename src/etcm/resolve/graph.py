@@ -6,7 +6,7 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Any
 
-from etcm.ir import LiteralValue, SourceSpan, TypeExpr
+from etcm.ir import ComparisonConstraint, Expression, LiteralValue, SourceSpan, TypeExpr
 
 
 @dataclass(frozen=True)
@@ -35,13 +35,15 @@ class ResolvedField:
     override: str = "allow"
     has_default: bool = False
     default: Any = None
+    derived: Expression | None = None
+    constraints: tuple[ComparisonConstraint, ...] = ()
     span: SourceSpan | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "metadata", MappingProxyType(dict(self.metadata)))
 
     def to_dict(self, path_base: Path | None = None) -> dict[str, Any]:
-        return {
+        result = {
             "name": self.name,
             "type": _type_expr_to_dict(self.type_expr),
             "required": self.required,
@@ -52,6 +54,13 @@ class ResolvedField:
             "source_path": _path_to_string(self.source_path, path_base),
             "span": _span_to_dict(self.span),
         }
+        if self.derived is not None:
+            result["derived"] = _expression_to_dict(self.derived)
+        if self.constraints:
+            result["constraints"] = [
+                _constraint_to_dict(constraint) for constraint in self.constraints
+            ]
+        return result
 
 
 @dataclass(frozen=True)
@@ -65,6 +74,7 @@ class ResolvedValue:
     overrode_parent: bool = False
     parent_value: Any = None
     local_value: Any = None
+    derived_expression: Expression | None = None
 
     def with_override(self, *, value: Any, parent_value: Any, local_value: Any) -> ResolvedValue:
         return replace(
@@ -79,7 +89,7 @@ class ResolvedValue:
         return replace(self, origin="parent", overrode_parent=False)
 
     def to_dict(self, path_base: Path | None = None) -> dict[str, Any]:
-        return {
+        result = {
             "value": _json_value(self.value, path_base),
             "origin": self.origin,
             "source_path": _path_to_string(self.source_path, path_base),
@@ -94,6 +104,9 @@ class ResolvedValue:
             if self.overrode_parent
             else None,
         }
+        if self.derived_expression is not None:
+            result["derived_expression"] = _expression_to_dict(self.derived_expression)
+        return result
 
 
 @dataclass(frozen=True)
@@ -143,7 +156,7 @@ class ResolvedNode:
     def to_dict(self, path_base: Path | None = None) -> dict[str, Any]:
         return {
             "id": self.id,
-            "selector": self.selector,
+            "selector": _selector_to_string(self.selector, path_base),
             "spec_name": self.spec_name,
             "spec_ancestors": list(self.spec_ancestors),
             "implementation": self.implementation,
@@ -176,7 +189,7 @@ class ResolvedGraph:
     def to_dict(self, path_base: str | Path | None = None) -> dict[str, Any]:
         base = Path(path_base).resolve() if path_base is not None else None
         return {
-            "root_selector": self.root_selector,
+            "root_selector": _selector_to_string(self.root_selector, base),
             "validated": self.validated,
             "sources": [_path_to_string(path, base) for path in self.sources],
             "nodes": [node.to_dict(base) for node in sorted(self.nodes, key=lambda node: node.id)],
@@ -203,6 +216,15 @@ def _path_to_string(path: Path, path_base: Path | None) -> str:
         except ValueError:
             pass
     return resolved.as_posix()
+
+
+def _selector_to_string(selector: str, path_base: Path | None) -> str:
+    if path_base is None:
+        return selector
+    path_text, separator, fragment = selector.partition("#")
+    if not separator or not path_text:
+        return selector
+    return f"{_path_to_string(Path(path_text), path_base)}#{fragment}"
 
 
 def _json_value(value: Any, path_base: Path | None) -> Any:
@@ -232,6 +254,39 @@ def _literal_to_dict(literal: LiteralValue | None, path_base: Path | None) -> di
         "kind": literal.kind,
         "value": _json_value(literal.value, path_base),
     }
+
+
+def _constraint_to_dict(constraint: ComparisonConstraint) -> dict[str, Any]:
+    return {
+        "kind": "comparison",
+        "operator": constraint.operator,
+        "left": _expression_to_dict(constraint.left),
+        "right": _expression_to_dict(constraint.right),
+        "raw": constraint.raw,
+        "span": _span_to_dict(constraint.span),
+    }
+
+
+def _expression_to_dict(expression: Expression) -> dict[str, Any]:
+    result: dict[str, Any] = {
+        "kind": expression.kind,
+        "span": _span_to_dict(expression.span),
+    }
+    if expression.raw is not None:
+        result["raw"] = expression.raw
+    if expression.operator is not None:
+        result["operator"] = expression.operator
+    if expression.literal is not None:
+        result["literal"] = _literal_to_dict(expression.literal, None)
+    if expression.reference is not None:
+        result["reference"] = {
+            "parts": list(expression.reference.parts),
+            "raw": expression.reference.raw,
+            "span": _span_to_dict(expression.reference.span),
+        }
+    if expression.operands:
+        result["operands"] = [_expression_to_dict(operand) for operand in expression.operands]
+    return result
 
 
 def _span_to_dict(span: SourceSpan | None) -> dict[str, int] | None:

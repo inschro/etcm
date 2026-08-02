@@ -1,7 +1,17 @@
 {
   "code": "E_PARSE_UNEXPECTED_TOKEN",
   "details": {
-    "expected": []
+    "expected": [
+      "ESCAPED_STRING",
+      "FALSE",
+      "LBRACE",
+      "LSQB",
+      "NULL",
+      "RSQB",
+      "SIGNED_NUMBER",
+      "TRUE",
+      "_NL"
+    ]
   },
   "graph_path": null,
   "message": "Unexpected token while parsing ETCM.",

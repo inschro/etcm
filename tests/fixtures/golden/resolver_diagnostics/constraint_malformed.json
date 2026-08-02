@@ -1,19 +1,21 @@
 {
-  "code": "E_CONSTRAINT",
+  "code": "E_EXPRESSION_TYPE",
   "details": {
-    "actual": 1,
-    "constraint": "gt",
-    "expected": "zero",
-    "field": "epochs"
+    "actual_types": [
+      "str"
+    ],
+    "expression": ">\"zero\"",
+    "field": "epochs",
+    "operator": ">"
   },
-  "graph_path": "root.epochs",
-  "message": "Field 'epochs' has invalid constraint 'gt'.",
+  "graph_path": null,
+  "message": "Invalid parameter expression for 'epochs': Operator '>' requires numeric operands.",
   "selector": null,
   "source_path": "invalid/constraint_malformed.etcm",
   "span": {
-    "column": 5,
-    "end_column": 1,
-    "end_line": 6,
-    "line": 5
+    "column": 16,
+    "end_column": 23,
+    "end_line": 2,
+    "line": 2
   }
 }

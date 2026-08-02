@@ -6,7 +6,9 @@
     {
       "fields": [
         {
+          "constraints": [],
           "default": null,
+          "derived": null,
           "fields": [],
           "metadata": {},
           "name": "depth",
@@ -19,7 +21,9 @@
           }
         },
         {
+          "constraints": [],
           "default": null,
+          "derived": null,
           "fields": [],
           "metadata": {},
           "name": "width",

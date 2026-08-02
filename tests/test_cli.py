@@ -65,6 +65,52 @@ def test_validate_command_reports_diagnostic(capsys: pytest.CaptureFixture[str])
     assert "graph_path: root.name" in captured.err
 
 
+def test_validate_command_formats_relational_evaluation(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    source = tmp_path / "model.etcm"
+    source.write_text(
+        """spec Model:
+  heads: int [>0]
+  hidden: int [% @heads == 0]
+
+  impl invalid:
+    heads: 12
+    hidden: 512
+""",
+        encoding="utf-8",
+    )
+
+    exit_code = main(["validate", f"{source}#Model:invalid"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert captured.out == ""
+    assert "constraint:\n  % @heads == 0" in captured.err
+    assert "resolved values:\n  hidden: 512\n  heads: 12" in captured.err
+    assert "evaluation:\n  512 % 12 == 0\n  8 == 0" in captured.err
+
+
+def test_resolve_command_includes_derived_values(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    selector = str(
+        FIXTURES
+        / "valid/parameter_relations/training.etcm#TrainingConfig:distributed"
+    )
+
+    exit_code = main(["resolve", selector])
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    root = next(node for node in payload["nodes"] if node["id"] == "root")
+    assert exit_code == 0
+    assert captured.err == ""
+    assert root["values"]["global_batch_size"] == 32
+    assert root["field_values"]["global_batch_size"]["origin"] == "derived"
+
+
 def test_load_command_defaults_to_dict_target(capsys: pytest.CaptureFixture[str]) -> None:
     selector = str(
         FIXTURES / "valid/spec_inheritance_resolver/cuda.etcm#CudaRuntime:default"

@@ -11,10 +11,13 @@ from typing import Any, Literal, NoReturn, cast
 from etcm.errors import Diagnostic, ETCMError
 from etcm.ir import (
     Assignment,
+    ComparisonConstraint,
     Document,
+    Expression,
     FieldDef,
     ImplDef,
     LiteralValue,
+    ParameterReference,
     RefAssignment,
     Selector,
     SourceSpan,
@@ -28,6 +31,18 @@ from etcm.resolve.graph import (
     ResolvedGraph,
     ResolvedNode,
     ResolvedValue,
+)
+from etcm.resolve.relations import (
+    RelationEvaluationError,
+    RelationTypeError,
+    evaluate_comparison,
+    evaluate_expression,
+    expression_references,
+    format_value,
+    infer_expression_type,
+    render_expression,
+    type_assignable,
+    validate_comparison_types,
 )
 from etcm.syntax import parse_file
 
@@ -130,6 +145,8 @@ class _ResolverState:
         self._resolver = resolver
         self._documents: dict[Path, Document] = {}
         self._specs: dict[tuple[Path, str], _ResolvedSpec] = {}
+        self._relations_validating: set[tuple[Path, str]] = set()
+        self._relations_validated: set[tuple[Path, str]] = set()
 
     def resolve(self, raw_selector: str) -> ResolvedGraph:
         selector = self._selector_from_raw(raw_selector)
@@ -142,6 +159,7 @@ class _ResolverState:
             ref_stack=(),
             cycle_code="E_IMPL_CYCLE",
         )
+        self._finalize_derivations(builder)
         builder.sources.update(self._documents)
         return builder.to_graph()
 
@@ -264,6 +282,19 @@ class _ResolverState:
         previous_value: ResolvedValue | None,
         active_spec: str,
     ) -> ResolvedValue:
+        if field.derived is not None:
+            _raise(
+                "E_DERIVED_ASSIGNMENT",
+                f"Cannot assign derived parameter '{field.name}'.",
+                source_path=source_path,
+                span=assignment.span,
+                graph_path=graph_path,
+                details={
+                    "field": field.name,
+                    "expression": field.derived.raw
+                    or render_expression(field.derived),
+                },
+            )
         if isinstance(assignment, RefAssignment):
             if field.fields:
                 _raise(
@@ -521,6 +552,7 @@ class _ResolverState:
                     details={"available": [spec.name]},
                 )
             self._specs[key] = spec
+            self._relations_validated.add(key)
             return spec
 
         if not document.specs:
@@ -558,6 +590,7 @@ class _ResolverState:
             ancestors=ancestors,
         )
         self._specs[key] = spec
+        self._validate_spec_relations(key, spec)
         return spec
 
     def _resolve_spec_selector(
@@ -682,6 +715,230 @@ class _ResolverState:
             )
 
         return field
+
+    def _validate_spec_relations(
+        self,
+        key: tuple[Path, str],
+        spec: _ResolvedSpec,
+    ) -> None:
+        if key in self._relations_validated or key in self._relations_validating:
+            return
+        self._relations_validating.add(key)
+        try:
+            self._validate_relation_group(
+                owner_name=spec.name,
+                source_path=spec.source_path,
+                fields=spec.fields,
+            )
+        finally:
+            self._relations_validating.discard(key)
+        self._relations_validated.add(key)
+
+    def _validate_relation_group(
+        self,
+        *,
+        owner_name: str,
+        source_path: Path,
+        fields: Mapping[str, FieldDef],
+    ) -> None:
+        for field in fields.values():
+            def reference_type(
+                reference: ParameterReference,
+                current: FieldDef = field,
+            ) -> TypeExpr:
+                return self._relation_reference_type(
+                    owner_name=owner_name,
+                    source_path=source_path,
+                    fields=fields,
+                    current_field=current,
+                    reference=reference,
+                )
+            if field.derived is not None:
+                if field.default is not None:
+                    _raise(
+                        "E_EXPRESSION_TYPE",
+                        f"Derived parameter '{field.name}' cannot also have a default.",
+                        source_path=_field_source_path(field, source_path),
+                        span=field.span,
+                        details={"field": field.name},
+                    )
+                if field.override != "allow":
+                    _raise(
+                        "E_EXPRESSION_TYPE",
+                        f"Derived parameter '{field.name}' cannot declare override policy "
+                        f"'{field.override}'.",
+                        source_path=_field_source_path(field, source_path),
+                        span=field.span,
+                        details={"field": field.name, "override": field.override},
+                    )
+                if _expression_contains_current(field.derived):
+                    _raise(
+                        "E_PARAMETER_REFERENCE",
+                        f"Derived parameter '{field.name}' cannot reference its current value.",
+                        source_path=_field_source_path(field, source_path),
+                        span=field.derived.span,
+                        details={"field": field.name},
+                    )
+                try:
+                    actual_type = infer_expression_type(
+                        field.derived,
+                        current_type=field.type_expr,
+                        reference_type=reference_type,
+                    )
+                except RelationTypeError as exc:
+                    self._raise_relation_type_error(
+                        exc,
+                        field=field,
+                        source_path=source_path,
+                        raw=field.derived.raw,
+                        span=field.derived.span,
+                    )
+                if not type_assignable(actual_type, field.type_expr):
+                    _raise(
+                        "E_EXPRESSION_TYPE",
+                        f"Derived expression for '{field.name}' produces "
+                        f"'{_type_text(actual_type)}', which is not assignable to "
+                        f"'{_type_text(field.type_expr)}'.",
+                        source_path=_field_source_path(field, source_path),
+                        span=field.derived.span,
+                        details={
+                            "field": field.name,
+                            "expression": field.derived.raw,
+                            "actual": _type_text(actual_type),
+                            "expected": _type_text(field.type_expr),
+                        },
+                    )
+
+            for constraint in field.constraints:
+                try:
+                    validate_comparison_types(
+                        constraint,
+                        current_type=field.type_expr,
+                        reference_type=reference_type,
+                    )
+                except RelationTypeError as exc:
+                    self._raise_relation_type_error(
+                        exc,
+                        field=field,
+                        source_path=source_path,
+                        raw=constraint.raw,
+                        span=constraint.span,
+                    )
+
+            if field.fields:
+                self._validate_relation_group(
+                    owner_name=str(field.type_expr.name),
+                    source_path=_field_source_path(field, source_path),
+                    fields={child.name: child for child in field.fields},
+                )
+
+        cycle = _derived_cycle(fields)
+        if cycle is not None:
+            first = fields[cycle[0]]
+            _raise(
+                "E_DERIVED_CYCLE",
+                "Derived parameter cycle detected.",
+                source_path=_field_source_path(first, source_path),
+                span=first.derived.span if first.derived is not None else first.span,
+                details={"owner": owner_name, "chain": cycle},
+            )
+
+    def _relation_reference_type(
+        self,
+        *,
+        owner_name: str,
+        source_path: Path,
+        fields: Mapping[str, FieldDef],
+        current_field: FieldDef,
+        reference: ParameterReference,
+    ) -> TypeExpr:
+        if reference.parts == (current_field.name,):
+            _raise(
+                "E_PARAMETER_REFERENCE",
+                f"Parameter '{current_field.name}' cannot reference itself.",
+                source_path=_field_source_path(current_field, source_path),
+                span=reference.span,
+                details={"field": current_field.name, "reference": reference.raw},
+            )
+
+        active_fields = fields
+        active_source = source_path
+        for index, part in enumerate(reference.parts):
+            target = active_fields.get(part)
+            if target is None:
+                _raise(
+                    "E_PARAMETER_REFERENCE",
+                    f"Unknown parameter reference '{reference.raw}'.",
+                    source_path=_field_source_path(current_field, source_path),
+                    span=reference.span,
+                    details={
+                        "field": current_field.name,
+                        "reference": reference.raw,
+                        "resolved_prefix": ".".join(reference.parts[:index]),
+                        "missing_segment": part,
+                        "available_parameters": list(active_fields),
+                        "owner": owner_name,
+                    },
+                )
+
+            is_final = index == len(reference.parts) - 1
+            is_object = bool(target.fields) or target.ref_selector is not None
+            if is_final:
+                if is_object:
+                    _raise(
+                        "E_PARAMETER_REFERENCE",
+                        f"Parameter reference '{reference.raw}' must end at a scalar field.",
+                        source_path=_field_source_path(current_field, source_path),
+                        span=reference.span,
+                        details={"field": current_field.name, "reference": reference.raw},
+                    )
+                return target.type_expr
+
+            if target.fields:
+                active_fields = {child.name: child for child in target.fields}
+                active_source = _field_source_path(target, active_source)
+                continue
+            if target.ref_selector is not None:
+                declaring_source = _field_source_path(target, active_source)
+                target_spec = self._resolve_spec_selector(
+                    target.ref_selector,
+                    declaring_source,
+                    (),
+                )
+                active_fields = target_spec.fields
+                active_source = target_spec.source_path
+                continue
+            _raise(
+                "E_PARAMETER_REFERENCE",
+                f"Parameter reference '{reference.raw}' cannot traverse scalar field "
+                f"'{part}'.",
+                source_path=_field_source_path(current_field, source_path),
+                span=reference.span,
+                details={
+                    "field": current_field.name,
+                    "reference": reference.raw,
+                    "scalar_segment": part,
+                    "scalar_type": _type_text(target.type_expr),
+                },
+            )
+        raise AssertionError("parameter reference path is empty")
+
+    def _raise_relation_type_error(
+        self,
+        error: RelationTypeError,
+        *,
+        field: FieldDef,
+        source_path: Path,
+        raw: str | None,
+        span: SourceSpan | None,
+    ) -> NoReturn:
+        _raise(
+            "E_EXPRESSION_TYPE",
+            f"Invalid parameter expression for '{field.name}': {error}",
+            source_path=_field_source_path(field, source_path),
+            span=span,
+            details={"field": field.name, "expression": raw, **error.details},
+        )
 
     def _default_values(
         self,
@@ -818,14 +1075,138 @@ class _ResolverState:
         return ResolvedField(
             name=field.name,
             type_expr=field.type_expr,
-            required=field.default is None,
+            required=field.default is None and field.derived is None,
             source_path=source_path,
             metadata={key: _literal_plain_value(value) for key, value in field.metadata.items()},
             override=field.override,
             has_default=field.default is not None,
             default=_literal_plain_value(field.default) if field.default is not None else None,
+            derived=field.derived,
+            constraints=field.constraints,
             span=field.span,
         )
+
+    def _finalize_derivations(self, builder: _GraphBuilder) -> None:
+        finalized: set[str] = set()
+        active: set[str] = set()
+
+        def finalize_node(node_id: str) -> None:
+            if node_id in finalized:
+                return
+            if node_id in active:
+                _raise(
+                    "E_REF_CYCLE",
+                    "Reference cycle encountered while computing derived parameters.",
+                    graph_path=node_id,
+                )
+            active.add(node_id)
+            node = builder.nodes[node_id]
+            for resolved_value in node.field_values.values():
+                if resolved_value.ref_target is not None:
+                    finalize_node(resolved_value.ref_target)
+
+            values = dict(node.field_values)
+            for field_name in _derived_order(node.fields):
+                field = node.fields[field_name]
+                expression = field.derived
+                if expression is None:
+                    raise AssertionError("derived field order contains a non-derived field")
+                resolved_operands: dict[str, Any] = {}
+
+                def reference_value(
+                    reference: ParameterReference,
+                    current_node: ResolvedNode = node,
+                    current_values: Mapping[str, ResolvedValue] = values,
+                    current_field_name: str = field_name,
+                    current_field: ResolvedField = field,
+                    current_expression: Expression = expression,
+                    operands: dict[str, Any] = resolved_operands,
+                ) -> Any:
+                    resolved = _resolved_parameter_value(
+                        node=current_node,
+                        node_by_id=builder.nodes,
+                        reference=reference,
+                        initial_values=current_values,
+                        required_by=f"{current_node.graph_path}.{current_field_name}",
+                        source_path=current_field.source_path,
+                        span=current_expression.span,
+                    )
+                    operands[reference.raw[1:]] = resolved
+                    return resolved
+
+                try:
+                    result = evaluate_expression(
+                        expression,
+                        current_value=None,
+                        reference_value=reference_value,
+                    )
+                except RelationEvaluationError as exc:
+                    _raise(
+                        "E_EXPRESSION_EVALUATION",
+                        f"Could not derive parameter '{field_name}': {exc}",
+                        source_path=field.source_path,
+                        span=expression.span,
+                        graph_path=f"{node.graph_path}.{field_name}",
+                        details={
+                            "field": field_name,
+                            "expression": expression.raw
+                            or render_expression(expression),
+                            "resolved_values": resolved_operands,
+                            **exc.details,
+                        },
+                    )
+                if not _value_matches_type(result, field.type_expr):
+                    _raise(
+                        "E_TYPE_MISMATCH",
+                        f"Derived value of type '{type(result).__name__}' is not assignable "
+                        f"to '{_type_text(field.type_expr)}'.",
+                        source_path=field.source_path,
+                        span=expression.span,
+                        graph_path=f"{node.graph_path}.{field_name}",
+                        details={
+                            "field": field_name,
+                            "expression": expression.raw,
+                            "actual": type(result).__name__,
+                            "expected": _type_text(field.type_expr),
+                            "resolved_values": resolved_operands,
+                        },
+                    )
+                values[field_name] = ResolvedValue(
+                    value=result,
+                    source_path=field.source_path,
+                    origin="derived",
+                    span=expression.span,
+                    derived_expression=expression,
+                )
+                if isinstance(result, Path):
+                    builder.paths.append(
+                        PathResolution(
+                            field_path=f"{node.graph_path}.{field_name}",
+                            source_path=field.source_path,
+                            original=expression.raw or render_expression(expression),
+                            resolved_path=result,
+                            field_policy=self._metadata_string(
+                                field,
+                                "path_exists",
+                                "resolver",
+                            ),
+                            resolver_policy=self._resolver.path_exists,
+                            expected_kind=self._metadata_string(field, "path_kind", "any"),
+                            exists=result.exists(),
+                            span=expression.span,
+                        )
+                    )
+
+            builder.nodes[node_id] = replace(
+                node,
+                field_values=values,
+                values={name: value.value for name, value in values.items()},
+            )
+            active.remove(node_id)
+            finalized.add(node_id)
+
+        for node_id in tuple(builder.nodes):
+            finalize_node(node_id)
 
     def _load_document(self, source_path: Path) -> Document:
         source_path = source_path.resolve()
@@ -945,11 +1326,188 @@ class _ResolverState:
             return path.resolve()
         return (base / path).resolve()
 
-    def _metadata_string(self, field: FieldDef, name: str, default: str) -> str:
+    def _metadata_string(
+        self,
+        field: FieldDef | ResolvedField,
+        name: str,
+        default: str,
+    ) -> str:
         value = field.metadata.get(name)
         if value is None:
             return default
-        return str(value.value)
+        return str(value.value) if isinstance(value, LiteralValue) else str(value)
+
+
+def _expression_contains_current(expression: Expression) -> bool:
+    return expression.kind == "current" or any(
+        _expression_contains_current(operand) for operand in expression.operands
+    )
+
+
+def _derived_dependencies(
+    fields: Mapping[str, FieldDef | ResolvedField],
+    field_name: str,
+) -> tuple[str, ...]:
+    derived = fields[field_name].derived
+    if derived is None:
+        return ()
+    dependencies: list[str] = []
+    for reference in expression_references(derived):
+        if len(reference.parts) != 1:
+            continue
+        dependency_name = reference.parts[0]
+        dependency = fields.get(dependency_name)
+        if (
+            dependency is not None
+            and dependency.derived is not None
+            and dependency_name not in dependencies
+        ):
+            dependencies.append(dependency_name)
+    return tuple(dependencies)
+
+
+def _derived_cycle(
+    fields: Mapping[str, FieldDef | ResolvedField],
+) -> tuple[str, ...] | None:
+    visiting: list[str] = []
+    visited: set[str] = set()
+
+    def visit(name: str) -> tuple[str, ...] | None:
+        if name in visiting:
+            start = visiting.index(name)
+            return (*visiting[start:], name)
+        if name in visited:
+            return None
+        visiting.append(name)
+        for dependency in _derived_dependencies(fields, name):
+            cycle = visit(dependency)
+            if cycle is not None:
+                return cycle
+        visiting.pop()
+        visited.add(name)
+        return None
+
+    for name, field in fields.items():
+        if field.derived is None:
+            continue
+        cycle = visit(name)
+        if cycle is not None:
+            return cycle
+    return None
+
+
+def _derived_order(fields: Mapping[str, FieldDef | ResolvedField]) -> tuple[str, ...]:
+    order: list[str] = []
+    visited: set[str] = set()
+
+    def visit(name: str) -> None:
+        if name in visited:
+            return
+        for dependency in _derived_dependencies(fields, name):
+            visit(dependency)
+        visited.add(name)
+        order.append(name)
+
+    for name, field in fields.items():
+        if field.derived is not None:
+            visit(name)
+    return tuple(order)
+
+
+def _resolved_parameter_value(
+    *,
+    node: ResolvedNode,
+    node_by_id: Mapping[str, ResolvedNode],
+    reference: ParameterReference,
+    initial_values: Mapping[str, ResolvedValue] | None = None,
+    required_by: str,
+    source_path: Path,
+    span: SourceSpan | None,
+) -> Any:
+    active_node = node
+    for index, part in enumerate(reference.parts):
+        field = active_node.fields.get(part)
+        if field is None:
+            _raise(
+                "E_PARAMETER_REFERENCE",
+                f"Unknown parameter reference '{reference.raw}' in resolved graph.",
+                source_path=source_path,
+                span=reference.span or span,
+                graph_path=required_by,
+                details={
+                    "reference": reference.raw,
+                    "missing_segment": part,
+                    "available_parameters": list(active_node.fields),
+                },
+            )
+        active_values = (
+            initial_values
+            if index == 0 and active_node.id == node.id and initial_values is not None
+            else active_node.field_values
+        )
+        value = active_values.get(part)
+        field_graph_path = f"{active_node.graph_path}.{part}"
+        if value is None:
+            _raise(
+                "E_MISSING_FIELD",
+                f"Missing required field '{part}' needed by parameter expression.",
+                source_path=field.source_path,
+                span=field.span,
+                graph_path=field_graph_path,
+                details={
+                    "field": part,
+                    "reference": reference.raw,
+                    "required_by": required_by,
+                },
+            )
+        is_final = index == len(reference.parts) - 1
+        if is_final:
+            if value.ref_target is not None:
+                _raise(
+                    "E_PARAMETER_REFERENCE",
+                    f"Parameter reference '{reference.raw}' ends at an object.",
+                    source_path=source_path,
+                    span=reference.span or span,
+                    graph_path=required_by,
+                    details={"reference": reference.raw, "required_by": required_by},
+                )
+            if not _value_matches_type(value.value, field.type_expr):
+                _raise(
+                    "E_TYPE_MISMATCH",
+                    f"Value used by '{reference.raw}' is not assignable to "
+                    f"'{_type_text(field.type_expr)}'.",
+                    source_path=value.source_path,
+                    span=value.span,
+                    graph_path=field_graph_path,
+                    details={
+                        "reference": reference.raw,
+                        "required_by": required_by,
+                        "actual": type(value.value).__name__,
+                        "expected": _type_text(field.type_expr),
+                    },
+                )
+            return value.value
+        if value.ref_target is None:
+            _raise(
+                "E_PARAMETER_REFERENCE",
+                f"Parameter reference '{reference.raw}' cannot traverse scalar field '{part}'.",
+                source_path=source_path,
+                span=reference.span or span,
+                graph_path=required_by,
+                details={"reference": reference.raw, "scalar_segment": part},
+            )
+        target = node_by_id.get(value.ref_target)
+        if target is None:
+            _raise(
+                "E_PARAMETER_REFERENCE",
+                f"Parameter reference '{reference.raw}' has no resolved object at '{part}'.",
+                source_path=source_path,
+                span=reference.span or span,
+                graph_path=required_by,
+                details={"reference": reference.raw, "object_segment": part},
+            )
+        active_node = target
+    raise AssertionError("parameter reference path is empty")
 
 
 def _validate_graph(graph: ResolvedGraph) -> ResolvedGraph:
@@ -969,15 +1527,21 @@ def _validate_graph(graph: ResolvedGraph) -> ResolvedGraph:
                 )
 
     for node in sorted(graph.nodes, key=lambda item: item.id):
-        _validate_node(node, node_by_id)
+        _validate_node_values(node, node_by_id)
 
     for path in graph.path_resolution:
         _validate_path(path)
 
+    for node in sorted(graph.nodes, key=lambda item: item.id):
+        _validate_node_constraints(node, node_by_id)
+
     return graph.with_validated(True)
 
 
-def _validate_node(node: ResolvedNode, node_by_id: Mapping[str, ResolvedNode]) -> None:
+def _validate_node_values(
+    node: ResolvedNode,
+    node_by_id: Mapping[str, ResolvedNode],
+) -> None:
     for field_name, field in node.fields.items():
         value = node.field_values.get(field_name)
         graph_path = f"{node.graph_path}.{field_name}"
@@ -996,7 +1560,25 @@ def _validate_node(node: ResolvedNode, node_by_id: Mapping[str, ResolvedNode]) -
             _validate_ref(field, value, node_by_id, graph_path)
             continue
         _validate_value_type(field, value, graph_path)
-        _validate_constraints(field, value, graph_path)
+
+
+def _validate_node_constraints(
+    node: ResolvedNode,
+    node_by_id: Mapping[str, ResolvedNode],
+) -> None:
+    for field_name, field in node.fields.items():
+        value = node.field_values[field_name]
+        if value.ref_target is not None:
+            continue
+        _validate_constraints(field, value, f"{node.graph_path}.{field_name}")
+        for constraint in field.constraints:
+            _validate_relational_constraint(
+                node=node,
+                field=field,
+                value=value,
+                constraint=constraint,
+                node_by_id=node_by_id,
+            )
 
 
 def _validate_ref(
@@ -1075,6 +1657,102 @@ def _validate_constraints(field: ResolvedField, value: ResolvedValue, graph_path
             _validate_length_bound(field, value, name, constraint, graph_path)
         elif name == "regex":
             _validate_regex(field, value, constraint, graph_path)
+
+
+def _validate_relational_constraint(
+    *,
+    node: ResolvedNode,
+    field: ResolvedField,
+    value: ResolvedValue,
+    constraint: ComparisonConstraint,
+    node_by_id: Mapping[str, ResolvedNode],
+) -> None:
+    graph_path = f"{node.graph_path}.{field.name}"
+    resolved_values: dict[str, Any] = {
+        field.name: _relation_detail_value(value.value),
+    }
+
+    def reference_value(reference: ParameterReference) -> Any:
+        resolved = _resolved_parameter_value(
+            node=node,
+            node_by_id=node_by_id,
+            reference=reference,
+            required_by=graph_path,
+            source_path=field.source_path,
+            span=constraint.span,
+        )
+        resolved_values[".".join(reference.parts)] = _relation_detail_value(resolved)
+        return resolved
+
+    try:
+        left = evaluate_expression(
+            constraint.left,
+            current_value=value.value,
+            reference_value=reference_value,
+        )
+        right = evaluate_expression(
+            constraint.right,
+            current_value=value.value,
+            reference_value=reference_value,
+        )
+        substituted_left = render_expression(
+            constraint.left,
+            current_value=value.value,
+            reference_value=reference_value,
+            substitute_values=True,
+        )
+        substituted_right = render_expression(
+            constraint.right,
+            current_value=value.value,
+            reference_value=reference_value,
+            substitute_values=True,
+        )
+        substituted = f"{substituted_left} {constraint.operator} {substituted_right}"
+        simplified = (
+            f"{format_value(left)} {constraint.operator} {format_value(right)}"
+        )
+        valid = evaluate_comparison(constraint.operator, left, right)
+    except RelationEvaluationError as exc:
+        _raise(
+            "E_EXPRESSION_EVALUATION",
+            f"Could not evaluate constraint for '{field.name}': {exc}",
+            source_path=value.source_path,
+            span=value.span,
+            graph_path=graph_path,
+            details={
+                "field": field.name,
+                "constraint": constraint.raw,
+                "resolved_values": resolved_values,
+                **exc.details,
+            },
+        )
+
+    if valid:
+        return
+    _raise(
+        "E_CONSTRAINT",
+        f"Validation failed for {node.spec_name}.{field.name}.",
+        source_path=value.source_path,
+        span=value.span,
+        graph_path=graph_path,
+        details={
+            "field": field.name,
+            "constraint": constraint.raw,
+            "resolved_values": resolved_values,
+            "evaluation": [substituted, simplified],
+            "operator": constraint.operator,
+        },
+    )
+
+
+def _relation_detail_value(value: Any) -> Any:
+    if isinstance(value, Path):
+        return value.as_posix()
+    if isinstance(value, Mapping):
+        return {str(key): _relation_detail_value(item) for key, item in value.items()}
+    if isinstance(value, tuple | list):
+        return [_relation_detail_value(item) for item in value]
+    return value
 
 
 def _validate_choices(

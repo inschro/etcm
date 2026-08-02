@@ -1,0 +1,7 @@
+spec SamplerConfig:
+  seed: int
+  alignment: int = 8 [>0]
+
+  impl fixed:
+    seed: 42
+    alignment: 8

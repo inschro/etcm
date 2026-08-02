@@ -31,6 +31,8 @@ def test_ml_example_loads_as_dict() -> None:
 
     assert cfg["run_name"] == "smoke"
     assert cfg["max_steps"] == 2
+    assert cfg["global_batch_size"] == 4
+    assert cfg["model_hidden_size"] == 128
     assert cfg["model"] == {"name": "tiny-lm", "layers": 4, "hidden_size": 128}
     assert cfg["runtime"]["accelerator"] == "cpu"
     assert cfg["runtime"]["checkpoint_dir"].endswith("examples/ml/outputs/local")

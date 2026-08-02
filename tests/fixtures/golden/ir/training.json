@@ -1,0 +1,524 @@
+{
+  "implementations": [],
+  "source_path": "valid/parameter_relations/training.etcm",
+  "spec_ref": null,
+  "specs": [
+    {
+      "fields": [
+        {
+          "constraints": [],
+          "default": null,
+          "derived": null,
+          "fields": [],
+          "metadata": {},
+          "name": "dataloader",
+          "override": "allow",
+          "ref_selector": "dataloader.etcm#DataLoaderConfig",
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "__ref__"
+          }
+        },
+        {
+          "constraints": [
+            {
+              "left": {
+                "kind": "current",
+                "literal": null,
+                "operands": [],
+                "operator": null,
+                "raw": null,
+                "reference": null
+              },
+              "operator": ">",
+              "raw": ">0",
+              "right": {
+                "kind": "literal",
+                "literal": {
+                  "kind": "int",
+                  "value": 0
+                },
+                "operands": [],
+                "operator": null,
+                "raw": "0",
+                "reference": null
+              }
+            }
+          ],
+          "default": {
+            "kind": "int",
+            "value": 2
+          },
+          "derived": null,
+          "fields": [],
+          "metadata": {},
+          "name": "gradient_accumulation_steps",
+          "override": "allow",
+          "ref_selector": null,
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "int"
+          }
+        },
+        {
+          "constraints": [
+            {
+              "left": {
+                "kind": "current",
+                "literal": null,
+                "operands": [],
+                "operator": null,
+                "raw": null,
+                "reference": null
+              },
+              "operator": ">",
+              "raw": ">0",
+              "right": {
+                "kind": "literal",
+                "literal": {
+                  "kind": "int",
+                  "value": 0
+                },
+                "operands": [],
+                "operator": null,
+                "raw": "0",
+                "reference": null
+              }
+            }
+          ],
+          "default": {
+            "kind": "int",
+            "value": 4
+          },
+          "derived": null,
+          "fields": [],
+          "metadata": {},
+          "name": "world_size",
+          "override": "allow",
+          "ref_selector": null,
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "int"
+          }
+        },
+        {
+          "constraints": [],
+          "default": null,
+          "derived": null,
+          "fields": [
+            {
+              "constraints": [
+                {
+                  "left": {
+                    "kind": "current",
+                    "literal": null,
+                    "operands": [],
+                    "operator": null,
+                    "raw": null,
+                    "reference": null
+                  },
+                  "operator": ">",
+                  "raw": ">0",
+                  "right": {
+                    "kind": "literal",
+                    "literal": {
+                      "kind": "int",
+                      "value": 0
+                    },
+                    "operands": [],
+                    "operator": null,
+                    "raw": "0",
+                    "reference": null
+                  }
+                }
+              ],
+              "default": {
+                "kind": "int",
+                "value": 16
+              },
+              "derived": null,
+              "fields": [],
+              "metadata": {},
+              "name": "minimum_batch",
+              "override": "allow",
+              "ref_selector": null,
+              "type": {
+                "args": [],
+                "kind": "named",
+                "name": "int"
+              }
+            },
+            {
+              "constraints": [],
+              "default": null,
+              "derived": {
+                "kind": "binary",
+                "literal": null,
+                "operands": [
+                  {
+                    "kind": "reference",
+                    "literal": null,
+                    "operands": [],
+                    "operator": null,
+                    "raw": "@minimum_batch",
+                    "reference": {
+                      "parts": [
+                        "minimum_batch"
+                      ],
+                      "raw": "@minimum_batch"
+                    }
+                  },
+                  {
+                    "kind": "literal",
+                    "literal": {
+                      "kind": "int",
+                      "value": 2
+                    },
+                    "operands": [],
+                    "operator": null,
+                    "raw": "2",
+                    "reference": null
+                  }
+                ],
+                "operator": "*",
+                "raw": "@minimum_batch * 2",
+                "reference": null
+              },
+              "fields": [],
+              "metadata": {},
+              "name": "doubled_minimum",
+              "override": "allow",
+              "ref_selector": null,
+              "type": {
+                "args": [],
+                "kind": "named",
+                "name": "int"
+              }
+            }
+          ],
+          "metadata": {},
+          "name": "limits",
+          "override": "allow",
+          "ref_selector": null,
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "TrainingConfig_limits"
+          }
+        },
+        {
+          "constraints": [],
+          "default": null,
+          "derived": {
+            "kind": "binary",
+            "literal": null,
+            "operands": [
+              {
+                "kind": "binary",
+                "literal": null,
+                "operands": [
+                  {
+                    "kind": "reference",
+                    "literal": null,
+                    "operands": [],
+                    "operator": null,
+                    "raw": "@dataloader.local_batch_size",
+                    "reference": {
+                      "parts": [
+                        "dataloader",
+                        "local_batch_size"
+                      ],
+                      "raw": "@dataloader.local_batch_size"
+                    }
+                  },
+                  {
+                    "kind": "reference",
+                    "literal": null,
+                    "operands": [],
+                    "operator": null,
+                    "raw": "@gradient_accumulation_steps",
+                    "reference": {
+                      "parts": [
+                        "gradient_accumulation_steps"
+                      ],
+                      "raw": "@gradient_accumulation_steps"
+                    }
+                  }
+                ],
+                "operator": "*",
+                "raw": "@dataloader.local_batch_size\n    * @gradient_accumulation_steps",
+                "reference": null
+              },
+              {
+                "kind": "reference",
+                "literal": null,
+                "operands": [],
+                "operator": null,
+                "raw": "@world_size",
+                "reference": {
+                  "parts": [
+                    "world_size"
+                  ],
+                  "raw": "@world_size"
+                }
+              }
+            ],
+            "operator": "*",
+            "raw": "@dataloader.local_batch_size\n    * @gradient_accumulation_steps\n    * @world_size",
+            "reference": null
+          },
+          "fields": [],
+          "metadata": {},
+          "name": "global_batch_size",
+          "override": "allow",
+          "ref_selector": null,
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "int"
+          }
+        },
+        {
+          "constraints": [],
+          "default": null,
+          "derived": {
+            "kind": "reference",
+            "literal": null,
+            "operands": [],
+            "operator": null,
+            "raw": "@dataloader.sampler.seed",
+            "reference": {
+              "parts": [
+                "dataloader",
+                "sampler",
+                "seed"
+              ],
+              "raw": "@dataloader.sampler.seed"
+            }
+          },
+          "fields": [],
+          "metadata": {},
+          "name": "copied_seed",
+          "override": "allow",
+          "ref_selector": null,
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "int"
+          }
+        },
+        {
+          "constraints": [],
+          "default": null,
+          "derived": {
+            "kind": "reference",
+            "literal": null,
+            "operands": [],
+            "operator": null,
+            "raw": "@dataloader.aligned_local_batch",
+            "reference": {
+              "parts": [
+                "dataloader",
+                "aligned_local_batch"
+              ],
+              "raw": "@dataloader.aligned_local_batch"
+            }
+          },
+          "fields": [],
+          "metadata": {},
+          "name": "copied_child_total",
+          "override": "allow",
+          "ref_selector": null,
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "int"
+          }
+        },
+        {
+          "constraints": [],
+          "default": null,
+          "derived": {
+            "kind": "reference",
+            "literal": null,
+            "operands": [],
+            "operator": null,
+            "raw": "@limits.doubled_minimum",
+            "reference": {
+              "parts": [
+                "limits",
+                "doubled_minimum"
+              ],
+              "raw": "@limits.doubled_minimum"
+            }
+          },
+          "fields": [],
+          "metadata": {},
+          "name": "copied_inline_total",
+          "override": "allow",
+          "ref_selector": null,
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "int"
+          }
+        },
+        {
+          "constraints": [
+            {
+              "left": {
+                "kind": "current",
+                "literal": null,
+                "operands": [],
+                "operator": null,
+                "raw": null,
+                "reference": null
+              },
+              "operator": "==",
+              "raw": "== @dataloader.sampler.seed",
+              "right": {
+                "kind": "reference",
+                "literal": null,
+                "operands": [],
+                "operator": null,
+                "raw": "@dataloader.sampler.seed",
+                "reference": {
+                  "parts": [
+                    "dataloader",
+                    "sampler",
+                    "seed"
+                  ],
+                  "raw": "@dataloader.sampler.seed"
+                }
+              }
+            }
+          ],
+          "default": null,
+          "derived": null,
+          "fields": [],
+          "metadata": {},
+          "name": "seed_confirmation",
+          "override": "allow",
+          "ref_selector": null,
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "int"
+          }
+        },
+        {
+          "constraints": [
+            {
+              "left": {
+                "kind": "binary",
+                "literal": null,
+                "operands": [
+                  {
+                    "kind": "current",
+                    "literal": null,
+                    "operands": [],
+                    "operator": null,
+                    "raw": null,
+                    "reference": null
+                  },
+                  {
+                    "kind": "reference",
+                    "literal": null,
+                    "operands": [],
+                    "operator": null,
+                    "raw": "@dataloader.sampler.alignment",
+                    "reference": {
+                      "parts": [
+                        "dataloader",
+                        "sampler",
+                        "alignment"
+                      ],
+                      "raw": "@dataloader.sampler.alignment"
+                    }
+                  }
+                ],
+                "operator": "%",
+                "raw": "% @dataloader.sampler.alignment",
+                "reference": null
+              },
+              "operator": "==",
+              "raw": "% @dataloader.sampler.alignment == 0",
+              "right": {
+                "kind": "literal",
+                "literal": {
+                  "kind": "int",
+                  "value": 0
+                },
+                "operands": [],
+                "operator": null,
+                "raw": "0",
+                "reference": null
+              }
+            }
+          ],
+          "default": null,
+          "derived": null,
+          "fields": [],
+          "metadata": {},
+          "name": "aligned_batch",
+          "override": "allow",
+          "ref_selector": null,
+          "type": {
+            "args": [],
+            "kind": "named",
+            "name": "int"
+          }
+        }
+      ],
+      "implementations": [
+        {
+          "assignments": [
+            {
+              "field_name": "dataloader",
+              "kind": "ref",
+              "selector": "dataloader.etcm#DataLoaderConfig:train"
+            },
+            {
+              "field_path": [
+                "limits",
+                "minimum_batch"
+              ],
+              "kind": "literal",
+              "value": {
+                "kind": "int",
+                "value": 16
+              }
+            },
+            {
+              "field_path": [
+                "seed_confirmation"
+              ],
+              "kind": "literal",
+              "value": {
+                "kind": "int",
+                "value": 42
+              }
+            },
+            {
+              "field_path": [
+                "aligned_batch"
+              ],
+              "kind": "literal",
+              "value": {
+                "kind": "int",
+                "value": 32
+              }
+            }
+          ],
+          "name": "distributed",
+          "parent": null
+        }
+      ],
+      "name": "TrainingConfig",
+      "parent": null
+    }
+  ]
+}

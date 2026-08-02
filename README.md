@@ -18,6 +18,7 @@ useful when a project benefits from:
 
 - config files that reference reusable definitions across files
 - generated Pydantic views from shared configuration definitions
+- typed relationships and derived values across nested config objects
 - explicit override policy for important fields
 - resolved config artifacts for replay and audit
 - object graphs made from models, optimizers, datasets, launchers, callbacks,
@@ -63,6 +64,24 @@ Selectors identify their target without inspecting the target file:
 Root selectors always use `path.etcm#Spec:implementation`. Implementations
 named `default` are written explicitly as `:default`; ETCM never infers them.
 
+Parameters can validate against or derive from other parameters. References
+start at the containing object and may follow typed child objects:
+
+```etcm
+spec TrainingConfig:
+  $dataloader: data/dataloader.etcm#DataLoaderConfig
+  accumulation_steps: int = 1 [>0]
+  world_size: int = 1 [>0]
+
+  global_batch_size: int :=
+    @dataloader.local_batch_size * @accumulation_steps * @world_size
+
+  seed_confirmation: int [== @dataloader.sampler.seed]
+```
+
+See [Parameter Relations](docs/parameter-relations.md) for dotted-reference,
+expression, type, evaluation, and diagnostic semantics.
+
 Typing note: `load()` and `convert()` return `Any`. ETCM validates the config
 before materializing it, but the returned object is a dynamic boundary for
 pyright, Pylance, and mypy. This makes attribute access ergonomic without
@@ -102,14 +121,15 @@ python -c 'from etcm import load; print(load("examples/ml/train.etcm#TrainRun:sm
 
 ## Current Status
 
-This repository is implemented through the generated-view API stage, with thin
-CLI wrappers over the same public Python APIs. The next milestone is standalone
-packaging, install smoke coverage, and real examples for consuming projects.
+This repository includes the parser, resolver, generated-view API, thin CLI,
+standalone packaging, examples, and typed parameter relations with derived
+values and stable dotted object traversal.
 
 - [Manifest](docs/manifest.md)
 - [Product Spec](docs/product_spec.md)
 - [Install Guide](docs/install.md)
 - [CLI Reference](docs/cli.md)
+- [Parameter Relations](docs/parameter-relations.md)
 - [Implementation Roadmap](docs/roadmap.md)
 - [Stage 1 Architecture Notes](docs/stage1/README.md)
 - [Stage 2 Scaffold Notes](docs/stage2/README.md)

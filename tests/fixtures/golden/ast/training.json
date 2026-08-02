@@ -1,0 +1,31 @@
+{
+  "items": [
+    {
+      "field_count": 10,
+      "implementations": [
+        {
+          "assignment_count": 4,
+          "kind": "impl",
+          "name": "distributed",
+          "parent": null,
+          "span": {
+            "column": 3,
+            "end_column": 1,
+            "end_line": 26,
+            "line": 21
+          }
+        }
+      ],
+      "kind": "spec",
+      "name": "TrainingConfig",
+      "parent": null,
+      "span": {
+        "column": 1,
+        "end_column": 1,
+        "end_line": 26,
+        "line": 1
+      }
+    }
+  ],
+  "source_path": "valid/parameter_relations/training.etcm"
+}

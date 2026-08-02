@@ -28,6 +28,7 @@ ETCM makes that graph explicit.
 8. The resolved graph is the reproducibility artifact.
 9. Python bindings are generated from ETCM definitions.
 10. Execution operates on typed objects, not anonymous dictionaries.
+11. Configured, defaulted, and derived values have distinct visible semantics.
 
 ## File Shape
 
@@ -207,6 +208,29 @@ V0 field metadata:
 | `path_kind` | Path kind policy: `any`, `file`, or `dir` |
 | `override` | Override behavior for inheritance and CLI changes |
 
+Numeric comparison syntax is represented as ordered validation constraints,
+not metadata. Constraints can reference sibling or nested object parameters:
+
+```etcm
+spec ModelConfig:
+  $dataloader: dataloader.etcm#DataLoaderConfig
+  attention_heads: int [>0]
+  hidden_size: int [% @attention_heads == 0]
+  seed_confirmation: int [== @dataloader.sampler.seed]
+```
+
+ETCM also distinguishes defaults from derived values:
+
+```etcm
+optional: int = 10
+total: int := @left + @right
+```
+
+A default may be replaced under the field's override policy. A derived value is
+computed by ETCM during resolution and cannot be assigned by an implementation.
+See [Parameter Relations](parameter-relations.md) for the complete expression,
+dotted-path, type, cycle, timing, and diagnostic contract.
+
 ## Path Fields
 
 `Path` is a first-class v0 type, not just a string convention.
@@ -310,9 +334,10 @@ ETCM processing is deterministic and observable:
 5. Apply implementation inheritance.
 6. Resolve references.
 7. Apply explicit overrides under spec-owned policy.
-8. Validate field constraints and reference assignability.
-9. Materialize a typed graph.
-10. Emit requested views: Pydantic, dataclass, dict, and graph.
+8. Compute derived parameters in dependency order.
+9. Validate field types, paths, reference assignability, and constraints.
+10. Materialize a typed graph.
+11. Emit requested views: Pydantic, dataclass, dict, and graph.
 
 Each stage should be separately inspectable by CLI tools.
 

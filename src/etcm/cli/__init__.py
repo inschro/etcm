@@ -356,8 +356,25 @@ def _format_diagnostic(diagnostic: Diagnostic) -> str:
         lines.append(f"selector: {diagnostic.selector}")
     if diagnostic.graph_path is not None:
         lines.append(f"graph_path: {diagnostic.graph_path}")
-    if diagnostic.details:
-        lines.append(f"details: {json.dumps(_json_compatible(diagnostic.details), sort_keys=True)}")
+    details = dict(diagnostic.details or {})
+    expression = details.get("expression")
+    if diagnostic.code == "E_DERIVED_ASSIGNMENT" and isinstance(expression, str):
+        lines.extend(["", "defined as:", f"  {expression}"])
+        return "\n".join(lines)
+    constraint = details.get("constraint")
+    resolved_values = details.get("resolved_values")
+    evaluation = details.get("evaluation")
+    if isinstance(constraint, str) and isinstance(resolved_values, Mapping):
+        lines.extend(["", "constraint:", f"  {constraint}", "", "resolved values:"])
+        for name, value in resolved_values.items():
+            rendered = json.dumps(_json_compatible(value), sort_keys=True)
+            lines.append(f"  {name}: {rendered}")
+        if isinstance(evaluation, Sequence) and not isinstance(evaluation, str):
+            lines.extend(["", "evaluation:"])
+            lines.extend(f"  {item}" for item in evaluation)
+        return "\n".join(lines)
+    if details:
+        lines.append(f"details: {json.dumps(_json_compatible(details), sort_keys=True)}")
     return "\n".join(lines)
 
 

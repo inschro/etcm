@@ -6,7 +6,9 @@
     {
       "fields": [
         {
+          "constraints": [],
           "default": null,
+          "derived": null,
           "fields": [],
           "metadata": {
             "choices": {
@@ -33,7 +35,9 @@
           }
         },
         {
+          "constraints": [],
           "default": null,
+          "derived": null,
           "fields": [],
           "metadata": {},
           "name": "values",
@@ -52,7 +56,9 @@
           }
         },
         {
+          "constraints": [],
           "default": null,
+          "derived": null,
           "fields": [],
           "metadata": {},
           "name": "metadata",
@@ -76,10 +82,12 @@
           }
         },
         {
+          "constraints": [],
           "default": {
             "kind": "bool",
             "value": true
           },
+          "derived": null,
           "fields": [],
           "metadata": {},
           "name": "enabled",
@@ -92,10 +100,12 @@
           }
         },
         {
+          "constraints": [],
           "default": {
             "kind": "null",
             "value": null
           },
+          "derived": null,
           "fields": [],
           "metadata": {},
           "name": "maybe",

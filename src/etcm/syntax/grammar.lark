@@ -1,4 +1,5 @@
 start: _NL* (item _NL*)+
+expression_start: arithmetic_expr
 
 ?item: spec | spec_ref | impl
 
@@ -20,12 +21,38 @@ field_path: NAME ("." NAME)*
 spec_ref_field: "$" NAME ":" SELECTOR field_meta? _NL
 nested_field: NAME ":" field_meta? _NL _INDENT spec_line* _DEDENT
 field: NAME ":" type_expr field_default? field_meta? _NL
+     | NAME ":" type_expr field_derived field_meta? _NL
+     | NAME ":" type_expr derived_block
 field_default: "=" value
+field_derived: ":=" arithmetic_expr
+derived_block: ":=" _NL _INDENT DERIVED_LINE (_NL DERIVED_LINE)* _NL? _DEDENT
 field_meta: META_LSQB [constraint (SEMICOLON constraint)* SEMICOLON?] RSQB
 ?constraint: comparison_constraint | in_constraint | meta_pair
-comparison_constraint: COMPARE value
+comparison_constraint: COMPARE arithmetic_expr -> implicit_comparison_constraint
+                     | current_arithmetic_expr COMPARE arithmetic_expr -> transformed_comparison_constraint
 in_constraint: "in" value
 meta_pair: NAME "=" value
+
+?arithmetic_expr: sum_expr
+sum_expr: product_expr (ADD_OP product_expr)*
+product_expr: unary_expr (MUL_OP unary_expr)*
+?unary_expr: UNARY_OP unary_expr -> unary_expression
+           | power_expr
+power_expr: expression_atom (POWER_OP unary_expr)?
+?expression_atom: PARAM_REF -> parameter_reference
+                | ESCAPED_STRING -> expression_string
+                | NUMBER -> expression_number
+                | "true" -> expression_true
+                | "false" -> expression_false
+                | "null" -> expression_null
+                | LPAR arithmetic_expr RPAR -> grouped_expression
+
+?current_arithmetic_expr: current_sum_expr
+current_sum_expr: current_product_expr (ADD_OP product_expr)* -> continued_current_sum
+                | ADD_OP product_expr (ADD_OP product_expr)* -> current_sum
+current_product_expr: current_power_expr (MUL_OP unary_expr)* -> continued_current_product
+                    | MUL_OP unary_expr (MUL_OP unary_expr)* -> current_product
+current_power_expr: POWER_OP unary_expr -> current_power
 
 ?type_expr: union_type
 ?union_type: type_atom ("|" type_atom)* -> union_type
@@ -52,9 +79,15 @@ LSQB: "["
 RSQB: "]"
 LBRACE: "{"
 RBRACE: "}"
-META_LSQB.2: /\[(?=\s*(?:[><!]|in\b|[A-Za-z_][A-Za-z0-9_]*\s*=))/
+META_LSQB.2: /\[(?=\s*(?:(?:==|!=|<=|>=|<|>)|(?:\*\*|\/\/|[+*\/%-])|in\b|[A-Za-z_][A-Za-z0-9_]*\s*=))/
 SEMICOLON: ";"
-COMPARE: ">=" | "<=" | "!=" | ">" | "<"
+COMPARE: "==" | ">=" | "<=" | "!=" | ">" | "<"
+ADD_OP: "+" | "-"
+MUL_OP.2: "//" | "*" | "/" | "%"
+POWER_OP.3: "**"
+UNARY_OP: "+" | "-"
+PARAM_REF.3: /@[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*/
+DERIVED_LINE: /(?:[^\r\n#"\\]|"(?:\\.|[^"\\])*")+/
 PATH: /[A-Za-z0-9_\.\/-]+/
 SELECTOR.3: /[A-Za-z0-9_\.\/-]+#[A-Za-z_][A-Za-z0-9_]*(?::[A-Za-z_][A-Za-z0-9_]*)?/ | /#[A-Za-z_][A-Za-z0-9_]*(?::[A-Za-z_][A-Za-z0-9_]*)?/ | /:[A-Za-z_][A-Za-z0-9_]*/ | /[A-Za-z0-9_\.\/-]+#/ | /[A-Za-z0-9_\.\/-]+/
 COMMENT: /(?<!\S)#[^\r\n]*/
@@ -62,6 +95,7 @@ COMMENT: /(?<!\S)#[^\r\n]*/
 %declare _INDENT _DEDENT
 %import common.CNAME -> NAME
 %import common.ESCAPED_STRING
+%import common.NUMBER
 %import common.SIGNED_NUMBER
 %import common.WS_INLINE
 %ignore WS_INLINE

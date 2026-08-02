@@ -6,7 +6,9 @@
     {
       "fields": [
         {
+          "constraints": [],
           "default": null,
+          "derived": null,
           "fields": [],
           "metadata": {},
           "name": "name",
@@ -19,17 +21,38 @@
           }
         },
         {
+          "constraints": [
+            {
+              "left": {
+                "kind": "current",
+                "literal": null,
+                "operands": [],
+                "operator": null,
+                "raw": null,
+                "reference": null
+              },
+              "operator": ">",
+              "raw": ">0",
+              "right": {
+                "kind": "literal",
+                "literal": {
+                  "kind": "int",
+                  "value": 0
+                },
+                "operands": [],
+                "operator": null,
+                "raw": "0",
+                "reference": null
+              }
+            }
+          ],
           "default": {
             "kind": "int",
             "value": 1
           },
+          "derived": null,
           "fields": [],
-          "metadata": {
-            "gt": {
-              "kind": "int",
-              "value": 0
-            }
-          },
+          "metadata": {},
           "name": "retries",
           "override": "allow",
           "ref_selector": null,

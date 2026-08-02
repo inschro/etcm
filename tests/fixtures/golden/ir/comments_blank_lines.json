@@ -6,7 +6,9 @@
     {
       "fields": [
         {
+          "constraints": [],
           "default": null,
+          "derived": null,
           "fields": [],
           "metadata": {
             "choices": {
@@ -33,17 +35,38 @@
           }
         },
         {
+          "constraints": [
+            {
+              "left": {
+                "kind": "current",
+                "literal": null,
+                "operands": [],
+                "operator": null,
+                "raw": null,
+                "reference": null
+              },
+              "operator": ">",
+              "raw": ">0.0",
+              "right": {
+                "kind": "literal",
+                "literal": {
+                  "kind": "float",
+                  "value": 0.0
+                },
+                "operands": [],
+                "operator": null,
+                "raw": "0.0",
+                "reference": null
+              }
+            }
+          ],
           "default": {
             "kind": "float",
             "value": 30.0
           },
+          "derived": null,
           "fields": [],
-          "metadata": {
-            "gt": {
-              "kind": "float",
-              "value": 0.0
-            }
-          },
+          "metadata": {},
           "name": "timeout_seconds",
           "override": "allow",
           "ref_selector": null,
@@ -54,10 +77,12 @@
           }
         },
         {
+          "constraints": [],
           "default": {
             "kind": "string",
             "value": "prod#primary"
           },
+          "derived": null,
           "fields": [],
           "metadata": {},
           "name": "label",

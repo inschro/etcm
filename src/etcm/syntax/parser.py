@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast as py_ast
+from dataclasses import replace
 from functools import lru_cache
 from importlib.resources import files
 from pathlib import Path
@@ -12,10 +13,13 @@ from lark.indenter import Indenter
 from etcm.errors import Diagnostic, ETCMError
 from etcm.ir import (
     Assignment,
+    ComparisonConstraint,
     Document,
+    Expression,
     FieldDef,
     ImplDef,
     LiteralValue,
+    ParameterReference,
     RefAssignment,
     Selector,
     SelectorTarget,
@@ -26,11 +30,14 @@ from etcm.ir import (
 )
 from etcm.syntax.ast import (
     SyntaxAssignment,
+    SyntaxComparisonConstraint,
     SyntaxDocument,
+    SyntaxExpression,
     SyntaxField,
     SyntaxImpl,
     SyntaxItem,
     SyntaxLiteral,
+    SyntaxParameterReference,
     SyntaxRefAssignment,
     SyntaxSpec,
     SyntaxSpecRef,
@@ -72,6 +79,7 @@ def build_parser() -> Lark:
     return Lark(
         grammar,
         parser="lalr",
+        start=["start", "expression_start"],
         propagate_positions=True,
         maybe_placeholders=False,
         postlex=ETCMIndenter(),
@@ -82,11 +90,11 @@ def parse_syntax(text: str, source_path: str | Path = "<string>") -> SyntaxDocum
     source = Path(source_path)
     _reject_tab_indentation(text, source)
     try:
-        tree = build_parser().parse(text)
+        tree = build_parser().parse(text, start="start")
     except UnexpectedInput as exc:
         raise ETCMError(_diagnostic_from_unexpected(exc, source)) from exc
 
-    document = _SyntaxBuilder(source).document(tree)
+    document = _SyntaxBuilder(source, text).document(tree)
     _validate_document(document)
     return document
 
@@ -101,8 +109,9 @@ def parse_file(path: str | Path) -> Document:
 
 
 class _SyntaxBuilder:
-    def __init__(self, source_path: Path) -> None:
+    def __init__(self, source_path: Path, source_text: str) -> None:
         self._source_path = source_path
+        self._source_text = source_text
 
     def document(self, tree: Tree[Token]) -> SyntaxDocument:
         items: list[SyntaxItem] = []
@@ -190,6 +199,8 @@ class _SyntaxBuilder:
         name = _required_token(tree, "NAME")
         type_expr: SyntaxTypeExpr | None = None
         default: SyntaxLiteral | None = None
+        derived: SyntaxExpression | None = None
+        constraints: tuple[SyntaxComparisonConstraint, ...] = ()
         metadata: dict[str, SyntaxLiteral] = {}
         override = "allow"
 
@@ -200,8 +211,12 @@ class _SyntaxBuilder:
                 type_expr = self.type_expr(child)
             elif child.data == "field_default":
                 default = self.literal(_required_tree(child))
+            elif child.data == "field_derived":
+                derived = self.expression(_required_tree(child))
+            elif child.data == "derived_block":
+                derived = self.derived_block(child)
             elif child.data == "field_meta":
-                meta = self.field_meta(child)
+                meta, constraints = self.field_meta(child)
                 override_literal = meta.pop("override", None)
                 if override_literal is not None:
                     override = str(override_literal.value)
@@ -214,6 +229,8 @@ class _SyntaxBuilder:
             name=str(name),
             type_expr=type_expr,
             default=default,
+            derived=derived,
+            constraints=constraints,
             metadata=metadata,
             override=override,
             span=_span(tree, self._source_path),
@@ -227,17 +244,19 @@ class _SyntaxBuilder:
             expected="spec",
         )
         metadata: dict[str, SyntaxLiteral] = {}
+        constraints: tuple[SyntaxComparisonConstraint, ...] = ()
         override = "allow"
 
         for child in tree.children:
             if isinstance(child, Tree) and child.data == "field_meta":
-                metadata = self.field_meta(child)
+                metadata, constraints = self.field_meta(child)
                 override_literal = metadata.pop("override", None)
                 if override_literal is not None:
                     override = str(override_literal.value)
 
         return SyntaxField(
             name=name,
+            constraints=constraints,
             metadata=metadata,
             override=override,
             ref_selector=ref_selector,
@@ -247,6 +266,7 @@ class _SyntaxBuilder:
     def nested_field(self, tree: Tree[Token]) -> SyntaxField:
         name = str(_required_token(tree, "NAME"))
         metadata: dict[str, SyntaxLiteral] = {}
+        constraints: tuple[SyntaxComparisonConstraint, ...] = ()
         override = "allow"
         fields: list[SyntaxField] = []
 
@@ -254,7 +274,7 @@ class _SyntaxBuilder:
             if not isinstance(child, Tree):
                 continue
             if child.data == "field_meta":
-                metadata = self.field_meta(child)
+                metadata, constraints = self.field_meta(child)
                 override_literal = metadata.pop("override", None)
                 if override_literal is not None:
                     override = str(override_literal.value)
@@ -267,14 +287,19 @@ class _SyntaxBuilder:
 
         return SyntaxField(
             name=name,
+            constraints=constraints,
             metadata=metadata,
             override=override,
             fields=tuple(fields),
             span=_span(tree, self._source_path),
         )
 
-    def field_meta(self, tree: Tree[Token]) -> dict[str, SyntaxLiteral]:
+    def field_meta(
+        self,
+        tree: Tree[Token],
+    ) -> tuple[dict[str, SyntaxLiteral], tuple[SyntaxComparisonConstraint, ...]]:
         metadata: dict[str, SyntaxLiteral] = {}
+        constraints: list[SyntaxComparisonConstraint] = []
         for child in tree.children:
             if not isinstance(child, Tree):
                 continue
@@ -282,12 +307,321 @@ class _SyntaxBuilder:
                 metadata[str(_required_token(child, "NAME"))] = self.literal(
                     _required_tree(child)
                 )
-            elif child.data == "comparison_constraint":
-                key = _comparison_key(str(_required_token(child, "COMPARE")))
-                metadata[key] = self.literal(_required_tree(child))
+            elif child.data in {
+                "implicit_comparison_constraint",
+                "transformed_comparison_constraint",
+            }:
+                constraints.append(self.comparison_constraint(child))
             elif child.data == "in_constraint":
                 metadata["choices"] = self.literal(_required_tree(child))
-        return metadata
+        return metadata, tuple(constraints)
+
+    def comparison_constraint(self, tree: Tree[Token]) -> SyntaxComparisonConstraint:
+        operator = str(_required_token(tree, "COMPARE"))
+        expression_trees = [child for child in tree.children if isinstance(child, Tree)]
+        span = _span(tree, self._source_path)
+        if tree.data == "implicit_comparison_constraint":
+            if len(expression_trees) != 1:
+                raise AssertionError("implicit comparison constraint is incomplete")
+            left = SyntaxExpression(kind="current", span=span)
+            right = self.expression(expression_trees[0])
+        else:
+            if len(expression_trees) != 2:
+                raise AssertionError("transformed comparison constraint is incomplete")
+            left = self.expression(expression_trees[0])
+            right = self.expression(expression_trees[1])
+        return SyntaxComparisonConstraint(
+            left=left,
+            operator=operator,
+            right=right,
+            raw=self._raw(tree).strip(),
+            span=span,
+        )
+
+    def derived_block(self, tree: Tree[Token]) -> SyntaxExpression:
+        line_tokens = [
+            child
+            for child in tree.children
+            if isinstance(child, Token) and child.type == "DERIVED_LINE"
+        ]
+        expression_text, position_map = self._normalized_derived_expression(line_tokens)
+        if not expression_text:
+            raise AssertionError("derived expression block is empty")
+        try:
+            parsed = build_parser().parse(expression_text, start="expression_start")
+        except UnexpectedInput as exc:
+            diagnostic = _diagnostic_from_unexpected(exc, self._source_path)
+            error_position = getattr(exc, "pos_in_stream", None)
+            if isinstance(error_position, int) and position_map:
+                if error_position < len(position_map):
+                    source_position = position_map[error_position]
+                else:
+                    source_position = position_map[-1] + 1
+                error_span = _span_from_positions(
+                    self._source_text,
+                    self._source_path,
+                    source_position,
+                    min(source_position + 1, len(self._source_text)),
+                )
+                diagnostic = replace(
+                    diagnostic,
+                    line=error_span.line,
+                    column=error_span.column,
+                    end_line=error_span.end_line,
+                    end_column=error_span.end_column,
+                )
+            else:
+                diagnostic = replace(
+                    diagnostic,
+                    line=tree.meta.line,
+                    column=tree.meta.column,
+                    end_line=tree.meta.end_line,
+                    end_column=tree.meta.end_column,
+                )
+            raise ETCMError(diagnostic) from exc
+        expression_tree = _required_tree(parsed)
+        parsed_expression = _SyntaxBuilder(self._source_path, expression_text).expression(
+            expression_tree
+        )
+        return self._rebase_block_expression(
+            parsed_expression,
+            position_map=position_map,
+        )
+
+    def expression(self, tree: Tree[Token]) -> SyntaxExpression:
+        span = _span(tree, self._source_path)
+        raw = self._raw(tree).strip()
+
+        if tree.data in {"sum_expr", "product_expr"}:
+            return self._binary_chain(tree)
+
+        if tree.data == "unary_expression":
+            operator = str(_required_token(tree, "UNARY_OP"))
+            operand = self.expression(_required_tree(tree))
+            return SyntaxExpression(
+                kind="unary",
+                operator=operator,
+                operands=(operand,),
+                raw=raw,
+                span=span,
+            )
+
+        if tree.data == "power_expr":
+            expression_trees = [child for child in tree.children if isinstance(child, Tree)]
+            if len(expression_trees) == 1:
+                return replace(self.expression(expression_trees[0]), raw=raw, span=span)
+            if len(expression_trees) != 2:
+                raise AssertionError("power expression is incomplete")
+            return SyntaxExpression(
+                kind="binary",
+                operator="**",
+                operands=(
+                    self.expression(expression_trees[0]),
+                    self.expression(expression_trees[1]),
+                ),
+                raw=raw,
+                span=span,
+            )
+
+        if tree.data == "grouped_expression":
+            return replace(self.expression(_required_tree(tree)), raw=raw, span=span)
+
+        if tree.data == "parameter_reference":
+            token = _required_token(tree, "PARAM_REF")
+            reference_raw = str(token)
+            return SyntaxExpression(
+                kind="reference",
+                reference=SyntaxParameterReference(
+                    parts=tuple(reference_raw[1:].split(".")),
+                    raw=reference_raw,
+                    span=_span(token, self._source_path),
+                ),
+                raw=reference_raw,
+                span=span,
+            )
+
+        literal_kind: str
+        literal_value: Any
+        if tree.data == "expression_string":
+            literal_kind = "string"
+            literal_value = py_ast.literal_eval(str(tree.children[0]))
+        elif tree.data == "expression_number":
+            number_raw = str(tree.children[0])
+            literal_kind = "float" if "." in number_raw or "e" in number_raw.lower() else "int"
+            literal_value = float(number_raw) if literal_kind == "float" else int(number_raw)
+        elif tree.data == "expression_true":
+            literal_kind = "bool"
+            literal_value = True
+        elif tree.data == "expression_false":
+            literal_kind = "bool"
+            literal_value = False
+        elif tree.data == "expression_null":
+            literal_kind = "null"
+            literal_value = None
+        else:
+            if tree.data in {
+                "continued_current_sum",
+                "continued_current_product",
+            }:
+                return self._binary_chain(tree)
+            if tree.data in {"current_sum", "current_product", "current_power"}:
+                current_span = span
+                if span.start_pos is not None:
+                    current_span = _span_from_positions(
+                        self._source_text,
+                        self._source_path,
+                        span.start_pos,
+                        span.start_pos,
+                    )
+                return self._binary_chain(
+                    tree,
+                    initial=SyntaxExpression(kind="current", span=current_span),
+                )
+            raise AssertionError(f"unsupported expression: {tree.data}")
+
+        return SyntaxExpression(
+            kind="literal",
+            literal=SyntaxLiteral(kind=literal_kind, value=literal_value, span=span),
+            raw=raw,
+            span=span,
+        )
+
+    def _binary_chain(
+        self,
+        tree: Tree[Token],
+        *,
+        initial: SyntaxExpression | None = None,
+    ) -> SyntaxExpression:
+        children = list(tree.children)
+        index = 0
+        if initial is None:
+            if not children or not isinstance(children[0], Tree):
+                raise AssertionError("binary expression is missing its first operand")
+            result = self.expression(children[0])
+            index = 1
+        else:
+            result = initial
+
+        while index < len(children):
+            operator = children[index]
+            if not isinstance(operator, Token):
+                raise AssertionError("binary expression is missing an operator")
+            index += 1
+            if index >= len(children):
+                raise AssertionError("binary expression is missing its right operand")
+            right_node = children[index]
+            if not isinstance(right_node, Tree):
+                raise AssertionError("binary expression is missing its right operand")
+            right = self.expression(right_node)
+            index += 1
+            span = self._expression_span(result, right, tree)
+            result = SyntaxExpression(
+                kind="binary",
+                operator=str(operator),
+                operands=(result, right),
+                raw=self._raw_span(span),
+                span=span,
+            )
+        return result
+
+    def _raw(self, node: Tree[Token] | Token) -> str:
+        span = _span(node, self._source_path)
+        return self._raw_span(span)
+
+    def _raw_span(self, span: SourceSpan) -> str:
+        if span.start_pos is None or span.end_pos is None:
+            return ""
+        return self._source_text[span.start_pos : span.end_pos]
+
+    def _expression_span(
+        self,
+        left: SyntaxExpression,
+        right: SyntaxExpression,
+        fallback: Tree[Token],
+    ) -> SourceSpan:
+        if (
+            left.span is None
+            or right.span is None
+            or left.span.start_pos is None
+            or right.span.end_pos is None
+        ):
+            return _span(fallback, self._source_path)
+        return _span_from_positions(
+            self._source_text,
+            self._source_path,
+            left.span.start_pos,
+            right.span.end_pos,
+        )
+
+    def _normalized_derived_expression(
+        self,
+        line_tokens: list[Token],
+    ) -> tuple[str, tuple[int, ...]]:
+        characters: list[str] = []
+        positions: list[int] = []
+        previous_end: int | None = None
+        for token in line_tokens:
+            if token.start_pos is None:
+                raise AssertionError("derived expression line is missing a source position")
+            raw_line = str(token)
+            content = raw_line.strip()
+            if not content:
+                continue
+            offset = raw_line.find(content)
+            source_start = token.start_pos + offset
+            if characters:
+                characters.append(" ")
+                positions.append(previous_end if previous_end is not None else source_start)
+            characters.extend(content)
+            positions.extend(range(source_start, source_start + len(content)))
+            previous_end = source_start + len(content)
+        return "".join(characters), tuple(positions)
+
+    def _rebase_block_expression(
+        self,
+        expression: SyntaxExpression,
+        *,
+        position_map: tuple[int, ...],
+    ) -> SyntaxExpression:
+        def rebase_span(span: SourceSpan | None) -> SourceSpan | None:
+            if span is None or span.start_pos is None or span.end_pos is None:
+                return span
+            if span.start_pos >= span.end_pos:
+                source_position = position_map[min(span.start_pos, len(position_map) - 1)]
+                return _span_from_positions(
+                    self._source_text,
+                    self._source_path,
+                    source_position,
+                    source_position,
+                )
+            start_pos = position_map[span.start_pos]
+            end_pos = position_map[span.end_pos - 1] + 1
+            return _span_from_positions(
+                self._source_text,
+                self._source_path,
+                start_pos,
+                end_pos,
+            )
+
+        def rebase(node: SyntaxExpression) -> SyntaxExpression:
+            span = rebase_span(node.span)
+            reference = node.reference
+            if reference is not None:
+                reference = replace(reference, span=rebase_span(reference.span))
+            literal = node.literal
+            if literal is not None:
+                literal = replace(literal, span=rebase_span(literal.span))
+            operands = tuple(rebase(operand) for operand in node.operands)
+            return replace(
+                node,
+                literal=literal,
+                reference=reference,
+                operands=operands,
+                raw=self._raw_span(span).strip() if span is not None else node.raw,
+                span=span,
+            )
+
+        return rebase(expression)
 
     def value_assignment(self, tree: Tree[Token]) -> SyntaxAssignment:
         field_path: tuple[str, ...] | None = None
@@ -474,6 +808,8 @@ def _field_to_ir(field: SyntaxField, owner_name: str) -> FieldDef:
         name=field.name,
         type_expr=type_expr,
         default=_literal_to_ir(field.default) if field.default is not None else None,
+        derived=_expression_to_ir(field.derived) if field.derived is not None else None,
+        constraints=tuple(_constraint_to_ir(item) for item in field.constraints),
         metadata={key: _literal_to_ir(value) for key, value in field.metadata.items()},
         override=field.override,
         ref_selector=Selector.parse(field.ref_selector) if field.ref_selector is not None else None,
@@ -525,16 +861,6 @@ def _nested_type_name(owner_name: str, field_name: str) -> str:
     return f"{owner_name}_{field_name}"
 
 
-def _comparison_key(operator: str) -> str:
-    return {
-        ">": "gt",
-        ">=": "ge",
-        "<": "lt",
-        "<=": "le",
-        "!=": "ne",
-    }[operator]
-
-
 def _literal_to_ir(literal: SyntaxLiteral) -> LiteralValue:
     if literal.kind == "list":
         return LiteralValue(
@@ -547,6 +873,36 @@ def _literal_to_ir(literal: SyntaxLiteral) -> LiteralValue:
             value=tuple((key, _literal_to_ir(value)) for key, value in literal.value),
         )
     return LiteralValue(kind=literal.kind, value=literal.value)
+
+
+def _expression_to_ir(expression: SyntaxExpression) -> Expression:
+    return Expression(
+        kind=expression.kind,
+        operator=expression.operator,
+        literal=_literal_to_ir(expression.literal) if expression.literal is not None else None,
+        reference=(
+            ParameterReference(
+                parts=expression.reference.parts,
+                raw=expression.reference.raw,
+                span=expression.reference.span,
+            )
+            if expression.reference is not None
+            else None
+        ),
+        operands=tuple(_expression_to_ir(operand) for operand in expression.operands),
+        raw=expression.raw,
+        span=expression.span,
+    )
+
+
+def _constraint_to_ir(constraint: SyntaxComparisonConstraint) -> ComparisonConstraint:
+    return ComparisonConstraint(
+        left=_expression_to_ir(constraint.left),
+        operator=constraint.operator,
+        right=_expression_to_ir(constraint.right),
+        raw=constraint.raw,
+        span=constraint.span,
+    )
 
 
 def _validate_document(document: SyntaxDocument) -> None:
@@ -736,6 +1092,29 @@ def _span(node: Tree[Token] | Token, source_path: Path) -> SourceSpan:
         end_column=end_column,
         start_pos=getattr(meta, "start_pos", None),
         end_pos=getattr(meta, "end_pos", None),
+    )
+
+
+def _span_from_positions(
+    source_text: str,
+    source_path: Path,
+    start_pos: int,
+    end_pos: int,
+) -> SourceSpan:
+    line = source_text.count("\n", 0, start_pos) + 1
+    previous_newline = source_text.rfind("\n", 0, start_pos)
+    column = start_pos - previous_newline
+    end_line = source_text.count("\n", 0, end_pos) + 1
+    end_previous_newline = source_text.rfind("\n", 0, end_pos)
+    end_column = end_pos - end_previous_newline
+    return SourceSpan(
+        source_path=source_path,
+        line=line,
+        column=column,
+        end_line=end_line,
+        end_column=end_column,
+        start_pos=start_pos,
+        end_pos=end_pos,
     )
 
 
