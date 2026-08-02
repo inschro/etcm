@@ -2,7 +2,7 @@
 
 ## Module Boundaries
 
-The first package scaffold should use these boundaries:
+The package uses these boundaries:
 
 ```text
 src/etcm/
@@ -28,6 +28,28 @@ Responsibilities:
   Pydantic.
 - `etcm.cli`: command-line wrappers only.
 - `etcm.errors`: shared diagnostic and exception types.
+
+### Internal dependency shape
+
+Package `__init__.py` files are declarative public facades. They re-export stable
+symbols but do not contain implementation logic. The implementation flows inward:
+
+```text
+public facade -> API or entry point -> cohesive services -> IR and diagnostics
+```
+
+The syntax entry point coordinates dedicated grammar, syntax-building,
+expression-building, validation, source-diagnostic, and IR-lowering modules. The
+resolver API coordinates graph construction while spec lookup, selector handling,
+override application, derivation, parameter traversal, type rules, and resolved
+graph validation remain separate services. Code generation separates its public
+conversion API from materialization, and the CLI separates command dispatch from
+validation discovery and output formatting.
+
+Shared public type contracts live below those packages so code generation and the
+resolver do not import each other's facades. Supported direct modules such as
+`etcm.syntax.parser`, `etcm.resolve.graph`, and `etcm.resolve.relations` remain
+importable independently and in any order.
 
 ## Public API
 
