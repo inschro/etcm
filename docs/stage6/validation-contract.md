@@ -9,6 +9,8 @@ Validation owns semantic config correctness after graph construction.
 - spec inheritance cycles
 - implementation inheritance cycles
 - reference cycles
+- invalid override declarations, including unknown policies, incompatible
+  policy types, and `deny` without an inline default
 
 `validate(graph)` owns:
 
@@ -16,7 +18,8 @@ Validation owns semantic config correctness after graph construction.
 - literal type compatibility
 - reference assignability
 - implementation-parent assignability
-- override policy checks
+- override policy checks for assignments to existing defaults or inherited
+  values
 - path existence and kind policy checks
 - non-path field constraints
 

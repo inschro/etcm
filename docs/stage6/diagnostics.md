@@ -21,7 +21,8 @@ Existing ownership remains:
 
 - `E_TYPE_MISMATCH`: type compatibility and reference assignability
 - `E_INVALID_PATH`: `Path` existence and kind policy
-- `E_INVALID_OVERRIDE`: override policy
+- `E_INVALID_OVERRIDE`: invalid policy declarations during resolution and
+  disallowed assignments during validation
 - `E_GENERATED_VIEW`: conversion cannot represent an already valid graph
 
 `E_GENERATED_VIEW` also reports attempts to convert an unvalidated graph unless

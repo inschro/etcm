@@ -4,14 +4,15 @@
     {
       "field_values": {
         "cache_dir": {
+          "applied_override": false,
           "literal": {
             "kind": "string",
             "value": "data/cache"
           },
           "local_value": null,
           "origin": "local",
-          "overrode_parent": false,
-          "parent_value": null,
+          "previous_origin": null,
+          "previous_value": null,
           "ref_target": null,
           "source_path": "valid/path_policies/data.etcm",
           "span": {
@@ -23,14 +24,15 @@
           "value": "valid/path_policies/data/cache"
         },
         "existing_file": {
+          "applied_override": false,
           "literal": {
             "kind": "string",
             "value": "data/existing.txt"
           },
           "local_value": null,
           "origin": "local",
-          "overrode_parent": false,
-          "parent_value": null,
+          "previous_origin": null,
+          "previous_value": null,
           "ref_target": null,
           "source_path": "valid/path_policies/data.etcm",
           "span": {
@@ -42,14 +44,15 @@
           "value": "valid/path_policies/data/existing.txt"
         },
         "output_dir": {
+          "applied_override": false,
           "literal": {
             "kind": "string",
             "value": "data/future-output"
           },
           "local_value": null,
           "origin": "local",
-          "overrode_parent": false,
-          "parent_value": null,
+          "previous_origin": null,
+          "previous_value": null,
           "ref_target": null,
           "source_path": "valid/path_policies/data.etcm",
           "span": {

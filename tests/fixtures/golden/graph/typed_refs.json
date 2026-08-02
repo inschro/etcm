@@ -13,14 +13,15 @@
     {
       "field_values": {
         "max_steps": {
+          "applied_override": true,
           "literal": {
             "kind": "int",
             "value": 2
           },
-          "local_value": null,
+          "local_value": 2,
           "origin": "local",
-          "overrode_parent": false,
-          "parent_value": null,
+          "previous_origin": "default",
+          "previous_value": 10,
           "ref_target": null,
           "source_path": "valid/typed_refs/train.etcm",
           "span": {
@@ -32,11 +33,12 @@
           "value": 2
         },
         "model": {
+          "applied_override": false,
           "literal": null,
           "local_value": null,
           "origin": "local",
-          "overrode_parent": false,
-          "parent_value": null,
+          "previous_origin": null,
+          "previous_value": null,
           "ref_target": "root.model",
           "source_path": "valid/typed_refs/train.etcm",
           "span": {
@@ -145,14 +147,15 @@
     {
       "field_values": {
         "depth": {
+          "applied_override": true,
           "literal": {
             "kind": "int",
             "value": 4
           },
-          "local_value": null,
+          "local_value": 4,
           "origin": "local",
-          "overrode_parent": false,
-          "parent_value": null,
+          "previous_origin": "default",
+          "previous_value": 12,
           "ref_target": null,
           "source_path": "valid/typed_refs/model.etcm",
           "span": {

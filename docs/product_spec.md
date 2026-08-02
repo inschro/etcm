@@ -159,7 +159,7 @@ spec ServiceSettings:
   environment: str [in ["dev", "staging", "prod"]]
   api_base_url: str
   timeout_seconds: float = 30.0 [>0.0]
-  credentials_ref: str [override="deny"]
+  credentials_ref: str [override="force_only"]
 
   impl prod:
     environment: "prod"

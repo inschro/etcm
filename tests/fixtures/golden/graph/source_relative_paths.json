@@ -13,11 +13,12 @@
     {
       "field_values": {
         "data": {
+          "applied_override": false,
           "literal": null,
           "local_value": null,
           "origin": "local",
-          "overrode_parent": false,
-          "parent_value": null,
+          "previous_origin": null,
+          "previous_value": null,
           "ref_target": "root.data",
           "source_path": "valid/source_relative_paths/train.etcm",
           "span": {
@@ -69,14 +70,15 @@
     {
       "field_values": {
         "local_file": {
+          "applied_override": false,
           "literal": {
             "kind": "string",
             "value": "local.txt"
           },
           "local_value": null,
           "origin": "local",
-          "overrode_parent": false,
-          "parent_value": null,
+          "previous_origin": null,
+          "previous_value": null,
           "ref_target": null,
           "source_path": "valid/source_relative_paths/nested/model.etcm",
           "span": {

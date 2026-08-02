@@ -11,14 +11,15 @@
     {
       "field_values": {
         "device": {
+          "applied_override": true,
           "literal": {
             "kind": "string",
             "value": "cuda"
           },
-          "local_value": null,
+          "local_value": "cuda",
           "origin": "local",
-          "overrode_parent": false,
-          "parent_value": null,
+          "previous_origin": "default",
+          "previous_value": "cpu",
           "ref_target": null,
           "source_path": "valid/spec_inheritance_resolver/cuda.etcm",
           "span": {
@@ -30,14 +31,15 @@
           "value": "cuda"
         },
         "gpus": {
+          "applied_override": true,
           "literal": {
             "kind": "int",
             "value": 2
           },
-          "local_value": null,
+          "local_value": 2,
           "origin": "local",
-          "overrode_parent": false,
-          "parent_value": null,
+          "previous_origin": "default",
+          "previous_value": 1,
           "ref_target": null,
           "source_path": "valid/spec_inheritance_resolver/cuda.etcm",
           "span": {

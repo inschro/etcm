@@ -2,7 +2,8 @@
   "code": "E_INVALID_OVERRIDE",
   "details": {
     "field": "seed",
-    "override": "deny"
+    "override": "deny",
+    "previous_origin": "parent"
   },
   "graph_path": "root.seed",
   "message": "Field 'seed' cannot be overridden with policy 'deny'.",

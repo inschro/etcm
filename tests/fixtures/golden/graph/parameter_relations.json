@@ -29,14 +29,15 @@
     {
       "field_values": {
         "aligned_batch": {
+          "applied_override": false,
           "literal": {
             "kind": "int",
             "value": 32
           },
           "local_value": null,
           "origin": "local",
-          "overrode_parent": false,
-          "parent_value": null,
+          "previous_origin": null,
+          "previous_value": null,
           "ref_target": null,
           "source_path": "valid/parameter_relations/training.etcm",
           "span": {
@@ -48,6 +49,7 @@
           "value": 32
         },
         "copied_child_total": {
+          "applied_override": false,
           "derived_expression": {
             "kind": "reference",
             "raw": "@dataloader.aligned_local_batch",
@@ -74,8 +76,8 @@
           "literal": null,
           "local_value": null,
           "origin": "derived",
-          "overrode_parent": false,
-          "parent_value": null,
+          "previous_origin": null,
+          "previous_value": null,
           "ref_target": null,
           "source_path": "valid/parameter_relations/training.etcm",
           "span": {
@@ -87,6 +89,7 @@
           "value": 12
         },
         "copied_inline_total": {
+          "applied_override": false,
           "derived_expression": {
             "kind": "reference",
             "raw": "@limits.doubled_minimum",
@@ -113,8 +116,8 @@
           "literal": null,
           "local_value": null,
           "origin": "derived",
-          "overrode_parent": false,
-          "parent_value": null,
+          "previous_origin": null,
+          "previous_value": null,
           "ref_target": null,
           "source_path": "valid/parameter_relations/training.etcm",
           "span": {
@@ -126,6 +129,7 @@
           "value": 32
         },
         "copied_seed": {
+          "applied_override": false,
           "derived_expression": {
             "kind": "reference",
             "raw": "@dataloader.sampler.seed",
@@ -153,8 +157,8 @@
           "literal": null,
           "local_value": null,
           "origin": "derived",
-          "overrode_parent": false,
-          "parent_value": null,
+          "previous_origin": null,
+          "previous_value": null,
           "ref_target": null,
           "source_path": "valid/parameter_relations/training.etcm",
           "span": {
@@ -166,11 +170,12 @@
           "value": 42
         },
         "dataloader": {
+          "applied_override": false,
           "literal": null,
           "local_value": null,
           "origin": "local",
-          "overrode_parent": false,
-          "parent_value": null,
+          "previous_origin": null,
+          "previous_value": null,
           "ref_target": "root.dataloader",
           "source_path": "valid/parameter_relations/training.etcm",
           "span": {
@@ -184,6 +189,7 @@
           }
         },
         "global_batch_size": {
+          "applied_override": false,
           "derived_expression": {
             "kind": "binary",
             "operands": [
@@ -280,8 +286,8 @@
           "literal": null,
           "local_value": null,
           "origin": "derived",
-          "overrode_parent": false,
-          "parent_value": null,
+          "previous_origin": null,
+          "previous_value": null,
           "ref_target": null,
           "source_path": "valid/parameter_relations/training.etcm",
           "span": {
@@ -293,14 +299,15 @@
           "value": 32
         },
         "gradient_accumulation_steps": {
+          "applied_override": false,
           "literal": {
             "kind": "int",
             "value": 2
           },
           "local_value": null,
           "origin": "default",
-          "overrode_parent": false,
-          "parent_value": null,
+          "previous_origin": null,
+          "previous_value": null,
           "ref_target": null,
           "source_path": "valid/parameter_relations/training.etcm",
           "span": {
@@ -312,11 +319,16 @@
           "value": 2
         },
         "limits": {
+          "applied_override": true,
           "literal": null,
-          "local_value": null,
+          "local_value": {
+            "$ref": "root.limits"
+          },
           "origin": "local",
-          "overrode_parent": false,
-          "parent_value": null,
+          "previous_origin": "default",
+          "previous_value": {
+            "$ref": "root.limits"
+          },
           "ref_target": "root.limits",
           "source_path": "valid/parameter_relations/training.etcm",
           "span": {
@@ -330,14 +342,15 @@
           }
         },
         "seed_confirmation": {
+          "applied_override": false,
           "literal": {
             "kind": "int",
             "value": 42
           },
           "local_value": null,
           "origin": "local",
-          "overrode_parent": false,
-          "parent_value": null,
+          "previous_origin": null,
+          "previous_value": null,
           "ref_target": null,
           "source_path": "valid/parameter_relations/training.etcm",
           "span": {
@@ -349,14 +362,15 @@
           "value": 42
         },
         "world_size": {
+          "applied_override": false,
           "literal": {
             "kind": "int",
             "value": 4
           },
           "local_value": null,
           "origin": "default",
-          "overrode_parent": false,
-          "parent_value": null,
+          "previous_origin": null,
+          "previous_value": null,
           "ref_target": null,
           "source_path": "valid/parameter_relations/training.etcm",
           "span": {
@@ -951,6 +965,7 @@
     {
       "field_values": {
         "aligned_local_batch": {
+          "applied_override": false,
           "derived_expression": {
             "kind": "binary",
             "operands": [
@@ -1012,8 +1027,8 @@
           "literal": null,
           "local_value": null,
           "origin": "derived",
-          "overrode_parent": false,
-          "parent_value": null,
+          "previous_origin": null,
+          "previous_value": null,
           "ref_target": null,
           "source_path": "valid/parameter_relations/dataloader.etcm",
           "span": {
@@ -1025,14 +1040,15 @@
           "value": 12
         },
         "local_batch_size": {
+          "applied_override": false,
           "literal": {
             "kind": "int",
             "value": 4
           },
           "local_value": null,
           "origin": "local",
-          "overrode_parent": false,
-          "parent_value": null,
+          "previous_origin": null,
+          "previous_value": null,
           "ref_target": null,
           "source_path": "valid/parameter_relations/dataloader.etcm",
           "span": {
@@ -1044,11 +1060,12 @@
           "value": 4
         },
         "sampler": {
+          "applied_override": false,
           "literal": null,
           "local_value": null,
           "origin": "local",
-          "overrode_parent": false,
-          "parent_value": null,
+          "previous_origin": null,
+          "previous_value": null,
           "ref_target": "root.dataloader.sampler",
           "source_path": "valid/parameter_relations/dataloader.etcm",
           "span": {
@@ -1236,14 +1253,15 @@
     {
       "field_values": {
         "alignment": {
+          "applied_override": true,
           "literal": {
             "kind": "int",
             "value": 8
           },
-          "local_value": null,
+          "local_value": 8,
           "origin": "local",
-          "overrode_parent": false,
-          "parent_value": null,
+          "previous_origin": "default",
+          "previous_value": 8,
           "ref_target": null,
           "source_path": "valid/parameter_relations/sampler.etcm",
           "span": {
@@ -1255,14 +1273,15 @@
           "value": 8
         },
         "seed": {
+          "applied_override": false,
           "literal": {
             "kind": "int",
             "value": 42
           },
           "local_value": null,
           "origin": "local",
-          "overrode_parent": false,
-          "parent_value": null,
+          "previous_origin": null,
+          "previous_value": null,
           "ref_target": null,
           "source_path": "valid/parameter_relations/sampler.etcm",
           "span": {
@@ -1367,6 +1386,7 @@
     {
       "field_values": {
         "doubled_minimum": {
+          "applied_override": false,
           "derived_expression": {
             "kind": "binary",
             "operands": [
@@ -1419,8 +1439,8 @@
           "literal": null,
           "local_value": null,
           "origin": "derived",
-          "overrode_parent": false,
-          "parent_value": null,
+          "previous_origin": null,
+          "previous_value": null,
           "ref_target": null,
           "source_path": "valid/parameter_relations/training.etcm",
           "span": {
@@ -1432,14 +1452,15 @@
           "value": 32
         },
         "minimum_batch": {
+          "applied_override": true,
           "literal": {
             "kind": "int",
             "value": 16
           },
-          "local_value": null,
+          "local_value": 16,
           "origin": "local",
-          "overrode_parent": false,
-          "parent_value": null,
+          "previous_origin": "default",
+          "previous_value": 16,
           "ref_target": null,
           "source_path": "valid/parameter_relations/training.etcm",
           "span": {

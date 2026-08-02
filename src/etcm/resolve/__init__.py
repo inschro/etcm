@@ -51,6 +51,7 @@ ViewTarget = Literal["pydantic", "dataclass", "dict"]
 
 _PRIMITIVE_TYPES = {"str", "int", "float", "bool", "null", "Path"}
 _PATH_METADATA = {"path_exists", "path_kind"}
+_OVERRIDE_POLICIES = {"allow", "deny", "force_only", "append", "merge"}
 
 
 @dataclass(frozen=True)
@@ -491,36 +492,28 @@ class _ResolverState:
     ) -> dict[str, ResolvedValue]:
         result = dict(values)
         previous = result.get(field_name)
-        if previous is None or previous.origin == "default":
+        if previous is None:
             result[field_name] = new_value
             return result
 
-        if previous.origin == "parent":
+        if previous.origin in {"default", "parent"}:
+            applied_value = new_value.value
             if (
                 field.override == "append"
                 and isinstance(previous.value, list)
                 and isinstance(new_value.value, list)
             ):
-                result[field_name] = new_value.with_override(
-                    value=[*previous.value, *new_value.value],
-                    parent_value=previous.value,
-                    local_value=new_value.value,
-                )
-                return result
-            if (
+                applied_value = [*previous.value, *new_value.value]
+            elif (
                 field.override == "merge"
                 and isinstance(previous.value, dict)
                 and isinstance(new_value.value, dict)
             ):
-                result[field_name] = new_value.with_override(
-                    value={**previous.value, **new_value.value},
-                    parent_value=previous.value,
-                    local_value=new_value.value,
-                )
-                return result
+                applied_value = _merge_mappings(previous.value, new_value.value)
             result[field_name] = new_value.with_override(
-                value=new_value.value,
-                parent_value=previous.value,
+                value=applied_value,
+                previous_origin=previous.origin,
+                previous_value=previous.value,
                 local_value=new_value.value,
             )
             return result
@@ -755,6 +748,8 @@ class _ResolverState:
         fields: Mapping[str, FieldDef],
     ) -> None:
         for field in fields.values():
+            self._validate_override_policy(field, source_path)
+
             def reference_type(
                 reference: ParameterReference,
                 current: FieldDef = field,
@@ -774,15 +769,6 @@ class _ResolverState:
                         source_path=_field_source_path(field, source_path),
                         span=field.span,
                         details={"field": field.name},
-                    )
-                if field.override != "allow":
-                    _raise(
-                        "E_EXPRESSION_TYPE",
-                        f"Derived parameter '{field.name}' cannot declare override policy "
-                        f"'{field.override}'.",
-                        source_path=_field_source_path(field, source_path),
-                        span=field.span,
-                        details={"field": field.name, "override": field.override},
                     )
                 if _expression_contains_current(field.derived):
                     _raise(
@@ -854,6 +840,64 @@ class _ResolverState:
                 source_path=_field_source_path(first, source_path),
                 span=first.derived.span if first.derived is not None else first.span,
                 details={"owner": owner_name, "chain": cycle},
+            )
+
+    def _validate_override_policy(self, field: FieldDef, source_path: Path) -> None:
+        policy = field.override
+        field_source = _field_source_path(field, source_path)
+        details = {"field": field.name, "override": policy}
+
+        if policy not in _OVERRIDE_POLICIES:
+            _raise(
+                "E_INVALID_OVERRIDE",
+                f"Unknown override policy '{policy}' for field '{field.name}'.",
+                source_path=field_source,
+                span=field.span,
+                details={**details, "reason": "unknown_policy"},
+            )
+        if field.derived is not None and policy != "allow":
+            _raise(
+                "E_INVALID_OVERRIDE",
+                f"Derived parameter '{field.name}' cannot declare override policy '{policy}'.",
+                source_path=field_source,
+                span=field.span,
+                details={**details, "reason": "derived_parameter"},
+            )
+        if policy == "deny" and field.default is None:
+            _raise(
+                "E_INVALID_OVERRIDE",
+                f"Field '{field.name}' with override policy 'deny' requires an inline default.",
+                source_path=field_source,
+                span=field.span,
+                details={**details, "reason": "missing_inline_default"},
+            )
+        if policy == "append" and not _is_list_type(field.type_expr):
+            _raise(
+                "E_INVALID_OVERRIDE",
+                f"Field '{field.name}' with override policy 'append' must use list[T], "
+                f"got '{_type_text(field.type_expr)}'.",
+                source_path=field_source,
+                span=field.span,
+                details={
+                    **details,
+                    "reason": "incompatible_type",
+                    "expected": "list[T]",
+                    "actual": _type_text(field.type_expr),
+                },
+            )
+        if policy == "merge" and not _is_string_keyed_dict_type(field.type_expr):
+            _raise(
+                "E_INVALID_OVERRIDE",
+                f"Field '{field.name}' with override policy 'merge' must use "
+                f"dict[str, T], got '{_type_text(field.type_expr)}'.",
+                source_path=field_source,
+                span=field.span,
+                details={
+                    **details,
+                    "reason": "incompatible_type",
+                    "expected": "dict[str, T]",
+                    "actual": _type_text(field.type_expr),
+                },
             )
 
     def _relation_reference_type(
@@ -1565,7 +1609,7 @@ def _validate_node_values(
                 graph_path=graph_path,
                 details={"field": field_name},
             )
-        if value.overrode_parent:
+        if value.applied_override:
             _validate_override(field, value, graph_path)
         if value.ref_target is not None:
             _validate_ref(field, value, node_by_id, graph_path)
@@ -1630,11 +1674,11 @@ def _validate_override(field: ResolvedField, value: ResolvedValue, graph_path: s
     if field.override in {"deny", "force_only"}:
         _invalid_override(field, value, graph_path)
     if field.override == "append" and not (
-        isinstance(value.parent_value, list) and isinstance(value.local_value, list)
+        isinstance(value.previous_value, list) and isinstance(value.local_value, list)
     ):
         _invalid_override(field, value, graph_path)
     if field.override == "merge" and not (
-        isinstance(value.parent_value, dict) and isinstance(value.local_value, dict)
+        isinstance(value.previous_value, dict) and isinstance(value.local_value, dict)
     ):
         _invalid_override(field, value, graph_path)
 
@@ -1916,6 +1960,31 @@ def _type_text(type_expr: TypeExpr) -> str:
     return type_expr.kind
 
 
+def _is_list_type(type_expr: TypeExpr) -> bool:
+    return type_expr.kind == "generic" and type_expr.name == "list" and len(type_expr.args) == 1
+
+
+def _is_string_keyed_dict_type(type_expr: TypeExpr) -> bool:
+    if type_expr.kind != "generic" or type_expr.name != "dict" or len(type_expr.args) != 2:
+        return False
+    key_type = type_expr.args[0]
+    return key_type.kind == "named" and key_type.name == "str"
+
+
+def _merge_mappings(
+    previous: Mapping[str, Any],
+    local: Mapping[str, Any],
+) -> dict[str, Any]:
+    result = dict(previous)
+    for key, local_value in local.items():
+        previous_value = result.get(key)
+        if isinstance(previous_value, Mapping) and isinstance(local_value, Mapping):
+            result[key] = _merge_mappings(previous_value, local_value)
+        else:
+            result[key] = local_value
+    return result
+
+
 def _selector_text(
     source_path: Path,
     spec: str | None = None,
@@ -1945,7 +2014,11 @@ def _invalid_override(field: ResolvedField, value: ResolvedValue, graph_path: st
         source_path=value.source_path,
         span=value.span,
         graph_path=graph_path,
-        details={"field": field.name, "override": field.override},
+        details={
+            "field": field.name,
+            "override": field.override,
+            "previous_origin": value.previous_origin,
+        },
     )
 
 

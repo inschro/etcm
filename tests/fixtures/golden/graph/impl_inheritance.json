@@ -11,14 +11,15 @@
     {
       "field_values": {
         "device": {
+          "applied_override": true,
           "literal": {
             "kind": "string",
             "value": "cuda"
           },
           "local_value": "cuda",
           "origin": "local",
-          "overrode_parent": true,
-          "parent_value": "cpu",
+          "previous_origin": "parent",
+          "previous_value": "cpu",
           "ref_target": null,
           "source_path": "valid/impl_inheritance_resolver/runtime.etcm",
           "span": {
@@ -30,6 +31,7 @@
           "value": "cuda"
         },
         "metadata": {
+          "applied_override": true,
           "literal": {
             "kind": "map",
             "value": [
@@ -46,8 +48,8 @@
             "mode": "fast"
           },
           "origin": "local",
-          "overrode_parent": true,
-          "parent_value": {
+          "previous_origin": "parent",
+          "previous_value": {
             "owner": "tests"
           },
           "ref_target": null,
@@ -64,6 +66,7 @@
           }
         },
         "tags": {
+          "applied_override": true,
           "literal": {
             "kind": "list",
             "value": [
@@ -77,8 +80,8 @@
             "child"
           ],
           "origin": "local",
-          "overrode_parent": true,
-          "parent_value": [
+          "previous_origin": "parent",
+          "previous_value": [
             "base"
           ],
           "ref_target": null,
@@ -196,14 +199,15 @@
     {
       "field_values": {
         "device": {
+          "applied_override": false,
           "literal": {
             "kind": "string",
             "value": "cpu"
           },
           "local_value": null,
           "origin": "default",
-          "overrode_parent": false,
-          "parent_value": null,
+          "previous_origin": null,
+          "previous_value": null,
           "ref_target": null,
           "source_path": "valid/impl_inheritance_resolver/runtime.etcm",
           "span": {
@@ -215,6 +219,7 @@
           "value": "cpu"
         },
         "metadata": {
+          "applied_override": true,
           "literal": {
             "kind": "map",
             "value": [
@@ -227,10 +232,12 @@
               ]
             ]
           },
-          "local_value": null,
+          "local_value": {
+            "owner": "tests"
+          },
           "origin": "local",
-          "overrode_parent": false,
-          "parent_value": null,
+          "previous_origin": "default",
+          "previous_value": {},
           "ref_target": null,
           "source_path": "valid/impl_inheritance_resolver/runtime.etcm",
           "span": {
@@ -244,6 +251,7 @@
           }
         },
         "tags": {
+          "applied_override": true,
           "literal": {
             "kind": "list",
             "value": [
@@ -253,10 +261,12 @@
               }
             ]
           },
-          "local_value": null,
+          "local_value": [
+            "base"
+          ],
           "origin": "local",
-          "overrode_parent": false,
-          "parent_value": null,
+          "previous_origin": "default",
+          "previous_value": [],
           "ref_target": null,
           "source_path": "valid/impl_inheritance_resolver/runtime.etcm",
           "span": {

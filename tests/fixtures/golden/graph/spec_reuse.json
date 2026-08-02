@@ -4,14 +4,15 @@
     {
       "field_values": {
         "retries": {
+          "applied_override": true,
           "literal": {
             "kind": "int",
             "value": 3
           },
-          "local_value": null,
+          "local_value": 3,
           "origin": "local",
-          "overrode_parent": false,
-          "parent_value": null,
+          "previous_origin": "default",
+          "previous_value": 2,
           "ref_target": null,
           "source_path": "valid/spec_reuse/variants.etcm",
           "span": {
@@ -23,14 +24,15 @@
           "value": 3
         },
         "train_file": {
+          "applied_override": false,
           "literal": {
             "kind": "string",
             "value": "data/smoke.txt"
           },
           "local_value": null,
           "origin": "local",
-          "overrode_parent": false,
-          "parent_value": null,
+          "previous_origin": null,
+          "previous_value": null,
           "ref_target": null,
           "source_path": "valid/spec_reuse/variants.etcm",
           "span": {

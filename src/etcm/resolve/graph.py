@@ -71,22 +71,38 @@ class ResolvedValue:
     span: SourceSpan | None = None
     literal: LiteralValue | None = None
     ref_target: str | None = None
-    overrode_parent: bool = False
-    parent_value: Any = None
+    applied_override: bool = False
+    previous_origin: str | None = None
+    previous_value: Any = None
     local_value: Any = None
     derived_expression: Expression | None = None
 
-    def with_override(self, *, value: Any, parent_value: Any, local_value: Any) -> ResolvedValue:
+    def with_override(
+        self,
+        *,
+        value: Any,
+        previous_origin: str,
+        previous_value: Any,
+        local_value: Any,
+    ) -> ResolvedValue:
         return replace(
             self,
             value=value,
-            overrode_parent=True,
-            parent_value=parent_value,
+            applied_override=True,
+            previous_origin=previous_origin,
+            previous_value=previous_value,
             local_value=local_value,
         )
 
     def as_parent(self) -> ResolvedValue:
-        return replace(self, origin="parent", overrode_parent=False)
+        return replace(
+            self,
+            origin="parent",
+            applied_override=False,
+            previous_origin=None,
+            previous_value=None,
+            local_value=None,
+        )
 
     def to_dict(self, path_base: Path | None = None) -> dict[str, Any]:
         result = {
@@ -96,12 +112,13 @@ class ResolvedValue:
             "span": _span_to_dict(self.span),
             "literal": _literal_to_dict(self.literal, path_base),
             "ref_target": self.ref_target,
-            "overrode_parent": self.overrode_parent,
-            "parent_value": _json_value(self.parent_value, path_base)
-            if self.overrode_parent
+            "applied_override": self.applied_override,
+            "previous_origin": self.previous_origin if self.applied_override else None,
+            "previous_value": _json_value(self.previous_value, path_base)
+            if self.applied_override
             else None,
             "local_value": _json_value(self.local_value, path_base)
-            if self.overrode_parent
+            if self.applied_override
             else None,
         }
         if self.derived_expression is not None:

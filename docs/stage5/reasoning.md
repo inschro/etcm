@@ -41,14 +41,19 @@ resolver, and constrain expected path kind.
 
 ## Override Policy
 
-Implementation inheritance applies parent values before local assignments.
-Inherited values then follow field override policy:
+Declaration defaults and implementation inheritance both establish values
+before local assignments. A local assignment that meets either kind of existing
+value follows field override policy:
 
-- `allow` replaces the parent value
-- `deny` rejects the override
-- `force_only` rejects in Stage 5 because no force API exists yet
-- `append` combines list values
-- `merge` combines mapping values
+- `allow` replaces the existing value
+- `deny` rejects the assignment and requires an inline declaration default
+- `force_only` rejects replacement because no force API exists yet
+- `append` combines values for an exact `list[T]` field
+- `merge` recursively combines values for an exact `dict[str, T]` field
+
+Without an existing value, the first `append`, `merge`, or `force_only`
+assignment establishes the value normally. `impl default` is an ordinary named
+implementation and receives no exception from these rules.
 
 This keeps policy enforcement near semantic resolution instead of deferring it
 to generated runtime views.

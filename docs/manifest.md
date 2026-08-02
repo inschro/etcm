@@ -254,7 +254,7 @@ V0 field metadata:
 | `choices` | Finite set of valid values |
 | `path_exists` | Path existence policy: `resolver`, `allow_missing`, or `must_exist` |
 | `path_kind` | Path kind policy: `any`, `file`, or `dir` |
-| `override` | Override behavior for inheritance and CLI changes |
+| `override` | Override behavior when an implementation assignment meets an existing value |
 
 Numeric comparison syntax is represented as ordered validation constraints,
 not metadata. Constraints can reference sibling or nested object parameters:
@@ -338,11 +338,26 @@ V0 policies:
 
 | Policy | Meaning |
 | --- | --- |
-| `allow` | Normal replacement behavior |
-| `deny` | Field cannot be overridden after initial definition |
-| `force_only` | Override requires an explicit force flag |
-| `append` | Collection overrides append values |
-| `merge` | Mapping overrides deep-merge values |
+| `allow` | Replace the existing value |
+| `deny` | Reject every implementation assignment; an inline declaration default is required |
+| `force_only` | Reject replacement unless a future force API explicitly authorizes it |
+| `append` | Append list values; the declared type must be exactly `list[T]` |
+| `merge` | Recursively merge mappings; the declared type must be exactly `dict[str, T]` |
+
+Declaration defaults and inherited implementation values are treated uniformly
+as existing values. Consequently, assigning even the same value to a `deny`
+field is invalid. `null` is a valid inline default, and an `impl default` block
+has no special policy privileges: it is an ordinary named implementation.
+
+For `append` and `merge`, a field without a declaration default accepts its
+first implementation assignment as the initial value. Later assignments append
+or recursively merge. During a recursive merge, nested mappings combine and a
+local non-mapping leaf replaces the previous leaf. `force_only` follows the same
+initial-value rule, but ETCM does not yet expose the force operation needed to
+replace an existing value.
+
+Unknown policy names, incompatible `append` or `merge` types, and `deny` without
+an inline default are spec errors. Derived fields may only use `allow`.
 
 The point is auditability. A caller should not be able to silently replace a
 seed, checkpoint URI, production account, or safety-critical runtime field
@@ -367,6 +382,11 @@ Every node records:
 - referenced children
 - validation result
 - materialized runtime representation
+
+Each resolved field value exposes `applied_override`. When it is true,
+`previous_origin`, `previous_value`, and `local_value` explain the composition.
+Passing a value into a child implementation resets that audit state before the
+child applies its own assignment, so each node reports only its own override.
 
 The resolved graph is what should be saved beside experiment outputs,
 checkpoints, build artifacts, or deployment records.
