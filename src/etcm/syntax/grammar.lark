@@ -6,23 +6,26 @@ expression_start: arithmetic_expr
 spec: "spec" NAME spec_parent? ":" _NL _INDENT spec_line* _DEDENT
 spec_parent: "<-" SELECTOR
 ?spec_line: spec_ref_field | nested_field | field | impl | _NL
+?nested_line: spec_ref_field | nested_field | field | nested_impl | _NL
+nested_impl: impl
 
 spec_ref: "$spec" ":" SELECTOR _NL
 
 impl: "impl" NAME impl_parent? ":" _NL _INDENT impl_line* _DEDENT
 impl_parent: "<-" SELECTOR
-?impl_line: assignment | _NL
+?impl_line: assignment | assignment_block | _NL
 
 ?assignment: ref_assignment | value_assignment
-ref_assignment: "$" NAME ":" SELECTOR _NL
+ref_assignment: "$" field_path ":" SELECTOR _NL
 value_assignment: field_path ":" value _NL
+assignment_block: field_path ":" _NL _INDENT impl_line* _DEDENT
 field_path: NAME ("." NAME)*
 
-spec_ref_field: "$" NAME ":" SELECTOR field_meta? _NL
-nested_field: NAME ":" field_meta? _NL _INDENT spec_line* _DEDENT
-field: NAME ":" type_expr field_default? field_meta? _NL
-     | NAME ":" type_expr field_derived field_meta? _NL
-     | NAME ":" type_expr derived_block
+spec_ref_field: "$" field_path ":" SELECTOR field_meta? _NL
+nested_field: field_path ":" field_meta? _NL _INDENT nested_line* _DEDENT
+field: field_path ":" type_expr field_default? field_meta? _NL
+     | field_path ":" type_expr field_derived field_meta? _NL
+     | field_path ":" type_expr derived_block
 field_default: "=" value
 field_derived: ":=" arithmetic_expr
 derived_block: ":=" _NL _INDENT DERIVED_LINE (_NL DERIVED_LINE)* _NL? _DEDENT

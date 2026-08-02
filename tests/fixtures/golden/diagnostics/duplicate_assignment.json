@@ -1,0 +1,17 @@
+{
+  "code": "E_DUPLICATE_ASSIGNMENT",
+  "details": {
+    "field_path": "optimizer.learning_rate",
+    "previous_line": 6
+  },
+  "graph_path": null,
+  "message": "Duplicate assignment to 'optimizer.learning_rate' in implementation 'invalid'.",
+  "selector": null,
+  "source_path": "invalid/duplicate_assignment.etcm",
+  "span": {
+    "column": 7,
+    "end_column": 1,
+    "end_line": 9,
+    "line": 8
+  }
+}

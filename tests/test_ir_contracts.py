@@ -100,7 +100,7 @@ def test_ir_contracts_can_be_instantiated() -> None:
     field = FieldDef(name="retries", type_expr=int_type, default=literal)
     assignment = Assignment(field_path=("retries",), value=literal)
     ref = RefAssignment(
-        field_name="model",
+        field_path=("model",),
         selector=Selector.parse("models/lm.etcm#ModelConfig:tiny"),
     )
     impl = ImplDef(name="smoke", assignments=(assignment, ref))

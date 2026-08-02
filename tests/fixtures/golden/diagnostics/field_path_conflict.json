@@ -1,0 +1,17 @@
+{
+  "code": "E_FIELD_PATH_CONFLICT",
+  "details": {
+    "field_path": "optimizer.learning_rate",
+    "previous_line": 2
+  },
+  "graph_path": null,
+  "message": "Field path 'optimizer.learning_rate' conflicts with an anonymous container in spec 'FieldPathConflict'.",
+  "selector": null,
+  "source_path": "invalid/field_path_conflict.etcm",
+  "span": {
+    "column": 3,
+    "end_column": 1,
+    "end_line": 4,
+    "line": 3
+  }
+}

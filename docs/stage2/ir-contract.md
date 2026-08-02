@@ -65,7 +65,7 @@ Stage 2 can keep literal and type shells simple:
 - `TypeExpr` as a frozen dataclass with `kind`, `name`, and `args`
 - `LiteralValue` as a frozen dataclass with `kind` and `value`
 - `Assignment` with a field path and literal value
-- `RefAssignment` with a field name and selector
+- `RefAssignment` with a field path and selector
 
 ## Rules
 

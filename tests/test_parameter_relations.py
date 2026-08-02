@@ -520,7 +520,6 @@ spec Parent:
   $child: child.etcm#Child
 
   impl invalid:
-    $child: child.etcm#Child:default
     child.value: 2
 """,
         "parent.etcm",
@@ -529,4 +528,4 @@ spec Parent:
     with pytest.raises(ETCMError) as raised:
         resolve(f"{parent}#Parent:invalid")
 
-    assert raised.value.diagnostic.code == "E_TYPE_MISMATCH"
+    assert raised.value.diagnostic.code == "E_INVALID_PATH"

@@ -36,12 +36,16 @@ PARSER_VALID_FIXTURES = [
 ]
 
 PARSER_INVALID_FIXTURES = {
+    "invalid/assignment_path_conflict.etcm": "E_ASSIGNMENT_PATH_CONFLICT",
     "invalid/bad_indent.etcm": "E_PARSE_BAD_INDENT",
+    "invalid/duplicate_assignment.etcm": "E_DUPLICATE_ASSIGNMENT",
     "invalid/duplicate_field.etcm": "E_DUPLICATE_FIELD",
     "invalid/duplicate_impl.etcm": "E_DUPLICATE_IMPL",
     "invalid/duplicate_spec.etcm": "E_DUPLICATE_SPEC",
+    "invalid/field_path_conflict.etcm": "E_FIELD_PATH_CONFLICT",
     "invalid/malformed_literal.etcm": "E_PARSE_UNEXPECTED_TOKEN",
     "invalid/malformed_syntax.etcm": "E_PARSE_UNEXPECTED_TOKEN",
+    "invalid/nested_impl.etcm": "E_NESTED_IMPL",
     "invalid/path_selector_ambiguity.etcm": "E_PARSE_SELECTOR",
     "invalid/spec_and_spec_ref.etcm": "E_SPEC_AND_SPEC_REF",
     "invalid/tab_indent.etcm": "E_PARSE_TAB_INDENT",
@@ -205,7 +209,7 @@ def _assignment_summary(assignment: Assignment | RefAssignment) -> dict[str, Any
     if isinstance(assignment, RefAssignment):
         return {
             "kind": "ref",
-            "field_name": assignment.field_name,
+            "field_path": list(assignment.field_path),
             "selector": assignment.selector.raw,
         }
     return {

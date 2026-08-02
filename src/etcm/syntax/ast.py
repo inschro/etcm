@@ -91,7 +91,7 @@ class SyntaxAssignment:
 
 @dataclass(frozen=True)
 class SyntaxRefAssignment:
-    field_name: str
+    field_path: tuple[str, ...]
     selector: str
     span: SourceSpan | None = None
 

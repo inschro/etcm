@@ -30,6 +30,10 @@ the key in JSON golden outputs.
 | `E_DUPLICATE_SPEC` | Parser | A document defines the same inline spec name more than once. |
 | `E_DUPLICATE_FIELD` | Parser | A spec defines the same field more than once. |
 | `E_DUPLICATE_IMPL` | Parser | A spec or top-level `$spec` file defines the same implementation more than once. |
+| `E_DUPLICATE_ASSIGNMENT` | Parser | An implementation assigns the same canonical leaf path more than once. |
+| `E_FIELD_PATH_CONFLICT` | Parser | A declaration path is used as both a value/reference field and an anonymous container. |
+| `E_ASSIGNMENT_PATH_CONFLICT` | Parser | Local implementation assignments target both a path and one of its descendants. |
+| `E_NESTED_IMPL` | Parser | An implementation block appears inside an anonymous field declaration. |
 | `E_SPEC_AND_SPEC_REF` | Parser | A document contains both inline `spec` and top-level `$spec`. |
 | `E_MISSING_SELECTOR` | Resolver | A referenced selector cannot be found. |
 | `E_SPEC_CYCLE` | Resolver | Spec inheritance contains a cycle. |
@@ -38,7 +42,7 @@ the key in JSON golden outputs.
 | `E_TYPE_MISMATCH` | Resolver | A literal or referenced implementation is not assignable to the field type. |
 | `E_CONSTRAINT` | Resolver | A field value violates a non-path field constraint. |
 | `E_INVALID_OVERRIDE` | Resolver | An assignment or CLI override violates override policy. |
-| `E_INVALID_PATH` | Resolver | A `Path` value violates existence or kind policy. |
+| `E_INVALID_PATH` | Resolver | A field path crosses an opaque reference, or a `Path` value violates existence or kind policy. |
 | `E_GENERATED_VIEW` | Codegen | A generated view cannot represent the resolved graph. |
 
 ## Layer Ownership
@@ -76,9 +80,10 @@ returned by the Python API and maps success or failure to process exit codes.
   policy, and expected kind for path errors.
 - Keep messages deterministic so text golden files stay reviewable.
 
-## Path Error Details
+## Path-Value Error Details
 
-`E_INVALID_PATH` diagnostics must include:
+When `E_INVALID_PATH` describes a resolved value of type `Path`, diagnostics
+must include:
 
 - `original`: path string as written in the config
 - `declaring_source_path`: source file that declared the value

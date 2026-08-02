@@ -1,0 +1,23 @@
+spec Schedule:
+  kind: str
+
+  impl cosine:
+    kind: "cosine"
+
+spec Training:
+  optimizer.lr: int = 1
+
+  optimizer:
+    weight_decay: int = 2
+    $schedule: #Schedule
+
+  optimizer.total: int := @lr + @weight_decay
+  optimizer.options.momentum: int = 0
+
+  impl mixed:
+    optimizer.lr: 3
+    optimizer:
+      weight_decay: 4
+      $schedule: #Schedule:cosine
+    optimizer.options:
+      momentum: 9

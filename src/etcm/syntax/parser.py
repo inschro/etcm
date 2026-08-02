@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import ast as py_ast
-from dataclasses import replace
+from dataclasses import dataclass, replace
+from dataclasses import field as dataclass_field
 from functools import lru_cache
 from importlib.resources import files
 from pathlib import Path
@@ -45,6 +46,22 @@ from etcm.syntax.ast import (
 )
 
 SyntaxDiagnostic = Diagnostic
+
+
+@dataclass(frozen=True)
+class _FieldDeclaration:
+    path: tuple[str, ...]
+    field: SyntaxField
+    is_container: bool = False
+
+
+@dataclass
+class _FieldNode:
+    name: str
+    first_span: SourceSpan | None
+    children: dict[str, _FieldNode] = dataclass_field(default_factory=dict)
+    leaf: SyntaxField | None = None
+    container: SyntaxField | None = None
 
 
 class ETCMIndenter(Indenter):
@@ -129,7 +146,7 @@ class _SyntaxBuilder:
     def spec(self, tree: Tree[Token]) -> SyntaxSpec:
         name = _required_token(tree, "NAME")
         parent: str | None = None
-        fields: list[SyntaxField] = []
+        declarations: list[_FieldDeclaration] = []
         implementations: list[SyntaxImpl] = []
 
         for child in tree.children:
@@ -141,19 +158,15 @@ class _SyntaxBuilder:
                     child,
                     expected="spec",
                 )
-            elif child.data == "field":
-                fields.append(self.field(child))
-            elif child.data == "spec_ref_field":
-                fields.append(self.spec_ref_field(child))
-            elif child.data == "nested_field":
-                fields.append(self.nested_field(child))
+            elif child.data in {"field", "spec_ref_field", "nested_field"}:
+                declarations.extend(self._field_declarations(child))
             elif child.data == "impl":
                 implementations.append(self.impl(child))
 
         return SyntaxSpec(
             name=str(name),
             parent=parent,
-            fields=tuple(fields),
+            fields=self._normalize_fields(str(name), declarations),
             implementations=tuple(implementations),
             span=_span(tree, self._source_path),
         )
@@ -187,6 +200,8 @@ class _SyntaxBuilder:
                 assignments.append(self.value_assignment(child))
             elif child.data == "ref_assignment":
                 assignments.append(self.ref_assignment(child))
+            elif child.data == "assignment_block":
+                assignments.extend(self.assignment_block(child))
 
         return SyntaxImpl(
             name=str(name),
@@ -195,8 +210,25 @@ class _SyntaxBuilder:
             span=_span(tree, self._source_path),
         )
 
-    def field(self, tree: Tree[Token]) -> SyntaxField:
-        name = _required_token(tree, "NAME")
+    def _field_declarations(
+        self,
+        tree: Tree[Token],
+        prefix: tuple[str, ...] = (),
+    ) -> tuple[_FieldDeclaration, ...]:
+        if tree.data == "field":
+            return (self.field(tree, prefix),)
+        if tree.data == "spec_ref_field":
+            return (self.spec_ref_field(tree, prefix),)
+        if tree.data == "nested_field":
+            return self.nested_field(tree, prefix)
+        raise AssertionError(f"unsupported field declaration: {tree.data}")
+
+    def field(
+        self,
+        tree: Tree[Token],
+        prefix: tuple[str, ...] = (),
+    ) -> _FieldDeclaration:
+        path = (*prefix, *self.field_path(tree))
         type_expr: SyntaxTypeExpr | None = None
         default: SyntaxLiteral | None = None
         derived: SyntaxExpression | None = None
@@ -225,19 +257,26 @@ class _SyntaxBuilder:
         if type_expr is None:
             raise AssertionError("field is missing type expression")
 
-        return SyntaxField(
-            name=str(name),
-            type_expr=type_expr,
-            default=default,
-            derived=derived,
-            constraints=constraints,
-            metadata=metadata,
-            override=override,
-            span=_span(tree, self._source_path),
+        return _FieldDeclaration(
+            path=path,
+            field=SyntaxField(
+                name=path[-1],
+                type_expr=type_expr,
+                default=default,
+                derived=derived,
+                constraints=constraints,
+                metadata=metadata,
+                override=override,
+                span=_span(tree, self._source_path),
+            ),
         )
 
-    def spec_ref_field(self, tree: Tree[Token]) -> SyntaxField:
-        name = str(_required_token(tree, "NAME"))
+    def spec_ref_field(
+        self,
+        tree: Tree[Token],
+        prefix: tuple[str, ...] = (),
+    ) -> _FieldDeclaration:
+        path = (*prefix, *self.field_path(tree))
         ref_selector = self._selector(
             str(_required_token(tree, "SELECTOR")),
             tree,
@@ -254,21 +293,28 @@ class _SyntaxBuilder:
                 if override_literal is not None:
                     override = str(override_literal.value)
 
-        return SyntaxField(
-            name=name,
-            constraints=constraints,
-            metadata=metadata,
-            override=override,
-            ref_selector=ref_selector,
-            span=_span(tree, self._source_path),
+        return _FieldDeclaration(
+            path=path,
+            field=SyntaxField(
+                name=path[-1],
+                constraints=constraints,
+                metadata=metadata,
+                override=override,
+                ref_selector=ref_selector,
+                span=_span(tree, self._source_path),
+            ),
         )
 
-    def nested_field(self, tree: Tree[Token]) -> SyntaxField:
-        name = str(_required_token(tree, "NAME"))
+    def nested_field(
+        self,
+        tree: Tree[Token],
+        prefix: tuple[str, ...] = (),
+    ) -> tuple[_FieldDeclaration, ...]:
+        path = (*prefix, *self.field_path(tree))
         metadata: dict[str, SyntaxLiteral] = {}
         constraints: tuple[SyntaxComparisonConstraint, ...] = ()
         override = "allow"
-        fields: list[SyntaxField] = []
+        declarations: list[_FieldDeclaration] = []
 
         for child in tree.children:
             if not isinstance(child, Tree):
@@ -278,20 +324,144 @@ class _SyntaxBuilder:
                 override_literal = metadata.pop("override", None)
                 if override_literal is not None:
                     override = str(override_literal.value)
-            elif child.data == "field":
-                fields.append(self.field(child))
-            elif child.data == "spec_ref_field":
-                fields.append(self.spec_ref_field(child))
-            elif child.data == "nested_field":
-                fields.append(self.nested_field(child))
+            elif child.data in {"field", "spec_ref_field", "nested_field"}:
+                declarations.extend(self._field_declarations(child, path))
+            elif child.data == "nested_impl":
+                _raise(
+                    "E_NESTED_IMPL",
+                    "Implementation blocks must be declared directly under a spec.",
+                    self._source_path,
+                    _span(child, self._source_path),
+                    details={"field_path": ".".join(path)},
+                )
 
-        return SyntaxField(
-            name=name,
-            constraints=constraints,
-            metadata=metadata,
-            override=override,
-            fields=tuple(fields),
-            span=_span(tree, self._source_path),
+        container = _FieldDeclaration(
+            path=path,
+            field=SyntaxField(
+                name=path[-1],
+                constraints=constraints,
+                metadata=metadata,
+                override=override,
+                span=_span(tree, self._source_path),
+            ),
+            is_container=True,
+        )
+        return (container, *declarations)
+
+    def field_path(self, tree: Tree[Token]) -> tuple[str, ...]:
+        for child in tree.children:
+            if isinstance(child, Tree) and child.data == "field_path":
+                return tuple(str(token) for token in _tokens(child, "NAME"))
+        raise AssertionError(f"{tree.data} is missing a field path")
+
+    def _normalize_fields(
+        self,
+        owner_name: str,
+        declarations: list[_FieldDeclaration],
+    ) -> tuple[SyntaxField, ...]:
+        root = _FieldNode(name="", first_span=None)
+        for declaration in declarations:
+            node = root
+            for index, segment in enumerate(declaration.path):
+                child = node.children.get(segment)
+                if child is None:
+                    child = _FieldNode(name=segment, first_span=declaration.field.span)
+                    node.children[segment] = child
+                node = child
+                if index < len(declaration.path) - 1 and node.leaf is not None:
+                    self._raise_field_path_conflict(
+                        owner_name,
+                        declaration.path,
+                        declaration.field.span,
+                        node.leaf.span,
+                    )
+
+            if declaration.is_container:
+                if node.leaf is not None:
+                    self._raise_field_path_conflict(
+                        owner_name,
+                        declaration.path,
+                        declaration.field.span,
+                        node.leaf.span,
+                    )
+                if node.container is not None:
+                    self._raise_duplicate_field(
+                        owner_name,
+                        declaration.path,
+                        declaration.field.span,
+                        node.container.span,
+                    )
+                node.container = declaration.field
+                continue
+
+            if node.leaf is not None:
+                self._raise_duplicate_field(
+                    owner_name,
+                    declaration.path,
+                    declaration.field.span,
+                    node.leaf.span,
+                )
+            if node.container is not None or node.children:
+                previous_span = (
+                    node.container.span
+                    if node.container is not None
+                    else next(iter(node.children.values())).first_span
+                )
+                self._raise_field_path_conflict(
+                    owner_name,
+                    declaration.path,
+                    declaration.field.span,
+                    previous_span,
+                )
+            node.leaf = declaration.field
+
+        return tuple(self._materialize_field(node) for node in root.children.values())
+
+    def _materialize_field(self, node: _FieldNode) -> SyntaxField:
+        if node.leaf is not None:
+            return node.leaf
+        children = tuple(self._materialize_field(child) for child in node.children.values())
+        if node.container is not None:
+            return replace(node.container, fields=children)
+        return SyntaxField(name=node.name, fields=children, span=node.first_span)
+
+    def _raise_duplicate_field(
+        self,
+        owner_name: str,
+        path: tuple[str, ...],
+        span: SourceSpan | None,
+        previous_span: SourceSpan | None,
+    ) -> None:
+        canonical_path = ".".join(path)
+        _raise(
+            "E_DUPLICATE_FIELD",
+            f"Duplicate field '{canonical_path}' in spec '{owner_name}'.",
+            self._source_path,
+            span,
+            details={
+                "field_path": canonical_path,
+                "previous_line": previous_span.line if previous_span is not None else None,
+            },
+        )
+
+    def _raise_field_path_conflict(
+        self,
+        owner_name: str,
+        path: tuple[str, ...],
+        span: SourceSpan | None,
+        previous_span: SourceSpan | None,
+    ) -> None:
+        canonical_path = ".".join(path)
+        _raise(
+            "E_FIELD_PATH_CONFLICT",
+            f"Field path '{canonical_path}' conflicts with an anonymous container "
+            f"in spec '{owner_name}'.",
+            self._source_path,
+            span,
+            details={
+                "field_path": canonical_path,
+                "previous_line": previous_span.line if previous_span is not None else None,
+            },
         )
 
     def field_meta(
@@ -623,13 +793,17 @@ class _SyntaxBuilder:
 
         return rebase(expression)
 
-    def value_assignment(self, tree: Tree[Token]) -> SyntaxAssignment:
+    def value_assignment(
+        self,
+        tree: Tree[Token],
+        prefix: tuple[str, ...] = (),
+    ) -> SyntaxAssignment:
         field_path: tuple[str, ...] | None = None
         value: SyntaxLiteral | None = None
 
         for child in tree.children:
             if isinstance(child, Tree) and child.data == "field_path":
-                field_path = tuple(str(token) for token in _tokens(child, "NAME"))
+                field_path = (*prefix, *tuple(str(token) for token in _tokens(child, "NAME")))
             elif isinstance(child, Tree):
                 value = self.literal(child)
 
@@ -642,18 +816,40 @@ class _SyntaxBuilder:
             span=_span(tree, self._source_path),
         )
 
-    def ref_assignment(self, tree: Tree[Token]) -> SyntaxRefAssignment:
-        field_name = str(_required_token(tree, "NAME"))
+    def ref_assignment(
+        self,
+        tree: Tree[Token],
+        prefix: tuple[str, ...] = (),
+    ) -> SyntaxRefAssignment:
+        field_path = (*prefix, *self.field_path(tree))
         selector = self._selector(
             str(_required_token(tree, "SELECTOR")),
             tree,
             expected="implementation",
         )
         return SyntaxRefAssignment(
-            field_name=field_name,
+            field_path=field_path,
             selector=selector,
             span=_span(tree, self._source_path),
         )
+
+    def assignment_block(
+        self,
+        tree: Tree[Token],
+        prefix: tuple[str, ...] = (),
+    ) -> tuple[SyntaxAssignment | SyntaxRefAssignment, ...]:
+        block_path = (*prefix, *self.field_path(tree))
+        assignments: list[SyntaxAssignment | SyntaxRefAssignment] = []
+        for child in tree.children:
+            if not isinstance(child, Tree):
+                continue
+            if child.data == "value_assignment":
+                assignments.append(self.value_assignment(child, block_path))
+            elif child.data == "ref_assignment":
+                assignments.append(self.ref_assignment(child, block_path))
+            elif child.data == "assignment_block":
+                assignments.extend(self.assignment_block(child, block_path))
+        return tuple(assignments)
 
     def type_expr(self, tree: Tree[Token]) -> SyntaxTypeExpr:
         if tree.data == "union_type":
@@ -832,7 +1028,7 @@ def _assignment_to_ir(
 ) -> Assignment | RefAssignment:
     if isinstance(assignment, SyntaxRefAssignment):
         return RefAssignment(
-            field_name=assignment.field_name,
+            field_path=assignment.field_path,
             selector=Selector.parse(assignment.selector),
             span=assignment.span,
         )
@@ -996,6 +1192,54 @@ def _validate_impl_group(source_path: Path, implementations: tuple[SyntaxImpl, .
                 },
             )
         seen[impl.name] = impl
+
+    for impl in implementations:
+        _validate_assignment_group(source_path, impl)
+
+
+def _validate_assignment_group(source_path: Path, impl: SyntaxImpl) -> None:
+    seen: dict[tuple[str, ...], SyntaxAssignment | SyntaxRefAssignment] = {}
+    for assignment in impl.assignments:
+        path = assignment.field_path
+        previous = seen.get(path)
+        canonical_path = ".".join(path)
+        if previous is not None:
+            _raise(
+                "E_DUPLICATE_ASSIGNMENT",
+                f"Duplicate assignment to '{canonical_path}' in implementation "
+                f"'{impl.name}'.",
+                source_path,
+                assignment.span,
+                details={
+                    "field_path": canonical_path,
+                    "previous_line": previous.span.line
+                    if previous.span is not None
+                    else None,
+                },
+            )
+
+        for previous_path, previous_assignment in seen.items():
+            if _path_is_prefix(previous_path, path) or _path_is_prefix(path, previous_path):
+                previous_text = ".".join(previous_path)
+                _raise(
+                    "E_ASSIGNMENT_PATH_CONFLICT",
+                    f"Assignments to '{previous_text}' and '{canonical_path}' conflict "
+                    f"in implementation '{impl.name}'.",
+                    source_path,
+                    assignment.span,
+                    details={
+                        "field_path": canonical_path,
+                        "conflicting_path": previous_text,
+                        "previous_line": previous_assignment.span.line
+                        if previous_assignment.span is not None
+                        else None,
+                    },
+                )
+        seen[path] = assignment
+
+
+def _path_is_prefix(left: tuple[str, ...], right: tuple[str, ...]) -> bool:
+    return len(left) < len(right) and right[: len(left)] == left
 
 
 def _second_of(items: tuple[SyntaxItem, ...], left: type[Any], right: type[Any]) -> Any:

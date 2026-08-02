@@ -299,6 +299,8 @@ Deliverables:
 
 - sibling and dotted child-object references using `@name` and `@object.name`
 - traversal through inline nested objects and typed `$field` references
+- equivalent dotted and indented paths for field declarations and implementation
+  assignments, normalized to one canonical object shape
 - ordered relational constraints in `[]`
 - derived values using `:=`, visible immediately after `resolve()`
 - conventional arithmetic precedence, parentheses, and unary numeric operators
@@ -310,6 +312,8 @@ Deliverables:
 Acceptance:
 
 - dotted reads such as `@dataloader.sampler.seed` are stable across files
+- dotted and indented field paths resolve to equivalent graphs
+- implementation writes stop at typed `$field` reference boundaries
 - relation paths are anchored at the object containing the declaration
 - dictionary/list indexing, Python attributes, calls, conditionals, and Boolean
   expressions remain rejected

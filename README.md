@@ -122,8 +122,8 @@ python -c 'from etcm import load; print(load("examples/ml/train.etcm#TrainRun:sm
 ## Current Status
 
 This repository includes the parser, resolver, generated-view API, thin CLI,
-standalone packaging, examples, and typed parameter relations with derived
-values and stable dotted object traversal.
+standalone packaging, examples, typed parameter relations, and equivalent
+dotted or indented field paths for declarations and implementations.
 
 - [Manifest](docs/manifest.md)
 - [Product Spec](docs/product_spec.md)

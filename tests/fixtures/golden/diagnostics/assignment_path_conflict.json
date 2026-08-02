@@ -1,0 +1,18 @@
+{
+  "code": "E_ASSIGNMENT_PATH_CONFLICT",
+  "details": {
+    "conflicting_path": "optimizer",
+    "field_path": "optimizer.learning_rate",
+    "previous_line": 6
+  },
+  "graph_path": null,
+  "message": "Assignments to 'optimizer' and 'optimizer.learning_rate' conflict in implementation 'invalid'.",
+  "selector": null,
+  "source_path": "invalid/assignment_path_conflict.etcm",
+  "span": {
+    "column": 5,
+    "end_column": 1,
+    "end_line": 8,
+    "line": 7
+  }
+}

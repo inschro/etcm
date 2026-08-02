@@ -69,7 +69,7 @@ Use immutable dataclasses for the first IR:
 - `ImplDef`: name, optional parent selector, assignments, references, source
   span
 - `Assignment`: field path, value, source span
-- `RefAssignment`: field name, selector, source span
+- `RefAssignment`: field path, selector, source span
 
 IR rules:
 

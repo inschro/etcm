@@ -295,6 +295,60 @@ class _ResolverState:
                     or render_expression(field.derived),
                 },
             )
+        if len(assignment.field_path) != 1:
+            if not field.fields:
+                if field.ref_selector is not None:
+                    requested_path = ".".join(
+                        (graph_path, *assignment.field_path[1:])
+                    )
+                    _raise(
+                        "E_INVALID_PATH",
+                        f"Cannot assign beneath referenced field '${field.name}'; "
+                        "references must be selected as a whole.",
+                        source_path=source_path,
+                        span=assignment.span,
+                        graph_path=graph_path,
+                        details={
+                            "field": field.name,
+                            "field_path": requested_path,
+                            "boundary": graph_path,
+                        },
+                    )
+                _raise(
+                    "E_TYPE_MISMATCH",
+                    "Nested assignment paths are only valid for inline nested spec fields.",
+                    source_path=source_path,
+                    span=assignment.span,
+                    graph_path=graph_path,
+                )
+            child = self._resolve_inline_node(
+                field=field,
+                source_path=source_path,
+                graph_path=graph_path,
+                builder=builder,
+                assignments=(
+                    replace(assignment, field_path=assignment.field_path[1:]),
+                ),
+                base_node=self._node_from_value(previous_value, builder),
+                base_as_parent=previous_value.origin == "parent"
+                if previous_value is not None
+                else False,
+                impl_stack=impl_stack,
+                ref_stack=ref_stack,
+            )
+            source_node_id = graph_path.rsplit(".", 1)[0] if "." in graph_path else "root"
+            _add_edge(
+                builder,
+                ResolvedEdge("ref", source_node_id, child.node_id, (field.name,)),
+            )
+            return ResolvedValue(
+                value={"$ref": child.node_id},
+                source_path=source_path,
+                span=assignment.span,
+                origin="local",
+                ref_target=child.node_id,
+            )
+
         if isinstance(assignment, RefAssignment):
             if field.fields:
                 _raise(
@@ -317,47 +371,6 @@ class _ResolverState:
                 impl_stack=impl_stack,
                 ref_stack=(*ref_stack, impl_stack[-1]),
                 cycle_code="E_REF_CYCLE",
-            )
-            source_node_id = graph_path.rsplit(".", 1)[0] if "." in graph_path else "root"
-            _add_edge(
-                builder,
-                ResolvedEdge("ref", source_node_id, child.node_id, (field.name,)),
-            )
-            return ResolvedValue(
-                value={"$ref": child.node_id},
-                source_path=source_path,
-                span=assignment.span,
-                origin="local",
-                ref_target=child.node_id,
-            )
-
-        if len(assignment.field_path) != 1:
-            if not field.fields:
-                _raise(
-                    "E_TYPE_MISMATCH",
-                    "Nested assignment paths are only valid for inline nested spec fields.",
-                    source_path=source_path,
-                    span=assignment.span,
-                    graph_path=graph_path,
-                )
-            child = self._resolve_inline_node(
-                field=field,
-                source_path=source_path,
-                graph_path=graph_path,
-                builder=builder,
-                assignments=(
-                    Assignment(
-                        field_path=assignment.field_path[1:],
-                        value=assignment.value,
-                        span=assignment.span,
-                    ),
-                ),
-                base_node=self._node_from_value(previous_value, builder),
-                base_as_parent=previous_value.origin == "parent"
-                if previous_value is not None
-                else False,
-                impl_stack=impl_stack,
-                ref_stack=ref_stack,
             )
             source_node_id = graph_path.rsplit(".", 1)[0] if "." in graph_path else "root"
             _add_edge(
@@ -1236,8 +1249,6 @@ class _ResolverState:
         return field
 
     def _assignment_field_name(self, assignment: Assignment | RefAssignment) -> str:
-        if isinstance(assignment, RefAssignment):
-            return assignment.field_name
         return assignment.field_path[0]
 
     def _selector_from_ir(

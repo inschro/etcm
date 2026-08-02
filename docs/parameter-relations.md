@@ -65,9 +65,10 @@ The target field may be declared before or after the relation. A reference must
 end at a scalar leaf; referring to an object as the expression value is an
 error. A scalar cannot be traversed further.
 
-Dot notation in a relation is read-only. Implementation assignments retain
-their existing rules: dot paths may configure inline nested fields, but cannot
-write through a `$field` reference.
+Dot notation in a relation is read-only. Declarations and implementation
+assignments may use either dotted paths or equivalent indented blocks. Both
+forms may configure inline anonymous fields, but neither may write through a
+`$field` reference.
 
 ## Validation constraints
 

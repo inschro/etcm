@@ -23,10 +23,17 @@ from etcm.syntax import parse_document, parse_file, parse_syntax
 - spec inheritance by selector
 - implementation inheritance by selector
 - field declarations with type expressions, direct defaults, and bracket metadata
-- literal assignments
-- `$field` reference assignments
+- equivalent dotted and indented field declarations
+- equivalent dotted and indented implementation assignments
+- `$field` declarations and reference assignments at inline nested paths
 - inline strings, numbers, booleans, nulls, lists, and mappings
 - YAML-style `#` comments, blank lines, and spaces-only indentation
+
+Dotted declaration prefixes normalize to anonymous field containers. Indented
+implementation blocks normalize to canonical assignment path tuples. Named
+`impl` blocks remain direct children of real specs and are rejected inside
+anonymous field declarations. Canonical duplicate leaves and parent/child path
+collisions are parser errors.
 
 Outside quoted strings, `#` at line start or after whitespace begins a same-file
 selector where the grammar expects a selector and begins a comment otherwise.

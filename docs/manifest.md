@@ -54,6 +54,54 @@ spec ResNetConfig:
 The spec defines structure, defaults, validation, and override policy.
 Implementations provide concrete named configurations.
 
+Field paths may be written with indentation, dots, or a mixture of both. These
+declarations are equivalent and produce the same anonymous `optimizer` object:
+
+Indented:
+
+```etcm
+optimizer:
+  learning_rate: float = 1e-3
+```
+
+Dotted:
+
+```etcm
+optimizer.learning_rate: float = 1e-3
+```
+
+Dotted prefixes create anonymous containers. An explicit indented container may
+be combined with other dotted descendants:
+
+```etcm
+optimizer:
+  learning_rate: float = 1e-3
+
+optimizer.weight_decay: float = 0.0
+$optimizer.schedule: schedulers/base.etcm#LRScheduler
+```
+
+Implementations accept the same two path forms:
+
+```etcm
+impl fast:
+  optimizer.learning_rate: 3e-3
+  optimizer:
+    weight_decay: 0.01
+    $schedule: schedulers/cosine.etcm#CosineLRScheduler:default
+```
+
+Paths inside an indented block are relative to that block. `$` marks the
+terminal field as a typed reference, so `$optimizer.schedule` and an indented
+`optimizer` block containing `$schedule` are equivalent. Duplicate canonical
+leaf paths and value-versus-container conflicts are errors.
+
+Named `impl` blocks belong directly to a real spec; they cannot appear inside
+an anonymous field declaration. A `$field` reference may be selected as a
+whole, including at a nested inline path, but its resolved target is opaque to
+implementation writes. For example, `model.hidden_size: 512` is invalid when
+`$model` is a referenced field.
+
 Selectors use file fragments:
 
 ```text

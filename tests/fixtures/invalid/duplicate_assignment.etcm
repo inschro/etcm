@@ -1,0 +1,8 @@
+spec DuplicateAssignment:
+  optimizer:
+    learning_rate: float
+
+  impl invalid:
+    optimizer.learning_rate: 0.001
+    optimizer:
+      learning_rate: 0.002

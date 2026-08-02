@@ -1,6 +1,7 @@
 {
   "code": "E_DUPLICATE_FIELD",
   "details": {
+    "field_path": "retries",
     "previous_line": 2
   },
   "graph_path": null,

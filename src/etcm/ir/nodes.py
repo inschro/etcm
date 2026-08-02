@@ -146,7 +146,7 @@ class Assignment:
 
 @dataclass(frozen=True)
 class RefAssignment:
-    field_name: str
+    field_path: tuple[str, ...]
     selector: Selector
     span: SourceSpan | None = None
 

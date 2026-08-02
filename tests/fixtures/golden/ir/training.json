@@ -477,7 +477,9 @@
         {
           "assignments": [
             {
-              "field_name": "dataloader",
+              "field_path": [
+                "dataloader"
+              ],
               "kind": "ref",
               "selector": "dataloader.etcm#DataLoaderConfig:train"
             },

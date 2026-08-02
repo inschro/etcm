@@ -1,0 +1,16 @@
+{
+  "code": "E_NESTED_IMPL",
+  "details": {
+    "field_path": "optimizer"
+  },
+  "graph_path": null,
+  "message": "Implementation blocks must be declared directly under a spec.",
+  "selector": null,
+  "source_path": "invalid/nested_impl.etcm",
+  "span": {
+    "column": 5,
+    "end_column": 1,
+    "end_line": 7,
+    "line": 5
+  }
+}

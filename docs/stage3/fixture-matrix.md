@@ -44,6 +44,10 @@ Fixture paths are relative to `tests/fixtures/`.
 | `invalid/duplicate_spec.etcm` | Parser | `E_DUPLICATE_SPEC`. |
 | `invalid/duplicate_field.etcm` | Parser | `E_DUPLICATE_FIELD`. Already present from Stage 2. |
 | `invalid/duplicate_impl.etcm` | Parser | `E_DUPLICATE_IMPL`. |
+| `invalid/duplicate_assignment.etcm` | Parser | `E_DUPLICATE_ASSIGNMENT`. |
+| `invalid/field_path_conflict.etcm` | Parser | `E_FIELD_PATH_CONFLICT`. |
+| `invalid/assignment_path_conflict.etcm` | Parser | `E_ASSIGNMENT_PATH_CONFLICT`. |
+| `invalid/nested_impl.etcm` | Parser | `E_NESTED_IMPL`. |
 | `invalid/spec_and_spec_ref.etcm` | Parser | `E_SPEC_AND_SPEC_REF`. |
 | `invalid/missing_selector.etcm` | Resolver | `E_MISSING_SELECTOR`. |
 | `invalid/malformed_literal.etcm` | Parser | `E_PARSE_UNEXPECTED_TOKEN` or `E_PARSE_LITERAL`. |
