@@ -319,23 +319,19 @@
           "value": 2
         },
         "limits": {
-          "applied_override": true,
+          "applied_override": false,
           "literal": null,
-          "local_value": {
-            "$ref": "root.limits"
-          },
-          "origin": "local",
-          "previous_origin": "default",
-          "previous_value": {
-            "$ref": "root.limits"
-          },
+          "local_value": null,
+          "origin": "default",
+          "previous_origin": null,
+          "previous_value": null,
           "ref_target": "root.limits",
           "source_path": "valid/parameter_relations/training.etcm",
           "span": {
-            "column": 5,
-            "end_column": 5,
-            "end_line": 24,
-            "line": 23
+            "column": 3,
+            "end_column": 3,
+            "end_line": 10,
+            "line": 6
           },
           "value": {
             "$ref": "root.limits"

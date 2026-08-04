@@ -1,5 +1,6 @@
 start: _NL* (item _NL*)+
 expression_start: arithmetic_expr
+literal_start: value
 
 ?item: spec | spec_ref | impl
 

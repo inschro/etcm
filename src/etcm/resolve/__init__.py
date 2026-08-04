@@ -1,4 +1,4 @@
-from etcm._contracts import PathExistsPolicy, ViewTarget
+from etcm._contracts import OverrideInput, PathExistsPolicy, ViewTarget
 from etcm.resolve._api import Resolver, convert, load, resolve, validate
 from etcm.resolve.graph import (
     PathResolution,
@@ -10,6 +10,7 @@ from etcm.resolve.graph import (
 )
 
 __all__ = [
+    "OverrideInput",
     "PathExistsPolicy",
     "PathResolution",
     "ResolvedEdge",

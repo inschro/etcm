@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
-from etcm._contracts import PathExistsPolicy, ViewTarget
+from etcm._contracts import OverrideInput, PathExistsPolicy, ViewTarget
 from etcm.resolve._engine import _ResolverState
 from etcm.resolve._validation import validate_graph
 from etcm.resolve.graph import ResolvedGraph
@@ -17,12 +18,38 @@ class Resolver:
         if self.path_exists not in ("allow_missing", "must_exist"):
             raise ValueError("path_exists must be 'allow_missing' or 'must_exist'")
 
-    def load(self, selector: str, *, target: ViewTarget = "pydantic") -> Any:
-        return self.convert(self.validate(self.resolve(selector)), target=target)
+    def load(
+        self,
+        selector: str,
+        *,
+        target: ViewTarget = "pydantic",
+        overrides: OverrideInput | None = None,
+        force_overrides: bool = False,
+        override_base: str | Path | None = None,
+    ) -> Any:
+        graph = self.resolve(
+            selector,
+            overrides=overrides,
+            force_overrides=force_overrides,
+            override_base=override_base,
+        )
+        return self.convert(self.validate(graph), target=target)
 
-    def resolve(self, selector: str) -> ResolvedGraph:
+    def resolve(
+        self,
+        selector: str,
+        *,
+        overrides: OverrideInput | None = None,
+        force_overrides: bool = False,
+        override_base: str | Path | None = None,
+    ) -> ResolvedGraph:
         state = _ResolverState(self)
-        return state.resolve(selector)
+        return state.resolve(
+            selector,
+            overrides=overrides,
+            force_overrides=force_overrides,
+            override_base=override_base,
+        )
 
     def validate(self, graph: ResolvedGraph) -> ResolvedGraph:
         return validate_graph(graph)
@@ -44,16 +71,33 @@ def load(
     *,
     target: ViewTarget = "pydantic",
     path_exists: PathExistsPolicy = "allow_missing",
+    overrides: OverrideInput | None = None,
+    force_overrides: bool = False,
+    override_base: str | Path | None = None,
 ) -> Any:
-    return Resolver(path_exists=path_exists).load(selector, target=target)
+    return Resolver(path_exists=path_exists).load(
+        selector,
+        target=target,
+        overrides=overrides,
+        force_overrides=force_overrides,
+        override_base=override_base,
+    )
 
 
 def resolve(
     selector: str,
     *,
     path_exists: PathExistsPolicy = "allow_missing",
+    overrides: OverrideInput | None = None,
+    force_overrides: bool = False,
+    override_base: str | Path | None = None,
 ) -> ResolvedGraph:
-    return Resolver(path_exists=path_exists).resolve(selector)
+    return Resolver(path_exists=path_exists).resolve(
+        selector,
+        overrides=overrides,
+        force_overrides=force_overrides,
+        override_base=override_base,
+    )
 
 
 def validate(graph: ResolvedGraph) -> ResolvedGraph:
@@ -70,6 +114,7 @@ def convert(
 
 
 __all__ = [
+    "OverrideInput",
     "PathExistsPolicy",
     "Resolver",
     "ViewTarget",

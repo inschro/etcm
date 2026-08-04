@@ -97,10 +97,21 @@ terminal field as a typed reference, so `$optimizer.schedule` and an indented
 leaf paths and value-versus-container conflicts are errors.
 
 Named `impl` blocks belong directly to a real spec; they cannot appear inside
-an anonymous field declaration. A `$field` reference may be selected as a
-whole, including at a nested inline path, but its resolved target is opaque to
-implementation writes. For example, `model.hidden_size: 512` is invalid when
-`$model` is a referenced field.
+an anonymous field declaration. A selected `$field` reference may be patched
+through a deep path with copy-on-write:
+
+```etcm
+impl debug:
+  $model: models/resnet.etcm#ResNetConfig:resnet_50
+  model.width: 48
+```
+
+The reference selection and descendant patches may appear in either source
+order. A descendant patch requires a reference value from the same
+implementation or from inheritance. Only the leaf field's override policy is
+applied; the referenced object itself is not treated as replaced. See
+[Overrides](overrides.md) for the shared implementation, Python, and CLI
+contract.
 
 Selectors use file fragments:
 
@@ -340,7 +351,7 @@ V0 policies:
 | --- | --- |
 | `allow` | Replace the existing value |
 | `deny` | Reject every implementation assignment; an inline declaration default is required |
-| `force_only` | Reject replacement unless a future force API explicitly authorizes it |
+| `force_only` | Reject replacement unless an external caller explicitly authorizes it |
 | `append` | Append list values; the declared type must be exactly `list[T]` |
 | `merge` | Recursively merge mappings; the declared type must be exactly `dict[str, T]` |
 
@@ -353,8 +364,10 @@ For `append` and `merge`, a field without a declaration default accepts its
 first implementation assignment as the initial value. Later assignments append
 or recursively merge. During a recursive merge, nested mappings combine and a
 local non-mapping leaf replaces the previous leaf. `force_only` follows the same
-initial-value rule, but ETCM does not yet expose the force operation needed to
-replace an existing value.
+initial-value rule. Python callers authorize replacement with
+`force_overrides=True`; the CLI uses `--force-overrides`. Force authorization
+never bypasses `deny`, and implementation assignments cannot authorize
+`force_only`.
 
 Unknown policy names, incompatible `append` or `merge` types, and `deny` without
 an inline default are spec errors. Derived fields may only use `allow`.

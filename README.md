@@ -49,6 +49,11 @@ from etcm import convert, load, resolve, validate
 
 cfg = load("configs/train.etcm#TrainRun:smoke", target="pydantic")
 
+cfg = load(
+    "configs/train.etcm#TrainRun:smoke",
+    overrides={"data.sampler.seed": 42},
+)
+
 graph = resolve("configs/train.etcm#TrainRun:smoke")
 graph = validate(graph)
 cfg = convert(graph, target="pydantic")
@@ -97,7 +102,13 @@ etcm validate configs/train.etcm#TrainRun:smoke
 etcm validate configs/train.etcm#TrainRun:smoke --short
 etcm validate-all configs/
 etcm load configs/train.etcm#TrainRun:smoke --target pydantic
+etcm load configs/train.etcm#TrainRun:smoke --set data.sampler.seed=42
 ```
+
+Python mappings, `PATH=VALUE` string lists, implementation assignments, and CLI
+`--set` flags all use the same deep override semantics and spec-owned policies.
+See [Overrides](docs/overrides.md) for reference replacement, relative path,
+force authorization, and audit behavior.
 
 ## Install
 
@@ -130,6 +141,7 @@ dotted or indented field paths for declarations and implementations.
 - [Install Guide](docs/install.md)
 - [CLI Reference](docs/cli.md)
 - [Parameter Relations](docs/parameter-relations.md)
+- [Overrides](docs/overrides.md)
 - [Implementation Roadmap](docs/roadmap.md)
 - [Stage 1 Architecture Notes](docs/stage1/README.md)
 - [Stage 2 Scaffold Notes](docs/stage2/README.md)

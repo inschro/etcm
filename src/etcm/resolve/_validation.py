@@ -147,7 +147,9 @@ def _validate_override(
     value: ResolvedValue,
     graph_path: str,
 ) -> None:
-    if field.override in {"deny", "force_only"}:
+    if field.override == "deny":
+        _invalid_override(field, value, graph_path)
+    if field.override == "force_only" and not value.override_forced:
         _invalid_override(field, value, graph_path)
     if field.override == "append" and not (
         isinstance(value.previous_value, list) and isinstance(value.local_value, list)
@@ -371,17 +373,20 @@ def _invalid_override(
     value: ResolvedValue,
     graph_path: str,
 ) -> NoReturn:
+    details: dict[str, Any] = {
+        "field": field.name,
+        "override": field.override,
+        "previous_origin": value.previous_origin,
+    }
+    if field.override == "force_only":
+        details["force_authorized"] = value.override_forced
     raise_error(
         "E_INVALID_OVERRIDE",
         f"Field '{field.name}' cannot be overridden with policy '{field.override}'.",
         source_path=value.source_path,
         span=value.span,
         graph_path=graph_path,
-        details={
-            "field": field.name,
-            "override": field.override,
-            "previous_origin": value.previous_origin,
-        },
+        details=details,
     )
 
 

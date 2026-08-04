@@ -11,7 +11,7 @@ import pytest
 PACKAGE_ROOT = Path(__file__).resolve().parents[1] / "src" / "etcm"
 
 PUBLIC_EXPORTS = {
-    "etcm": ["Resolver", "convert", "load", "resolve", "validate"],
+    "etcm": ["OverrideInput", "Resolver", "convert", "load", "resolve", "validate"],
     "etcm.cli": ["build_parser", "main"],
     "etcm.codegen": ["ViewTarget", "convert", "pydantic_schema_summary"],
     "etcm.ir": [
@@ -33,6 +33,7 @@ PUBLIC_EXPORTS = {
         "TypeExpr",
     ],
     "etcm.resolve": [
+        "OverrideInput",
         "PathExistsPolicy",
         "PathResolution",
         "ResolvedEdge",
@@ -71,8 +72,9 @@ PUBLIC_EXPORTS = {
 
 
 def test_public_imports() -> None:
-    from etcm import Resolver, convert, load, resolve, validate
+    from etcm import OverrideInput, Resolver, convert, load, resolve, validate
 
+    assert OverrideInput is not None
     assert Resolver is not None
     assert convert is not None
     assert load is not None

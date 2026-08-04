@@ -138,6 +138,13 @@ def _validate_assignment_group(source_path: Path, impl: SyntaxImpl) -> None:
 
         for previous_path, previous_assignment in seen.items():
             if _path_is_prefix(previous_path, path) or _path_is_prefix(path, previous_path):
+                shorter_assignment = (
+                    previous_assignment
+                    if _path_is_prefix(previous_path, path)
+                    else assignment
+                )
+                if isinstance(shorter_assignment, SyntaxRefAssignment):
+                    continue
                 previous_text = ".".join(previous_path)
                 raise_syntax_error(
                     "E_ASSIGNMENT_PATH_CONFLICT",

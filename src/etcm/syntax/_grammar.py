@@ -39,7 +39,7 @@ def build_parser() -> Lark:
     return Lark(
         grammar,
         parser="lalr",
-        start=["start", "expression_start"],
+        start=["start", "expression_start", "literal_start"],
         propagate_positions=True,
         maybe_placeholders=False,
         postlex=ETCMIndenter(),

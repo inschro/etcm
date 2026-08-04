@@ -137,7 +137,7 @@ def test_declaration_path_conflicts_are_rejected(declarations: str, code: str) -
         "    child:\n      $grandchild: child.etcm#Child:default\n",
     ],
 )
-def test_implementation_paths_cannot_write_through_references(
+def test_implementation_paths_require_a_selected_reference(
     tmp_path: Path,
     assignment: str,
 ) -> None:
@@ -166,7 +166,8 @@ def test_implementation_paths_cannot_write_through_references(
         resolve(f"{parent}#Parent:invalid")
 
     assert raised.value.diagnostic.code == "E_INVALID_PATH"
-    assert "referenced field '$child'" in raised.value.diagnostic.message
+    assert raised.value.diagnostic.details is not None
+    assert raised.value.diagnostic.details["reason"] == "unset_reference"
 
 
 def _syntax_field_shapes(fields: tuple[SyntaxField, ...]) -> list[dict[str, Any]]:

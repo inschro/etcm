@@ -91,6 +91,7 @@ def apply_value(
     field: FieldDef,
     field_name: str,
     new_value: ResolvedValue,
+    force_authorized: bool = False,
 ) -> dict[str, ResolvedValue]:
     result = dict(values)
     previous = result.get(field_name)
@@ -98,27 +99,24 @@ def apply_value(
         result[field_name] = new_value
         return result
 
-    if previous.origin in {"default", "parent"}:
-        applied_value = new_value.value
-        if (
-            field.override == "append"
-            and isinstance(previous.value, list)
-            and isinstance(new_value.value, list)
-        ):
-            applied_value = [*previous.value, *new_value.value]
-        elif (
-            field.override == "merge"
-            and isinstance(previous.value, dict)
-            and isinstance(new_value.value, dict)
-        ):
-            applied_value = merge_mappings(previous.value, new_value.value)
-        result[field_name] = new_value.with_override(
-            value=applied_value,
-            previous_origin=previous.origin,
-            previous_value=previous.value,
-            local_value=new_value.value,
-        )
-        return result
-
-    result[field_name] = new_value
+    applied_value = new_value.value
+    if (
+        field.override == "append"
+        and isinstance(previous.value, list)
+        and isinstance(new_value.value, list)
+    ):
+        applied_value = [*previous.value, *new_value.value]
+    elif (
+        field.override == "merge"
+        and isinstance(previous.value, dict)
+        and isinstance(new_value.value, dict)
+    ):
+        applied_value = merge_mappings(previous.value, new_value.value)
+    result[field_name] = new_value.with_override(
+        value=applied_value,
+        previous_origin=previous.origin,
+        previous_value=previous.value,
+        local_value=new_value.value,
+        override_forced=force_authorized and field.override == "force_only",
+    )
     return result

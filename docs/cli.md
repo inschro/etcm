@@ -18,7 +18,7 @@ etcm load <selector> --target dataclass
 etcm load <selector> --target pydantic
 ```
 
-All commands accept:
+All commands accept the path policy option:
 
 ```bash
 --path-exists allow_missing
@@ -27,6 +27,21 @@ All commands accept:
 
 The option sets the resolver default for `Path` fields whose field metadata uses
 `path_exists="resolver"`.
+
+`resolve`, `validate`, and `load` additionally accept:
+
+```bash
+--set PATH=VALUE          # repeatable
+--force-overrides
+--override-base DIRECTORY
+```
+
+`--set` uses ETCM literals with a bare-string fallback and accepts deep paths
+through inline objects and selected references. `--force-overrides` authorizes
+replacement of `force_only` fields but never bypasses `deny`. Relative external
+`Path` values and explicit reference selector paths use `--override-base`,
+which defaults to the current working directory. `validate-all` deliberately
+does not accept these three options. See [Overrides](overrides.md).
 
 ## Output
 

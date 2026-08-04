@@ -76,6 +76,8 @@ class ResolvedValue:
     previous_value: Any = None
     local_value: Any = None
     derived_expression: Expression | None = None
+    override_forced: bool = False
+    override_base: Path | None = None
 
     def with_override(
         self,
@@ -84,6 +86,7 @@ class ResolvedValue:
         previous_origin: str,
         previous_value: Any,
         local_value: Any,
+        override_forced: bool = False,
     ) -> ResolvedValue:
         return replace(
             self,
@@ -92,6 +95,7 @@ class ResolvedValue:
             previous_origin=previous_origin,
             previous_value=previous_value,
             local_value=local_value,
+            override_forced=override_forced,
         )
 
     def as_parent(self) -> ResolvedValue:
@@ -102,6 +106,8 @@ class ResolvedValue:
             previous_origin=None,
             previous_value=None,
             local_value=None,
+            override_forced=False,
+            override_base=None,
         )
 
     def to_dict(self, path_base: Path | None = None) -> dict[str, Any]:
@@ -123,6 +129,10 @@ class ResolvedValue:
         }
         if self.derived_expression is not None:
             result["derived_expression"] = _expression_to_dict(self.derived_expression)
+        if self.origin == "external" and self.override_base is not None:
+            result["override_base"] = _path_to_string(self.override_base, path_base)
+        if self.override_forced:
+            result["override_forced"] = True
         return result
 
 

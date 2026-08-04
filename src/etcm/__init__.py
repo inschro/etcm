@@ -1,3 +1,3 @@
-from etcm.resolve import Resolver, convert, load, resolve, validate
+from etcm.resolve import OverrideInput, Resolver, convert, load, resolve, validate
 
-__all__ = ["Resolver", "convert", "load", "resolve", "validate"]
+__all__ = ["OverrideInput", "Resolver", "convert", "load", "resolve", "validate"]

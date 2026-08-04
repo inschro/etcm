@@ -67,8 +67,9 @@ error. A scalar cannot be traversed further.
 
 Dot notation in a relation is read-only. Declarations and implementation
 assignments may use either dotted paths or equivalent indented blocks. Both
-forms may configure inline anonymous fields, but neither may write through a
-`$field` reference.
+assignment forms may patch descendants of an already selected `$field`
+reference. ETCM applies those writes with copy-on-write and checks the override
+policy of the leaf field. See [Overrides](overrides.md).
 
 ## Validation constraints
 
