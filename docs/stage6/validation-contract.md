@@ -22,6 +22,7 @@ Validation owns semantic config correctness after graph construction.
   values
 - path existence and kind policy checks
 - non-path field constraints
+- named object assertions after derived values and field constraints are valid
 
 Stage 6 supported non-path constraints:
 

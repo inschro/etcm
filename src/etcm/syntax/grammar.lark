@@ -1,14 +1,19 @@
 start: _NL* (item _NL*)+
 expression_start: arithmetic_expr
+assertion_expression_start: assertion_expr
 literal_start: value
 
 ?item: spec | spec_ref | impl
 
 spec: "spec" NAME spec_parent? ":" _NL _INDENT spec_line* _DEDENT
 spec_parent: "<-" SELECTOR
-?spec_line: spec_ref_field | nested_field | field | impl | _NL
-?nested_line: spec_ref_field | nested_field | field | nested_impl | _NL
+?spec_line: spec_ref_field | nested_field | field | assertion | impl | _NL
+?nested_line: spec_ref_field | nested_field | field | assertion | nested_impl | _NL
 nested_impl: impl
+
+assertion: "assert" NAME ":" assertion_expr _NL
+         | "assert" NAME ":" _NL _INDENT _NL* assertion_statement (assertion_statement | _NL)* _DEDENT
+assertion_statement: assertion_expr _NL
 
 spec_ref: "$spec" ":" SELECTOR _NL
 
@@ -58,6 +63,25 @@ current_product_expr: current_power_expr (MUL_OP unary_expr)* -> continued_curre
                     | MUL_OP unary_expr (MUL_OP unary_expr)* -> current_product
 current_power_expr: POWER_OP unary_expr -> current_power
 
+?assertion_expr: assertion_or
+assertion_or: assertion_and (OR assertion_and)*
+assertion_and: assertion_not (AND assertion_not)*
+?assertion_not: NOT assertion_not -> assertion_not
+              | assertion_comparison
+assertion_comparison: assertion_sum (COMPARE assertion_sum)?
+assertion_sum: assertion_product (ADD_OP assertion_product)*
+assertion_product: assertion_unary (MUL_OP assertion_unary)*
+?assertion_unary: UNARY_OP assertion_unary -> assertion_numeric_unary
+                | assertion_power
+assertion_power: assertion_atom (POWER_OP assertion_unary)?
+?assertion_atom: PARAM_REF -> assertion_parameter_reference
+               | ESCAPED_STRING -> assertion_string
+               | NUMBER -> assertion_number
+               | "true" -> assertion_true
+               | "false" -> assertion_false
+               | "null" -> assertion_null
+               | LPAR assertion_expr RPAR -> assertion_grouped
+
 ?type_expr: union_type
 ?union_type: type_atom ("|" type_atom)* -> union_type
 ?type_atom: NAME LSQB type_expr ("," type_expr)* RSQB -> generic_type
@@ -90,6 +114,9 @@ ADD_OP: "+" | "-"
 MUL_OP.2: "//" | "*" | "/" | "%"
 POWER_OP.3: "**"
 UNARY_OP: "+" | "-"
+OR: "or"
+AND: "and"
+NOT: "not"
 PARAM_REF.3: /@[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*/
 DERIVED_LINE: /(?:[^\r\n#"\\]|"(?:\\.|[^"\\])*")+/
 PATH: /[A-Za-z0-9_\.\/-]+/

@@ -225,6 +225,7 @@ V0 should include:
 - reference resolution with source identity
 - typed parameter expressions with sibling and dotted child-object references
 - relational validation constraints and dependency-ordered derived parameters
+- named downward-only assertions for cross-object invariants
 - spec-owned override policy
 - validation errors with source path and graph path
 - generated Pydantic models

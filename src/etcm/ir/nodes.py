@@ -138,6 +138,13 @@ class ComparisonConstraint:
 
 
 @dataclass(frozen=True)
+class AssertionDef:
+    name: str
+    predicates: tuple[Expression, ...]
+    span: SourceSpan | None = None
+
+
+@dataclass(frozen=True)
 class Assignment:
     field_path: tuple[str, ...]
     value: LiteralValue
@@ -162,6 +169,7 @@ class FieldDef:
     override: str = "allow"
     ref_selector: Selector | None = None
     fields: tuple[FieldDef, ...] = ()
+    assertions: tuple[AssertionDef, ...] = ()
     span: SourceSpan | None = None
 
     def __post_init__(self) -> None:
@@ -173,6 +181,7 @@ class SpecDef:
     name: str
     parent: Selector | None = None
     fields: tuple[FieldDef, ...] = ()
+    assertions: tuple[AssertionDef, ...] = ()
     implementations: tuple[ImplDef, ...] = ()
     span: SourceSpan | None = None
 

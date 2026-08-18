@@ -1,4 +1,5 @@
 from etcm.syntax.ast import (
+    SyntaxAssertion,
     SyntaxAssignment,
     SyntaxComparisonConstraint,
     SyntaxDocument,
@@ -22,6 +23,7 @@ from etcm.syntax.parser import (
 )
 
 __all__ = [
+    "SyntaxAssertion",
     "SyntaxAssignment",
     "SyntaxComparisonConstraint",
     "SyntaxDiagnostic",

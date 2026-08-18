@@ -7,6 +7,10 @@ spec TrainRun:
   model_hidden_size: int := @model.hidden_size
   run_name: str = "smoke"
 
+  assert resolved_shape:
+    @global_batch_size == @micro_batch_size * @runtime.devices
+    @model_hidden_size == @model.hidden_size
+
   impl smoke:
     $model: model.etcm#ModelConfig:tiny
     $runtime: runtime.etcm#RuntimeConfig:local

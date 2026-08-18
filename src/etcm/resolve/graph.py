@@ -6,7 +6,14 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Any
 
-from etcm.ir import ComparisonConstraint, Expression, LiteralValue, SourceSpan, TypeExpr
+from etcm.ir import (
+    AssertionDef,
+    ComparisonConstraint,
+    Expression,
+    LiteralValue,
+    SourceSpan,
+    TypeExpr,
+)
 
 
 @dataclass(frozen=True)
@@ -171,6 +178,7 @@ class ResolvedNode:
     implementation: str
     source_path: Path
     graph_path: str
+    assertions: tuple[AssertionDef, ...] = ()
     fields: Mapping[str, ResolvedField] = field(default_factory=dict)
     field_values: Mapping[str, ResolvedValue] = field(default_factory=dict)
     values: Mapping[str, Any] = field(default_factory=dict)
@@ -181,7 +189,7 @@ class ResolvedNode:
         object.__setattr__(self, "values", MappingProxyType(dict(self.values)))
 
     def to_dict(self, path_base: Path | None = None) -> dict[str, Any]:
-        return {
+        result = {
             "id": self.id,
             "selector": _selector_to_string(self.selector, path_base),
             "spec_name": self.spec_name,
@@ -199,6 +207,11 @@ class ResolvedNode:
             },
             "values": _json_value(self.values, path_base),
         }
+        if self.assertions:
+            result["assertions"] = [
+                _assertion_to_dict(assertion, path_base) for assertion in self.assertions
+            ]
+        return result
 
 
 @dataclass(frozen=True)
@@ -314,6 +327,24 @@ def _expression_to_dict(expression: Expression) -> dict[str, Any]:
     if expression.operands:
         result["operands"] = [_expression_to_dict(operand) for operand in expression.operands]
     return result
+
+
+def _assertion_to_dict(
+    assertion: AssertionDef,
+    path_base: Path | None,
+) -> dict[str, Any]:
+    return {
+        "name": assertion.name,
+        "source_path": (
+            _path_to_string(assertion.span.source_path, path_base)
+            if assertion.span is not None
+            else None
+        ),
+        "predicates": [
+            _expression_to_dict(predicate) for predicate in assertion.predicates
+        ],
+        "span": _span_to_dict(assertion.span),
+    }
 
 
 def _span_to_dict(span: SourceSpan | None) -> dict[str, int] | None:

@@ -45,16 +45,25 @@ class _Materializer:
     def pydantic_schema_summary(self) -> dict[str, Any]:
         classes = []
         for node in sorted(self._graph.nodes, key=lambda item: self._class_names[item.id]):
-            classes.append(
-                {
-                    "name": self._class_names[node.id],
-                    "frozen": True,
-                    "fields": [
-                        self._schema_field_summary(node, field)
-                        for field in node.fields.values()
-                    ],
-                }
-            )
+            summary: dict[str, Any] = {
+                "name": self._class_names[node.id],
+                "frozen": True,
+                "fields": [
+                    self._schema_field_summary(node, field)
+                    for field in node.fields.values()
+                ],
+            }
+            if node.assertions:
+                summary["assertions"] = [
+                    {
+                        "name": assertion.name,
+                        "predicates": [
+                            predicate.raw for predicate in assertion.predicates
+                        ],
+                    }
+                    for assertion in node.assertions
+                ]
+            classes.append(summary)
         return {"classes": classes}
 
     def _schema_field_summary(

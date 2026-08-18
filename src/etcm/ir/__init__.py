@@ -1,4 +1,5 @@
 from etcm.ir.nodes import (
+    AssertionDef,
     Assignment,
     ComparisonConstraint,
     Document,
@@ -18,6 +19,7 @@ from etcm.ir.nodes import (
 )
 
 __all__ = [
+    "AssertionDef",
     "Assignment",
     "ComparisonConstraint",
     "Document",

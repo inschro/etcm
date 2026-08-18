@@ -285,10 +285,23 @@ optional: int = 10
 total: int := @left + @right
 ```
 
+Named assertions express invariants that have no single natural field subject
+or that cross object branches:
+
+```etcm
+assert model_shape:
+  @model.hidden_size % @model.attention_heads == 0
+  @model.hidden_size == @runtime.partition_size * @runtime.devices
+```
+
+Assertions are anchored at the containing spec or inline object and may only
+traverse downward through declared typed objects. They never discover a parent,
+root, unrelated selector, collection entry, or runtime attribute.
+
 A default may be replaced under the field's override policy. A derived value is
 computed by ETCM during resolution and cannot be assigned by an implementation.
 See [Parameter Relations](parameter-relations.md) for the complete expression,
-dotted-path, type, cycle, timing, and diagnostic contract.
+assertion, dotted-path, type, cycle, timing, and diagnostic contract.
 
 ## Path Fields
 

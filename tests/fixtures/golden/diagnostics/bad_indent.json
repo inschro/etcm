@@ -2,6 +2,7 @@
   "code": "E_PARSE_BAD_INDENT",
   "details": {
     "expected": [
+      "ASSERT",
       "DOLLAR",
       "IMPL",
       "NAME",

@@ -141,6 +141,180 @@ def validate_comparison_types(
         )
 
 
+def validate_assertion_expression(
+    expression: Expression,
+    *,
+    reference_type: Callable[[ParameterReference], TypeExpr],
+) -> None:
+    result = _infer_assertion_type(
+        expression,
+        reference_type=reference_type,
+        non_null=frozenset(),
+    )
+    _require_boolean(_scalar_names(result), "assertion")
+
+
+def _infer_assertion_type(
+    expression: Expression,
+    *,
+    reference_type: Callable[[ParameterReference], TypeExpr],
+    non_null: frozenset[tuple[str, ...]],
+) -> TypeExpr:
+    if expression.kind == "current":
+        raise RelationTypeError("Assertions do not have an implicit current value.")
+    if expression.kind == "reference":
+        if expression.reference is None:
+            raise AssertionError("reference expression is missing its reference")
+        resolved = reference_type(expression.reference)
+        if expression.reference.parts in non_null:
+            resolved = _without_null(resolved)
+        _scalar_names(resolved)
+        return resolved
+    if expression.kind == "literal":
+        if expression.literal is None:
+            raise AssertionError("literal expression is missing its literal")
+        name = {
+            "int": "int",
+            "float": "float",
+            "string": "str",
+            "bool": "bool",
+            "null": "null",
+        }.get(expression.literal.kind)
+        if name is None:
+            raise RelationTypeError(
+                "Collection and object literals are not supported in assertions.",
+                details={"literal_kind": expression.literal.kind},
+            )
+        return TypeExpr(kind="named", name=name)
+    if expression.kind == "unary":
+        if expression.operator is None or len(expression.operands) != 1:
+            raise AssertionError("invalid unary assertion expression")
+        operand = _infer_assertion_type(
+            expression.operands[0],
+            reference_type=reference_type,
+            non_null=non_null,
+        )
+        names = _scalar_names(operand)
+        if expression.operator == "not":
+            _require_boolean(names, expression.operator)
+            return TypeExpr(kind="named", name="bool")
+        if expression.operator not in {"+", "-"}:
+            raise AssertionError(f"unsupported unary operator: {expression.operator}")
+        _require_numeric(names, expression.operator)
+        return _type_from_names(names)
+    if expression.kind != "binary" or expression.operator is None:
+        raise AssertionError(f"unsupported assertion expression kind: {expression.kind}")
+    if len(expression.operands) != 2:
+        raise AssertionError("binary assertion expression requires two operands")
+
+    left_expression, right_expression = expression.operands
+    left = _infer_assertion_type(
+        left_expression,
+        reference_type=reference_type,
+        non_null=non_null,
+    )
+    operator_text = expression.operator
+    if operator_text in {"and", "or"}:
+        _require_boolean(_scalar_names(left), operator_text)
+        right_non_null = set(non_null)
+        right_non_null.update(
+            _non_null_when(
+                left_expression,
+                truth=operator_text == "and",
+            )
+        )
+        right = _infer_assertion_type(
+            right_expression,
+            reference_type=reference_type,
+            non_null=frozenset(right_non_null),
+        )
+        _require_boolean(_scalar_names(right), operator_text)
+        return TypeExpr(kind="named", name="bool")
+
+    right = _infer_assertion_type(
+        right_expression,
+        reference_type=reference_type,
+        non_null=non_null,
+    )
+    if operator_text in {"==", "!=", "<", "<=", ">", ">="}:
+        left_names = _scalar_names(left)
+        right_names = _scalar_names(right)
+        if operator_text in {"<", "<=", ">", ">="}:
+            _require_numeric(left_names, operator_text)
+            _require_numeric(right_names, operator_text)
+        elif not _equality_compatible(left_names, right_names):
+            raise RelationTypeError(
+                f"Operator '{operator_text}' requires compatible scalar operands.",
+                details={
+                    "operator": operator_text,
+                    "left_type": _type_text(left),
+                    "right_type": _type_text(right),
+                },
+            )
+        return TypeExpr(kind="named", name="bool")
+    return _infer_binary_type(operator_text, left, right)
+
+
+def _without_null(type_expr: TypeExpr) -> TypeExpr:
+    if type_expr.kind != "union":
+        return type_expr
+    options = tuple(
+        option
+        for option in type_expr.args
+        if not (option.kind == "named" and option.name == "null")
+    )
+    if not options:
+        return type_expr
+    if len(options) == 1:
+        return options[0]
+    return TypeExpr(kind="union", args=options)
+
+
+def _non_null_when(
+    expression: Expression,
+    *,
+    truth: bool,
+) -> frozenset[tuple[str, ...]]:
+    if expression.kind == "unary" and expression.operator == "not":
+        return _non_null_when(expression.operands[0], truth=not truth)
+    if expression.kind != "binary" or expression.operator is None:
+        return frozenset()
+    if expression.operator in {"==", "!="}:
+        reference = _reference_compared_to_null(expression)
+        proves_non_null = (
+            expression.operator == "!=" and truth
+        ) or (expression.operator == "==" and not truth)
+        return frozenset({reference}) if reference is not None and proves_non_null else frozenset()
+    if expression.operator == "and" and truth:
+        return _non_null_when(expression.operands[0], truth=True) | _non_null_when(
+            expression.operands[1], truth=True
+        )
+    if expression.operator == "or" and not truth:
+        return _non_null_when(expression.operands[0], truth=False) | _non_null_when(
+            expression.operands[1], truth=False
+        )
+    return frozenset()
+
+
+def _reference_compared_to_null(
+    expression: Expression,
+) -> tuple[str, ...] | None:
+    left, right = expression.operands
+    if _is_null_literal(left) and right.kind == "reference" and right.reference is not None:
+        return right.reference.parts
+    if _is_null_literal(right) and left.kind == "reference" and left.reference is not None:
+        return left.reference.parts
+    return None
+
+
+def _is_null_literal(expression: Expression) -> bool:
+    return (
+        expression.kind == "literal"
+        and expression.literal is not None
+        and expression.literal.kind == "null"
+    )
+
+
 def type_assignable(actual: TypeExpr, expected: TypeExpr) -> bool:
     try:
         actual_names = _scalar_names(actual)
@@ -219,6 +393,87 @@ def evaluate_comparison(operator_text: str, left: Any, right: Any) -> bool:
         ) from exc
 
 
+def evaluate_assertion_expression(
+    expression: Expression,
+    *,
+    reference_value: Callable[[ParameterReference], Any],
+) -> bool:
+    result = _evaluate_assertion_node(expression, reference_value=reference_value)
+    if type(result) is not bool:
+        raise RelationEvaluationError(
+            "Assertion expression did not produce a Boolean value.",
+            details={"actual_type": type(result).__name__},
+        )
+    return result
+
+
+def _evaluate_assertion_node(
+    expression: Expression,
+    *,
+    reference_value: Callable[[ParameterReference], Any],
+) -> Any:
+    if expression.kind == "current":
+        raise RelationEvaluationError("Assertions do not have an implicit current value.")
+    if expression.kind == "reference":
+        if expression.reference is None:
+            raise AssertionError("reference expression is missing its reference")
+        return _checked_expression_leaf(reference_value(expression.reference))
+    if expression.kind == "literal":
+        if expression.literal is None:
+            raise AssertionError("literal expression is missing its literal")
+        return _checked_expression_leaf(expression.literal.value)
+    if expression.kind == "unary":
+        if expression.operator is None or len(expression.operands) != 1:
+            raise AssertionError("invalid unary assertion expression")
+        value = _evaluate_assertion_node(
+            expression.operands[0],
+            reference_value=reference_value,
+        )
+        if expression.operator == "not":
+            if type(value) is not bool:
+                raise RelationEvaluationError(
+                    "Operator 'not' requires a Boolean operand.",
+                    details={"actual_type": type(value).__name__},
+                )
+            return not value
+        _runtime_number(value, expression.operator)
+        result = +value if expression.operator == "+" else -value
+        return _checked_numeric_result(result, expression.operator)
+    if expression.kind != "binary" or expression.operator is None:
+        raise AssertionError(f"unsupported assertion expression kind: {expression.kind}")
+    left = _evaluate_assertion_node(
+        expression.operands[0],
+        reference_value=reference_value,
+    )
+    if expression.operator in {"and", "or"}:
+        if type(left) is not bool:
+            raise RelationEvaluationError(
+                f"Operator '{expression.operator}' requires Boolean operands.",
+                details={"actual_type": type(left).__name__},
+            )
+        if expression.operator == "and" and not left:
+            return False
+        if expression.operator == "or" and left:
+            return True
+        right = _evaluate_assertion_node(
+            expression.operands[1],
+            reference_value=reference_value,
+        )
+        if type(right) is not bool:
+            raise RelationEvaluationError(
+                f"Operator '{expression.operator}' requires Boolean operands.",
+                details={"actual_type": type(right).__name__},
+            )
+        return right
+    right = _evaluate_assertion_node(
+        expression.operands[1],
+        reference_value=reference_value,
+    )
+    if expression.operator in {"==", "!=", "<", "<=", ">", ">="}:
+        return evaluate_comparison(expression.operator, left, right)
+    return _evaluate_binary(expression.operator, left, right)
+
+
 def render_expression(
     expression: Expression,
     *,
@@ -232,6 +487,22 @@ def render_expression(
         reference_value=reference_value,
         substitute_values=substitute_values,
         parent_precedence=-1,
+        side="root",
+    )
+
+
+def render_assertion_expression(
+    expression: Expression,
+    *,
+    reference_value: Callable[[ParameterReference], Any] | None = None,
+    substitute_values: bool = False,
+) -> str:
+    return _render_expression(
+        expression,
+        current_value=None,
+        reference_value=reference_value,
+        substitute_values=substitute_values,
+        parent_precedence=-5,
         side="root",
     )
 
@@ -380,6 +651,15 @@ def _require_numeric(names: Iterable[str], operator_text: str) -> None:
         )
 
 
+def _require_boolean(names: Iterable[str], operator_text: str) -> None:
+    names_tuple = tuple(names)
+    if names_tuple != ("bool",):
+        raise RelationTypeError(
+            f"Operator '{operator_text}' requires Boolean operands.",
+            details={"operator": operator_text, "actual_types": list(names_tuple)},
+        )
+
+
 def _equality_compatible(left: tuple[str, ...], right: tuple[str, ...]) -> bool:
     left_set = set(left)
     right_set = set(right)
@@ -445,8 +725,10 @@ def _render_expression(
     if expression.kind == "unary":
         if expression.operator is None or len(expression.operands) != 1:
             raise AssertionError("invalid unary expression")
-        precedence = 3
-        rendered = expression.operator + _render_expression(
+        is_boolean_not = expression.operator == "not"
+        precedence = -1 if is_boolean_not else 3
+        prefix = "not " if is_boolean_not else expression.operator
+        rendered = prefix + _render_expression(
             expression.operands[0],
             current_value=current_value,
             reference_value=reference_value,
@@ -458,15 +740,29 @@ def _render_expression(
         # Python gives exponentiation asymmetric precedence around unary
         # operators: ``-2 ** 2`` is unary-over-power, while ``(-2) ** 2``
         # requires grouping when the unary expression is the left operand.
-        if side == "left" and parent_precedence == 2:
+        if not is_boolean_not and side == "left" and parent_precedence == 2:
             needs_parentheses = True
         return f"({rendered})" if needs_parentheses else rendered
     if expression.kind != "binary" or expression.operator is None:
         raise AssertionError(f"unsupported expression kind: {expression.kind}")
 
-    precedence = {"+": 0, "-": 0, "*": 1, "/": 1, "//": 1, "%": 1, "**": 2}[
-        expression.operator
-    ]
+    precedence = {
+        "or": -4,
+        "and": -3,
+        "==": -2,
+        "!=": -2,
+        "<": -2,
+        "<=": -2,
+        ">": -2,
+        ">=": -2,
+        "+": 0,
+        "-": 0,
+        "*": 1,
+        "/": 1,
+        "//": 1,
+        "%": 1,
+        "**": 2,
+    }[expression.operator]
     left = _render_expression(
         expression.operands[0],
         current_value=current_value,
@@ -495,12 +791,15 @@ __all__ = [
     "RelationEvaluationError",
     "RelationTypeError",
     "constraint_references",
+    "evaluate_assertion_expression",
     "evaluate_comparison",
     "evaluate_expression",
     "expression_references",
     "format_value",
     "infer_expression_type",
+    "render_assertion_expression",
     "render_expression",
     "type_assignable",
+    "validate_assertion_expression",
     "validate_comparison_types",
 ]

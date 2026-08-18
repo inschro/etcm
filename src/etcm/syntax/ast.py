@@ -51,6 +51,13 @@ class SyntaxComparisonConstraint:
 
 
 @dataclass(frozen=True)
+class SyntaxAssertion:
+    name: str
+    predicates: tuple[SyntaxExpression, ...]
+    span: SourceSpan | None = None
+
+
+@dataclass(frozen=True)
 class SyntaxField:
     name: str
     type_expr: SyntaxTypeExpr | None = None
@@ -61,6 +68,7 @@ class SyntaxField:
     override: str = "allow"
     ref_selector: str | None = None
     fields: tuple[SyntaxField, ...] = ()
+    assertions: tuple[SyntaxAssertion, ...] = ()
     span: SourceSpan | None = None
 
     def __post_init__(self) -> None:
@@ -72,6 +80,7 @@ class SyntaxSpec:
     name: str
     parent: str | None = None
     fields: tuple[SyntaxField, ...] = ()
+    assertions: tuple[SyntaxAssertion, ...] = ()
     implementations: tuple[SyntaxImpl, ...] = ()
     span: SourceSpan | None = None
 

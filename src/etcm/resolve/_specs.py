@@ -7,6 +7,7 @@ from types import MappingProxyType
 from typing import NoReturn
 
 from etcm.ir import (
+    AssertionDef,
     Document,
     FieldDef,
     ImplDef,
@@ -25,6 +26,7 @@ from etcm.resolve.relations import (
     RelationTypeError,
     infer_expression_type,
     type_assignable,
+    validate_assertion_expression,
     validate_comparison_types,
 )
 from etcm.syntax import parse_file
@@ -35,6 +37,7 @@ class ResolvedSpec:
     name: str
     source_path: Path
     fields: Mapping[str, FieldDef]
+    assertions: tuple[AssertionDef, ...] = ()
     ancestors: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
@@ -150,10 +153,12 @@ class SpecResolver:
         spec_def = self._select_spec(document, source_path, spec_name)
 
         fields: dict[str, FieldDef] = {}
+        assertions: list[AssertionDef] = []
         ancestors: tuple[str, ...] = ()
         if spec_def.parent is not None:
             parent = self._resolve_spec_selector(spec_def.parent, source_path, (*stack, key))
             fields.update(parent.fields)
+            assertions.extend(parent.assertions)
             ancestors = (parent.name, *parent.ancestors)
 
         for raw_field_def in spec_def.fields:
@@ -172,10 +177,37 @@ class SpecResolver:
                 )
             fields[field_def.name] = field_def
 
+        inherited_assertions = {assertion.name: assertion for assertion in assertions}
+        for assertion in spec_def.assertions:
+            previous = inherited_assertions.get(assertion.name)
+            if previous is not None:
+                raise_error(
+                    "E_DUPLICATE_ASSERTION",
+                    f"Assertion '{assertion.name}' is already inherited by "
+                    f"spec '{spec_def.name}'.",
+                    source_path=source_path,
+                    span=assertion.span,
+                    details={
+                        "assertion": assertion.name,
+                        "owner": spec_def.name,
+                        "previous_source_path": (
+                            previous.span.source_path.as_posix()
+                            if previous.span is not None
+                            else None
+                        ),
+                        "previous_line": (
+                            previous.span.line if previous.span is not None else None
+                        ),
+                    },
+                )
+            inherited_assertions[assertion.name] = assertion
+            assertions.append(assertion)
+
         spec = ResolvedSpec(
             name=spec_def.name,
             source_path=source_path,
             fields=fields,
+            assertions=tuple(assertions),
             ancestors=ancestors,
         )
         self._specs[key] = spec
@@ -293,6 +325,7 @@ class SpecResolver:
                 owner_name=spec.name,
                 source_path=spec.source_path,
                 fields=spec.fields,
+                assertions=spec.assertions,
             )
         finally:
             self._relations_validating.discard(key)
@@ -304,6 +337,7 @@ class SpecResolver:
         owner_name: str,
         source_path: Path,
         fields: Mapping[str, FieldDef],
+        assertions: tuple[AssertionDef, ...],
     ) -> None:
         for field in fields.values():
             validate_override_policy(field, source_path)
@@ -387,7 +421,40 @@ class SpecResolver:
                     owner_name=str(field.type_expr.name),
                     source_path=field_source_path(field, source_path),
                     fields={child.name: child for child in field.fields},
+                    assertions=field.assertions,
                 )
+
+        for assertion in assertions:
+            for predicate in assertion.predicates:
+                try:
+                    validate_assertion_expression(
+                        predicate,
+                        reference_type=lambda reference, current=assertion: (
+                            self._assertion_reference_type(
+                                owner_name=owner_name,
+                                source_path=source_path,
+                                fields=fields,
+                                assertion=current,
+                                reference=reference,
+                            )
+                        ),
+                    )
+                except RelationTypeError as exc:
+                    raise_error(
+                        "E_EXPRESSION_TYPE",
+                        f"Invalid expression in assertion '{assertion.name}': {exc}",
+                        source_path=(
+                            assertion.span.source_path
+                            if assertion.span is not None
+                            else source_path
+                        ),
+                        span=predicate.span,
+                        details={
+                            "assertion": assertion.name,
+                            "expression": predicate.raw,
+                            **exc.details,
+                        },
+                    )
 
         cycle = derived_cycle(fields)
         if cycle is not None:
@@ -473,6 +540,85 @@ class SpecResolver:
                 span=reference.span,
                 details={
                     "field": current_field.name,
+                    "reference": reference.raw,
+                    "scalar_segment": part,
+                    "scalar_type": type_text(target.type_expr),
+                },
+            )
+        raise AssertionError("parameter reference path is empty")
+
+    def _assertion_reference_type(
+        self,
+        *,
+        owner_name: str,
+        source_path: Path,
+        fields: Mapping[str, FieldDef],
+        assertion: AssertionDef,
+        reference: ParameterReference,
+    ) -> TypeExpr:
+        assertion_source = (
+            assertion.span.source_path if assertion.span is not None else source_path
+        )
+        active_fields = fields
+        active_source = source_path
+        for index, part in enumerate(reference.parts):
+            target = active_fields.get(part)
+            if target is None:
+                raise_error(
+                    "E_PARAMETER_REFERENCE",
+                    f"Unknown parameter reference '{reference.raw}' in assertion "
+                    f"'{assertion.name}'.",
+                    source_path=assertion_source,
+                    span=reference.span,
+                    details={
+                        "assertion": assertion.name,
+                        "reference": reference.raw,
+                        "resolved_prefix": ".".join(reference.parts[:index]),
+                        "missing_segment": part,
+                        "available_parameters": list(active_fields),
+                        "owner": owner_name,
+                    },
+                )
+
+            is_final = index == len(reference.parts) - 1
+            is_object = bool(target.fields) or target.ref_selector is not None
+            if is_final:
+                if is_object:
+                    raise_error(
+                        "E_PARAMETER_REFERENCE",
+                        f"Parameter reference '{reference.raw}' in assertion "
+                        "must end at a scalar field.",
+                        source_path=assertion_source,
+                        span=reference.span,
+                        details={
+                            "assertion": assertion.name,
+                            "reference": reference.raw,
+                        },
+                    )
+                return target.type_expr
+
+            if target.fields:
+                active_fields = {child.name: child for child in target.fields}
+                active_source = field_source_path(target, active_source)
+                continue
+            if target.ref_selector is not None:
+                declaring_source = field_source_path(target, active_source)
+                target_spec = self._resolve_spec_selector(
+                    target.ref_selector,
+                    declaring_source,
+                    (),
+                )
+                active_fields = target_spec.fields
+                active_source = target_spec.source_path
+                continue
+            raise_error(
+                "E_PARAMETER_REFERENCE",
+                f"Parameter reference '{reference.raw}' in assertion cannot traverse "
+                f"scalar field '{part}'.",
+                source_path=assertion_source,
+                span=reference.span,
+                details={
+                    "assertion": assertion.name,
                     "reference": reference.raw,
                     "scalar_segment": part,
                     "scalar_type": type_text(target.type_expr),

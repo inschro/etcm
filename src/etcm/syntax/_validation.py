@@ -5,6 +5,7 @@ from typing import Any
 
 from etcm.syntax._source import raise_syntax_error
 from etcm.syntax.ast import (
+    SyntaxAssertion,
     SyntaxAssignment,
     SyntaxDocument,
     SyntaxField,
@@ -52,6 +53,7 @@ def validate_document(document: SyntaxDocument) -> None:
 
     for spec in specs:
         _validate_fields(document.source_path, spec)
+        _validate_assertions(document.source_path, spec.name, spec.assertions)
         _validate_impl_group(document.source_path, spec.implementations)
 
     _validate_implementations(document)
@@ -82,6 +84,36 @@ def _validate_field_group(
         seen[field.name] = field
         if field.fields:
             _validate_field_group(source_path, f"{owner_name}.{field.name}", field.fields)
+            _validate_assertions(
+                source_path,
+                f"{owner_name}.{field.name}",
+                field.assertions,
+            )
+
+
+def _validate_assertions(
+    source_path: Path,
+    owner_name: str,
+    assertions: tuple[SyntaxAssertion, ...],
+) -> None:
+    seen: dict[str, SyntaxAssertion] = {}
+    for assertion in assertions:
+        previous = seen.get(assertion.name)
+        if previous is not None:
+            raise_syntax_error(
+                "E_DUPLICATE_ASSERTION",
+                f"Duplicate assertion '{assertion.name}' in '{owner_name}'.",
+                source_path,
+                assertion.span,
+                details={
+                    "assertion": assertion.name,
+                    "owner": owner_name,
+                    "previous_line": (
+                        previous.span.line if previous.span is not None else None
+                    ),
+                },
+            )
+        seen[assertion.name] = assertion
 
 
 def _validate_implementations(document: SyntaxDocument) -> None:

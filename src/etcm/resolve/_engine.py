@@ -195,6 +195,7 @@ class _ResolverState:
             implementation=impl.name,
             source_path=source_path,
             graph_path=graph_path,
+            assertions=spec.assertions,
             fields={name: self._field_schema(field) for name, field in spec.fields.items()},
             field_values=values,
             values={name: value.value for name, value in values.items()},
@@ -229,6 +230,7 @@ class _ResolverState:
             name=str(field.type_expr.name),
             source_path=_field_source_path(field, source_path),
             fields={child.name: child for child in field.fields},
+            assertions=field.assertions,
         )
         values = self._default_values(spec, builder, graph_path)
         builder.nodes[graph_path] = ResolvedNode(
@@ -239,6 +241,7 @@ class _ResolverState:
             implementation="inline",
             source_path=spec.source_path,
             graph_path=graph_path,
+            assertions=spec.assertions,
             fields={name: self._field_schema(child) for name, child in spec.fields.items()},
             field_values=values,
             values={name: value.value for name, value in values.items()},

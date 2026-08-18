@@ -200,6 +200,118 @@ class ExpressionBuilder:
             span=span,
         )
 
+    def assertion_expression(self, tree: Tree[Token]) -> SyntaxExpression:
+        span = source_span(tree, self._source_path)
+        raw = self._raw(tree).strip()
+
+        if tree.data in {
+            "assertion_or",
+            "assertion_and",
+            "assertion_sum",
+            "assertion_product",
+        }:
+            return self._assertion_binary_chain(tree)
+
+        if tree.data == "assertion_comparison":
+            expression_trees = [child for child in tree.children if isinstance(child, Tree)]
+            if len(expression_trees) == 1:
+                return replace(
+                    self.assertion_expression(expression_trees[0]),
+                    raw=raw,
+                    span=span,
+                )
+            if len(expression_trees) != 2:
+                raise AssertionError("assertion comparison is incomplete")
+            return SyntaxExpression(
+                kind="binary",
+                operator=str(required_token(tree, "COMPARE")),
+                operands=tuple(
+                    self.assertion_expression(child) for child in expression_trees
+                ),
+                raw=raw,
+                span=span,
+            )
+
+        if tree.data in {"assertion_not", "assertion_numeric_unary"}:
+            token_type = "NOT" if tree.data == "assertion_not" else "UNARY_OP"
+            operator = str(required_token(tree, token_type))
+            return SyntaxExpression(
+                kind="unary",
+                operator=operator,
+                operands=(self.assertion_expression(required_tree(tree)),),
+                raw=raw,
+                span=span,
+            )
+
+        if tree.data == "assertion_power":
+            expression_trees = [child for child in tree.children if isinstance(child, Tree)]
+            if len(expression_trees) == 1:
+                return replace(
+                    self.assertion_expression(expression_trees[0]),
+                    raw=raw,
+                    span=span,
+                )
+            if len(expression_trees) != 2:
+                raise AssertionError("assertion power expression is incomplete")
+            return SyntaxExpression(
+                kind="binary",
+                operator="**",
+                operands=tuple(
+                    self.assertion_expression(child) for child in expression_trees
+                ),
+                raw=raw,
+                span=span,
+            )
+
+        if tree.data == "assertion_grouped":
+            return replace(
+                self.assertion_expression(required_tree(tree)),
+                raw=raw,
+                span=span,
+            )
+
+        if tree.data == "assertion_parameter_reference":
+            token = required_token(tree, "PARAM_REF")
+            reference_raw = str(token)
+            return SyntaxExpression(
+                kind="reference",
+                reference=SyntaxParameterReference(
+                    parts=tuple(reference_raw[1:].split(".")),
+                    raw=reference_raw,
+                    span=source_span(token, self._source_path),
+                ),
+                raw=reference_raw,
+                span=span,
+            )
+
+        literal_kind: str
+        literal_value: Any
+        if tree.data == "assertion_string":
+            literal_kind = "string"
+            literal_value = py_ast.literal_eval(str(tree.children[0]))
+        elif tree.data == "assertion_number":
+            number_raw = str(tree.children[0])
+            literal_kind = "float" if "." in number_raw or "e" in number_raw.lower() else "int"
+            literal_value = float(number_raw) if literal_kind == "float" else int(number_raw)
+        elif tree.data == "assertion_true":
+            literal_kind = "bool"
+            literal_value = True
+        elif tree.data == "assertion_false":
+            literal_kind = "bool"
+            literal_value = False
+        elif tree.data == "assertion_null":
+            literal_kind = "null"
+            literal_value = None
+        else:
+            raise AssertionError(f"unsupported assertion expression: {tree.data}")
+
+        return SyntaxExpression(
+            kind="literal",
+            literal=SyntaxLiteral(kind=literal_kind, value=literal_value, span=span),
+            raw=raw,
+            span=span,
+        )
+
     def _binary_chain(
         self,
         tree: Tree[Token],
@@ -227,6 +339,34 @@ class ExpressionBuilder:
             if not isinstance(right_node, Tree):
                 raise AssertionError("binary expression is missing its right operand")
             right = self.expression(right_node)
+            index += 1
+            span = self._expression_span(result, right, tree)
+            result = SyntaxExpression(
+                kind="binary",
+                operator=str(operator),
+                operands=(result, right),
+                raw=self._raw_span(span),
+                span=span,
+            )
+        return result
+
+    def _assertion_binary_chain(self, tree: Tree[Token]) -> SyntaxExpression:
+        children = list(tree.children)
+        if not children or not isinstance(children[0], Tree):
+            raise AssertionError("assertion expression is missing its first operand")
+        result = self.assertion_expression(children[0])
+        index = 1
+        while index < len(children):
+            operator = children[index]
+            if not isinstance(operator, Token):
+                raise AssertionError("assertion expression is missing an operator")
+            index += 1
+            if index >= len(children):
+                raise AssertionError("assertion expression is missing its right operand")
+            right_node = children[index]
+            if not isinstance(right_node, Tree):
+                raise AssertionError("assertion expression is missing its right operand")
+            right = self.assertion_expression(right_node)
             index += 1
             span = self._expression_span(result, right, tree)
             result = SyntaxExpression(

@@ -27,6 +27,8 @@ repeat resolver logic.
 - model config is frozen and `extra="forbid"`
 - references become nested Pydantic objects
 - representable constraints are mirrored into Pydantic fields
+- named assertions remain ETCM validation rules and are listed in schema
+  summaries rather than installed as Pydantic model validators
 
 ETCM validation remains the source of truth. Pydantic constraints are included
 for view fidelity and future schema export.

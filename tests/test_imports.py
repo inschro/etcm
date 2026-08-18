@@ -15,6 +15,7 @@ PUBLIC_EXPORTS = {
     "etcm.cli": ["build_parser", "main"],
     "etcm.codegen": ["ViewTarget", "convert", "pydantic_schema_summary"],
     "etcm.ir": [
+        "AssertionDef",
         "Assignment",
         "ComparisonConstraint",
         "Document",
@@ -49,6 +50,7 @@ PUBLIC_EXPORTS = {
         "validate",
     ],
     "etcm.syntax": [
+        "SyntaxAssertion",
         "SyntaxAssignment",
         "SyntaxComparisonConstraint",
         "SyntaxDiagnostic",

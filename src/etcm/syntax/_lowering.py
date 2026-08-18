@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from etcm.ir import (
+    AssertionDef,
     Assignment,
     ComparisonConstraint,
     Document,
@@ -16,6 +17,7 @@ from etcm.ir import (
     TypeExpr,
 )
 from etcm.syntax.ast import (
+    SyntaxAssertion,
     SyntaxAssignment,
     SyntaxComparisonConstraint,
     SyntaxDocument,
@@ -48,6 +50,7 @@ def _spec_to_ir(spec: SyntaxSpec) -> SpecDef:
         name=spec.name,
         parent=Selector.parse(spec.parent) if spec.parent is not None else None,
         fields=tuple(_field_to_ir(field, spec.name) for field in spec.fields),
+        assertions=tuple(_assertion_to_ir(item) for item in spec.assertions),
         implementations=tuple(_impl_to_ir(impl) for impl in spec.implementations),
         span=spec.span,
     )
@@ -75,6 +78,7 @@ def _field_to_ir(field: SyntaxField, owner_name: str) -> FieldDef:
         override=field.override,
         ref_selector=Selector.parse(field.ref_selector) if field.ref_selector is not None else None,
         fields=tuple(_field_to_ir(child, str(type_expr.name)) for child in field.fields),
+        assertions=tuple(_assertion_to_ir(item) for item in field.assertions),
         span=field.span,
     )
 
@@ -163,4 +167,12 @@ def _constraint_to_ir(constraint: SyntaxComparisonConstraint) -> ComparisonConst
         right=_expression_to_ir(constraint.right),
         raw=constraint.raw,
         span=constraint.span,
+    )
+
+
+def _assertion_to_ir(assertion: SyntaxAssertion) -> AssertionDef:
+    return AssertionDef(
+        name=assertion.name,
+        predicates=tuple(_expression_to_ir(predicate) for predicate in assertion.predicates),
+        span=assertion.span,
     )

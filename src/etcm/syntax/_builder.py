@@ -17,6 +17,7 @@ from etcm.syntax._source import (
     tokens,
 )
 from etcm.syntax.ast import (
+    SyntaxAssertion,
     SyntaxAssignment,
     SyntaxComparisonConstraint,
     SyntaxDocument,
@@ -70,6 +71,7 @@ class SyntaxBuilder:
         name = required_token(tree, "NAME")
         parent: str | None = None
         declarations: list[_FieldDeclaration] = []
+        assertions: list[SyntaxAssertion] = []
         implementations: list[SyntaxImpl] = []
 
         for child in tree.children:
@@ -83,6 +85,8 @@ class SyntaxBuilder:
                 )
             elif child.data in {"field", "spec_ref_field", "nested_field"}:
                 declarations.extend(self._field_declarations(child))
+            elif child.data == "assertion":
+                assertions.append(self.assertion(child))
             elif child.data == "impl":
                 implementations.append(self.impl(child))
 
@@ -90,6 +94,7 @@ class SyntaxBuilder:
             name=str(name),
             parent=parent,
             fields=self._normalize_fields(str(name), declarations),
+            assertions=tuple(assertions),
             implementations=tuple(implementations),
             span=source_span(tree, self._source_path),
         )
@@ -238,6 +243,7 @@ class SyntaxBuilder:
         constraints: tuple[SyntaxComparisonConstraint, ...] = ()
         override = "allow"
         declarations: list[_FieldDeclaration] = []
+        assertions: list[SyntaxAssertion] = []
 
         for child in tree.children:
             if not isinstance(child, Tree):
@@ -249,6 +255,8 @@ class SyntaxBuilder:
                     override = str(override_literal.value)
             elif child.data in {"field", "spec_ref_field", "nested_field"}:
                 declarations.extend(self._field_declarations(child, path))
+            elif child.data == "assertion":
+                assertions.append(self.assertion(child))
             elif child.data == "nested_impl":
                 raise_syntax_error(
                     "E_NESTED_IMPL",
@@ -265,11 +273,31 @@ class SyntaxBuilder:
                 constraints=constraints,
                 metadata=metadata,
                 override=override,
+                assertions=tuple(assertions),
                 span=source_span(tree, self._source_path),
             ),
             is_container=True,
         )
         return (container, *declarations)
+
+    def assertion(self, tree: Tree[Token]) -> SyntaxAssertion:
+        predicates: list[SyntaxExpression] = []
+        for child in tree.children:
+            if not isinstance(child, Tree):
+                continue
+            if child.data == "assertion_statement":
+                predicates.append(
+                    self._expressions.assertion_expression(required_tree(child))
+                )
+            else:
+                predicates.append(self._expressions.assertion_expression(child))
+        if not predicates:
+            raise AssertionError("assertion must contain at least one predicate")
+        return SyntaxAssertion(
+            name=str(required_token(tree, "NAME")),
+            predicates=tuple(predicates),
+            span=source_span(tree, self._source_path),
+        )
 
     def field_path(self, tree: Tree[Token]) -> tuple[str, ...]:
         for child in tree.children:

@@ -82,10 +82,16 @@ spec TrainingConfig:
     @dataloader.local_batch_size * @accumulation_steps * @world_size
 
   seed_confirmation: int [== @dataloader.sampler.seed]
+
+  assert batch_shape:
+    (
+      @global_batch_size
+      == @dataloader.local_batch_size * @accumulation_steps * @world_size
+    )
 ```
 
 See [Parameter Relations](docs/parameter-relations.md) for dotted-reference,
-expression, type, evaluation, and diagnostic semantics.
+derived-value, named-assertion, type, evaluation, and diagnostic semantics.
 
 Typing note: `load()` and `convert()` return `Any`. ETCM validates the config
 before materializing it, but the returned object is a dynamic boundary for
@@ -133,8 +139,9 @@ python -c 'from etcm import load; print(load("examples/ml/train.etcm#TrainRun:sm
 ## Current Status
 
 This repository includes the parser, resolver, generated-view API, thin CLI,
-standalone packaging, examples, typed parameter relations, and equivalent
-dotted or indented field paths for declarations and implementations.
+standalone packaging, examples, typed parameter relations, named downward
+assertions, and equivalent dotted or indented field paths for declarations and
+implementations.
 
 - [Manifest](docs/manifest.md)
 - [Product Spec](docs/product_spec.md)

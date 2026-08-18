@@ -302,6 +302,7 @@ Deliverables:
 - equivalent dotted and indented paths for field declarations and implementation
   assignments, normalized to one canonical object shape
 - ordered relational constraints in `[]`
+- named assertions with multiple explicit predicates and downward-only reach
 - derived values using `:=`, visible immediately after `resolve()`
 - conventional arithmetic precedence, parentheses, and unary numeric operators
 - scalar expression type checking, derived dependency ordering, and cycle
@@ -315,13 +316,15 @@ Acceptance:
 - dotted and indented field paths resolve to equivalent graphs
 - implementation writes stop at typed `$field` reference boundaries
 - relation paths are anchored at the object containing the declaration
-- dictionary/list indexing, Python attributes, calls, conditionals, and Boolean
-  expressions remain rejected
+- dictionary/list indexing, Python attributes, calls, and conditionals remain
+  rejected; Boolean expressions are confined to named assertions
 - implementations cannot assign derived fields
 - inherited source changes recompute derived values rather than copying stale
   results
 - generated dict, dataclass, and Pydantic views include derived values
 - invalid references and expression types fail before runtime materialization
+- named assertions see final derived and overridden values, inherit without
+  replacement, and report their config-defined name on failure
 
 ## Phase 10: Bridges And Adoption
 

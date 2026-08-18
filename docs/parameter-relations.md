@@ -1,9 +1,9 @@
 # Parameter Relations
 
-ETCM parameters can validate themselves against other parameters and can derive
-their values from typed expressions. Relations are local to the ETCM object
-that contains the declaration, but a reference may follow child-object fields
-with stable dot notation.
+ETCM parameters can validate themselves against other parameters, derive their
+values from typed expressions, and participate in named object assertions.
+Relations are local to the ETCM object that contains the declaration, but a
+reference may follow child-object fields with stable dot notation.
 
 ```etcm
 spec TrainingConfig:
@@ -19,12 +19,13 @@ spec TrainingConfig:
   seed: int [== @dataloader.sampler.seed]
 ```
 
-The three declaration operators remain visibly distinct:
+Field operators and named assertions remain visibly distinct:
 
 ```text
 =   supplies a default value
 :=  defines a derived value
 []  validates a resolved value
+assert name:  validates one or more explicit predicates
 ```
 
 ## Parameter references
@@ -64,6 +65,32 @@ runtime objects. These forms are invalid:
 The target field may be declared before or after the relation. A reference must
 end at a scalar leaf; referring to an object as the expression value is an
 error. A scalar cannot be traversed further.
+
+Named assertions use the same anchor. An assertion declared in a spec can read
+any scalar descendant of that spec, including values reached through typed
+references in other files. An assertion inside an inline object starts at that
+object. It cannot discover its parent or the root:
+
+```etcm
+spec Training:
+  model:
+    hidden_size: int
+    attention_heads: int
+
+    assert local_shape:
+      @hidden_size % @attention_heads == 0
+
+  runtime:
+    partition_size: int
+    devices: int
+
+  assert distributed_shape:
+    @model.hidden_size == @runtime.partition_size * @runtime.devices
+```
+
+The nested `local_shape` assertion cannot see `runtime`; a rule involving both
+branches belongs at their common owning object. Names such as `root` and
+`parent` have no special meaning, and assertions cannot contain selectors.
 
 Dot notation in a relation is read-only. Declarations and implementation
 assignments may use either dotted paths or equivalent indented blocks. Both
@@ -122,6 +149,49 @@ resolution and validates its constraints during validation:
 ```etcm
 total: int := @left + @right [>0]
 ```
+
+## Named assertions
+
+Use `[]` when a rule naturally validates the field being declared. Use a named
+assertion when an invariant has no single field subject or spans object
+branches. Assertions support an inline form and a block form:
+
+```etcm
+assert batch_limit: @global_batch_size <= 1024
+
+assert model_shape:
+  @model.hidden_size % @model.attention_heads == 0
+  @model.hidden_size == @runtime.partition_size * @runtime.devices
+```
+
+Each top-level expression in a block is an independent predicate. The block is
+their implicit conjunction; ETCM evaluates them in source order and stops at
+the first failure. A long individual predicate can span physical lines inside
+parentheses:
+
+```etcm
+assert cuda_runtime:
+  (
+    @runtime.accelerator != "cuda"
+    or @runtime.devices > 0
+  )
+  @runtime.devices <= @runtime.maximum_devices
+```
+
+Assertion predicates support arithmetic, comparisons, Boolean scalar values,
+parentheses, and `not`, `and`, and `or`. Boolean evaluation short-circuits.
+Direct null guards narrow nullable scalar values:
+
+```etcm
+assert optional_timeout:
+  @timeout == null or @timeout > 0
+  @retry_delay != null and @retry_delay >= 0
+```
+
+Assertions are schema-owned. Spec inheritance accumulates parent assertions;
+a child may add new assertion names but cannot replace or disable an inherited
+one. Referenced child specs validate their own assertions, while a parent may
+declare additional assertions over child values.
 
 ## Derived parameters
 
@@ -197,12 +267,16 @@ grouped: int := (-2) ** 2
 total_size: int [== (@header_size + @payload_size) * @replicas]
 ```
 
-Chained comparisons and Boolean expressions are not supported. Write separate
-constraints instead:
+Chained comparisons and Boolean expressions are not supported inside field
+constraints. Write separate constraints, or use a named assertion when Boolean
+logic is required:
 
 ```etcm
 value: int [>0; <100]
 ```
+
+Assertion predicates add comparison, `not`, `and`, and `or` levels below the
+arithmetic precedence shown above. Chained comparisons remain invalid.
 
 ## Type rules
 
@@ -240,7 +314,8 @@ The observable pipeline is:
 3. Compute derived parameters.
 4. Validate field and reference types.
 5. Validate paths, atomic metadata, and relational constraints.
-6. Produce the validated configuration.
+6. Evaluate named assertions.
+7. Produce the validated configuration.
 ```
 
 `resolve()` performs steps 1–3 and returns an unvalidated graph whose derived
@@ -283,22 +358,23 @@ Important diagnostic codes are:
 | `E_DERIVED_ASSIGNMENT` | An implementation tries to assign a derived parameter |
 | `E_EXPRESSION_EVALUATION` | Safe arithmetic evaluation cannot produce a value |
 | `E_CONSTRAINT` | A well-typed relation evaluates to false |
+| `E_ASSERTION` | A named assertion predicate evaluates to false |
+| `E_DUPLICATE_ASSERTION` | An assertion name is duplicated locally or through inheritance |
 
 ## Initial scope
 
-The initial feature deliberately excludes cross-spec assertions, upward or
-root-relative navigation, collection indexing, mapping traversal, function
-calls, conditionals, Boolean operators, user-defined operators, and arbitrary
-Python execution.
+The feature deliberately excludes upward or root-relative navigation,
+selector-based access to unrelated specs, collection indexing, mapping
+traversal, function calls, ternary conditionals, chained comparisons,
+user-defined operators, and arbitrary Python execution. Boolean operators are
+available only in named assertions.
 
 ```etcm
 # Not supported
-@parent.hidden_size
-@root.training.batch_size
 @values[0]
 max(@a, @b)
 @a if @enabled else @b
-@a > 0 and @b > 0
+configs/model.etcm#Model:base
 ```
 
 The central distinction is:
@@ -306,4 +382,5 @@ The central distinction is:
 ```text
 A constraint asks whether a configured value is valid.
 A derived expression defines what the value is.
+A named assertion validates an explicit invariant owned by an object.
 ```

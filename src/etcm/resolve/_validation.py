@@ -5,7 +5,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, NoReturn, cast
 
-from etcm.ir import ComparisonConstraint, ParameterReference
+from etcm.ir import AssertionDef, ComparisonConstraint, ParameterReference
 from etcm.resolve._diagnostics import raise_error
 from etcm.resolve._parameters import resolved_parameter_value
 from etcm.resolve._types import (
@@ -24,9 +24,11 @@ from etcm.resolve.graph import (
 )
 from etcm.resolve.relations import (
     RelationEvaluationError,
+    evaluate_assertion_expression,
     evaluate_comparison,
     evaluate_expression,
     format_value,
+    render_assertion_expression,
     render_expression,
 )
 
@@ -57,6 +59,9 @@ def validate_graph(graph: ResolvedGraph) -> ResolvedGraph:
 
     for node in sorted(graph.nodes, key=lambda item: item.id):
         _validate_node_constraints(node, node_by_id)
+
+    for node in sorted(graph.nodes, key=lambda item: item.id):
+        _validate_node_assertions(node, node_by_id)
 
     return graph.with_validated(True)
 
@@ -278,6 +283,89 @@ def _validate_relational_constraint(
             "resolved_values": resolved_values,
             "evaluation": [substituted, simplified],
             "operator": constraint.operator,
+        },
+    )
+
+
+def _validate_node_assertions(
+    node: ResolvedNode,
+    node_by_id: Mapping[str, ResolvedNode],
+) -> None:
+    for assertion in node.assertions:
+        for index in range(len(assertion.predicates)):
+            _validate_assertion_predicate(
+                node=node,
+                assertion=assertion,
+                predicate_index=index,
+                node_by_id=node_by_id,
+            )
+
+
+def _validate_assertion_predicate(
+    *,
+    node: ResolvedNode,
+    assertion: AssertionDef,
+    predicate_index: int,
+    node_by_id: Mapping[str, ResolvedNode],
+) -> None:
+    predicate = assertion.predicates[predicate_index]
+    resolved_values: dict[str, Any] = {}
+    source_path = (
+        assertion.span.source_path if assertion.span is not None else node.source_path
+    )
+
+    def reference_value(reference: ParameterReference) -> Any:
+        resolved = resolved_parameter_value(
+            node=node,
+            node_by_id=node_by_id,
+            reference=reference,
+            required_by=node.graph_path,
+            source_path=source_path,
+            span=predicate.span,
+        )
+        resolved_values[".".join(reference.parts)] = _relation_detail_value(resolved)
+        return resolved
+
+    try:
+        valid = evaluate_assertion_expression(
+            predicate,
+            reference_value=reference_value,
+        )
+        substituted = render_assertion_expression(
+            predicate,
+            reference_value=reference_value,
+            substitute_values=True,
+        )
+    except RelationEvaluationError as exc:
+        raise_error(
+            "E_EXPRESSION_EVALUATION",
+            f"Could not evaluate assertion '{assertion.name}': {exc}",
+            source_path=source_path,
+            span=predicate.span,
+            graph_path=node.graph_path,
+            details={
+                "assertion": assertion.name,
+                "predicate_index": predicate_index,
+                "expression": predicate.raw,
+                "resolved_values": resolved_values,
+                **exc.details,
+            },
+        )
+
+    if valid:
+        return
+    raise_error(
+        "E_ASSERTION",
+        f"Assertion '{assertion.name}' failed.",
+        source_path=source_path,
+        span=predicate.span,
+        graph_path=node.graph_path,
+        details={
+            "assertion": assertion.name,
+            "predicate_index": predicate_index,
+            "expression": predicate.raw,
+            "resolved_values": resolved_values,
+            "evaluation": [substituted, "false"],
         },
     )
 
