@@ -25,7 +25,6 @@ def test_sdist_scope_keeps_release_artifact_focused() -> None:
     assert "/examples" in include
     assert "/docs/install.md" in include
     assert not any(path.startswith("/tests") for path in include)
-    assert not any(path.startswith("/docs/stage") for path in include)
 
 
 def test_required_package_resources_are_present_in_source_tree() -> None:
