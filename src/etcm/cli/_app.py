@@ -150,7 +150,10 @@ def _add_override_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--override-base",
         type=Path,
-        help="base directory for relative Path values and explicit selector paths",
+        help=(
+            "base directory for relative Path/File values and explicit "
+            "selector paths"
+        ),
     )
 
 
@@ -201,14 +204,17 @@ def _cmd_resolve(args: argparse.Namespace) -> int:
 
 def _cmd_load(args: argparse.Namespace) -> int:
     target = cast(ViewTarget, args.target)
-    loaded = _resolver_from_args(args).load(
-        str(args.selector),
-        target=target,
-        overrides=args.overrides,
-        force_overrides=bool(args.force_overrides),
-        override_base=args.override_base,
+    resolver = _resolver_from_args(args)
+    graph = resolver.validate(
+        resolver.resolve(
+            str(args.selector),
+            overrides=args.overrides,
+            force_overrides=bool(args.force_overrides),
+            override_base=args.override_base,
+        )
     )
-    write_json(loaded_json_payload(loaded))
+    loaded = resolver.convert(graph, target=target)
+    write_json(loaded_json_payload(loaded, graph=graph))
     return 0
 
 

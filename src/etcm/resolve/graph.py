@@ -14,6 +14,12 @@ from etcm.ir import (
     SourceSpan,
     TypeExpr,
 )
+from etcm.resolve._files import (
+    contains_file_type,
+    file_leaf_codec,
+    non_null_union_options,
+    type_allows_null,
+)
 
 
 @dataclass(frozen=True)
@@ -117,9 +123,13 @@ class ResolvedValue:
             override_base=None,
         )
 
-    def to_dict(self, path_base: Path | None = None) -> dict[str, Any]:
+    def to_dict(
+        self,
+        path_base: Path | None = None,
+        type_expr: TypeExpr | None = None,
+    ) -> dict[str, Any]:
         result = {
-            "value": _json_value(self.value, path_base),
+            "value": _resolved_value(self.value, type_expr, path_base),
             "origin": self.origin,
             "source_path": _path_to_string(self.source_path, path_base),
             "span": _span_to_dict(self.span),
@@ -202,10 +212,13 @@ class ResolvedNode:
                 for name, field_def in sorted(self.fields.items())
             },
             "field_values": {
-                name: value.to_dict(path_base)
+                name: value.to_dict(path_base, self.fields[name].type_expr)
                 for name, value in sorted(self.field_values.items())
             },
-            "values": _json_value(self.values, path_base),
+            "values": {
+                name: _resolved_value(value, self.fields[name].type_expr, path_base)
+                for name, value in sorted(self.values.items())
+            },
         }
         if self.assertions:
             result["assertions"] = [
@@ -277,6 +290,47 @@ def _json_value(value: Any, path_base: Path | None) -> Any:
     if isinstance(value, tuple | list):
         return [_json_value(item, path_base) for item in value]
     return value
+
+
+def _resolved_value(
+    value: Any,
+    type_expr: TypeExpr | None,
+    path_base: Path | None,
+) -> Any:
+    if type_expr is None or not contains_file_type(type_expr):
+        return _json_value(value, path_base)
+    codec = file_leaf_codec(type_expr)
+    if codec is not None:
+        if codec == "bytes":
+            return None
+        return value
+    if type_expr.kind == "union":
+        if value is None and type_allows_null(type_expr):
+            return None
+        non_null = non_null_union_options(type_expr)
+        if len(non_null) == 1:
+            return _resolved_value(value, non_null[0], path_base)
+        return value
+    if (
+        type_expr.kind == "generic"
+        and type_expr.name == "list"
+        and len(type_expr.args) == 1
+        and isinstance(value, list)
+    ):
+        return [
+            _resolved_value(item, type_expr.args[0], path_base) for item in value
+        ]
+    if (
+        type_expr.kind == "generic"
+        and type_expr.name == "dict"
+        and len(type_expr.args) == 2
+        and isinstance(value, Mapping)
+    ):
+        return {
+            str(key): _resolved_value(item, type_expr.args[1], path_base)
+            for key, item in value.items()
+        }
+    return _json_value(value, path_base)
 
 
 def _type_expr_to_dict(type_expr: TypeExpr) -> dict[str, Any]:

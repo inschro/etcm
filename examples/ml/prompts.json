@@ -1,0 +1,7 @@
+{
+  "system": "Answer training prompts precisely.",
+  "templates": [
+    "Summarize: {text}",
+    "Classify: {text}"
+  ]
+}

@@ -31,14 +31,21 @@ resolve/validate/convert convenience.
 - implementation inheritance applies parent values before local assignments
 - `$field` refs materialize graph edges and node values
 - `Path` values resolve relative to the file where the value was declared
+- `File[str]`, `File[bytes]`, `File[json]`, and `File[yaml]` paths are
+  materialized after effective overrides are composed, relative to the source
+  that declared each path
 
 ## Type Rules
 
-- `str`, `int`, `float`, `bool`, `null`, and `Path` are primitive types
+- `str`, `int`, `float`, `bool`, `null`, and `Path` are scalar types
+- `File[str]`, `File[bytes]`, `File[json]`, and `File[yaml]` are opaque,
+  file-backed leaf types
 - `float` accepts integer and float literals
 - `int` does not accept booleans
 - `list[T]`, `dict[str, T]`, and unions are checked structurally
-- named non-primitive fields require references
+- file leaves declare exactly one codec and compose recursively in lists and
+  dictionary values; filename suffixes never select a codec
+- named spec/object fields require references
 - referenced implementations must be assignable through spec inheritance
 - fields without defaults must be supplied by inheritance or local assignment
 

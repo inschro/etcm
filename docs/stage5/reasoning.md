@@ -30,14 +30,20 @@ cross-file implementation selection.
 
 ## Type Checking
 
-Stage 5 checks primitives, containers, unions, named references, and `Path`.
-Named non-primitive fields require reference assignments so object identity and
-dependency edges remain explicit in the graph.
+Stage 5 checks scalars, containers, unions, named references, `Path`, and
+typed text, byte, JSON, and YAML files. Named object fields require reference
+assignments so object identity and dependency edges remain explicit in the
+graph.
 
 `Path` is intentionally a first-class type. It resolves relative to the file
 where the value was declared and records resolution metadata. Field metadata can
 force existing paths, allow missing paths, delegate existence policy to the
 resolver, and constrain expected path kind.
+
+`File[str]`, `File[bytes]`, `File[json]`, and `File[yaml]` are intentionally
+links rather than embedded schemas. Their paths retain the declaring value's
+base through override composition and are loaded only once the effective value
+is known. Materialized content is opaque to relations and deep overrides.
 
 ## Override Policy
 

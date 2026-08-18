@@ -11,6 +11,8 @@ Validation owns semantic config correctness after graph construction.
 - reference cycles
 - invalid override declarations, including unknown policies, incompatible
   policy types, and `deny` without an inline default
+- invalid `File[...]` type shapes, missing files, UTF-8 decode failures, and
+  JSON/YAML parse failures
 
 `validate(graph)` owns:
 
@@ -23,6 +25,11 @@ Validation owns semantic config correctness after graph construction.
 - path existence and kind policy checks
 - non-path field constraints
 - named object assertions after derived values and field constraints are valid
+
+Materialized file content is deliberately not part of ETCM validation.
+Relations, assertions, deep overrides, and direct constraints do not traverse a
+`File[...]` leaf. Constraints on an ETCM-owned surrounding list or
+dictionary still apply to that container.
 
 Stage 6 supported non-path constraints:
 

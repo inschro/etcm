@@ -20,6 +20,7 @@ classifiers = [
 dependencies = [
     "lark>=1.3",
     "pydantic>=2.13",
+    "ruamel.yaml>=0.19.1,<0.20",
 ]
 
 [project.scripts]
@@ -48,6 +49,7 @@ include = [
     "/examples",
     "/docs/install.md",
     "/docs/cli.md",
+    "/docs/file-types.md",
     "/docs/parameter-relations.md",
     "/docs/manifest.md",
     "/docs/product_spec.md",

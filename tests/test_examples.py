@@ -36,3 +36,5 @@ def test_ml_example_loads_as_dict() -> None:
     assert cfg["model"] == {"name": "tiny-lm", "layers": 4, "hidden_size": 128}
     assert cfg["runtime"]["accelerator"] == "cpu"
     assert cfg["runtime"]["checkpoint_dir"].endswith("examples/ml/outputs/local")
+    assert cfg["system_prompt"] == "Answer each training request precisely and concisely.\n"
+    assert cfg["artifact"] == b"ETCM example binary artifact\n"

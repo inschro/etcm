@@ -10,6 +10,12 @@ from pydantic import ConfigDict, Field, create_model
 
 from etcm._contracts import ViewTarget
 from etcm.ir import TypeExpr
+from etcm.resolve._files import (
+    contains_file_type,
+    file_leaf_codec,
+    non_null_union_options,
+    type_allows_null,
+)
 from etcm.resolve.graph import ResolvedField, ResolvedGraph, ResolvedNode
 
 
@@ -95,7 +101,7 @@ class _Materializer:
             if target is not None:
                 payload[field_name] = self._node_to_dict(self._nodes[target])
             else:
-                payload[field_name] = _json_compatible(value)
+                payload[field_name] = _dict_value(value, node.fields[field_name].type_expr)
         return payload
 
     def _node_to_object_values(self, node: ResolvedNode, *, mode: ViewTarget) -> dict[str, Any]:
@@ -182,8 +188,15 @@ class _Materializer:
 def _annotation_from_type(type_expr: TypeExpr) -> Any:
     if type_expr.kind == "union":
         union_type = cast(Any, Union)
-        return union_type.__getitem__(tuple(_annotation_from_type(arg) for arg in type_expr.args))
+        return union_type[tuple(_annotation_from_type(arg) for arg in type_expr.args)]
     if type_expr.kind == "generic":
+        if type_expr.name == "File" and len(type_expr.args) == 1:
+            codec_type = type_expr.args[0]
+            if codec_type.kind == "named" and codec_type.name == "str":
+                return str
+            if codec_type.kind == "named" and codec_type.name == "bytes":
+                return bytes
+            return Any
         if type_expr.name == "list" and len(type_expr.args) == 1:
             return list[_annotation_from_type(type_expr.args[0])]
         if type_expr.name == "dict" and len(type_expr.args) == 2:
@@ -251,6 +264,38 @@ def _json_compatible(value: Any) -> Any:
     if isinstance(value, tuple | list):
         return [_json_compatible(item) for item in value]
     return value
+
+
+def _dict_value(value: Any, type_expr: TypeExpr) -> Any:
+    if file_leaf_codec(type_expr) is not None:
+        return value
+    if type_expr.kind == "union" and contains_file_type(type_expr):
+        if value is None and type_allows_null(type_expr):
+            return None
+        non_null = non_null_union_options(type_expr)
+        if len(non_null) == 1:
+            return _dict_value(value, non_null[0])
+        return value
+    if (
+        type_expr.kind == "generic"
+        and type_expr.name == "list"
+        and len(type_expr.args) == 1
+        and isinstance(value, list)
+        and contains_file_type(type_expr)
+    ):
+        return [_dict_value(item, type_expr.args[0]) for item in value]
+    if (
+        type_expr.kind == "generic"
+        and type_expr.name == "dict"
+        and len(type_expr.args) == 2
+        and isinstance(value, Mapping)
+        and contains_file_type(type_expr)
+    ):
+        return {
+            str(key): _dict_value(item, type_expr.args[1])
+            for key, item in value.items()
+        }
+    return _json_compatible(value)
 
 
 def _identifier(value: str) -> str:

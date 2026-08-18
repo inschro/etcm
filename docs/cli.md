@@ -39,9 +39,10 @@ The option sets the resolver default for `Path` fields whose field metadata uses
 `--set` uses ETCM literals with a bare-string fallback and accepts deep paths
 through inline objects and selected references. `--force-overrides` authorizes
 replacement of `force_only` fields but never bypasses `deny`. Relative external
-`Path` values and explicit reference selector paths use `--override-base`,
-which defaults to the current working directory. `validate-all` deliberately
-does not accept these three options. See [Overrides](overrides.md).
+`Path` values, `File[...]` paths, and explicit reference selector
+paths use `--override-base`, which defaults to the current working directory.
+`validate-all` deliberately does not accept these three options. See
+[Overrides](overrides.md).
 
 ## Output
 
@@ -66,6 +67,19 @@ does not accept these three options. See [Overrides](overrides.md).
 CLI output is always text. `load --target dataclass` and
 `load --target pydantic` still serialize to JSON after building the selected
 runtime object.
+
+Safe YAML can produce native Python values such as dates, sets, binary values,
+or mappings with non-string keys. Python views preserve them. If a resolved
+file contains a value outside the standard JSON model, graph and
+loaded-config JSON output fails with `E_SERIALIZATION` and identifies the
+offending output path; ETCM does not stringify it. `validate --short` does not
+serialize the graph and can therefore succeed. See
+[Typed Files](file-types.md).
+
+`File[bytes]` is the deliberate exception: Python values retain exact bytes,
+while graph and CLI JSON project each typed byte-file leaf to `null`, including
+inside lists and dictionaries. This does not apply to arbitrary bytes nested in
+YAML or other values.
 
 ETCM diagnostics are printed to stderr and exit with code `1`. Invalid CLI
 usage follows normal `argparse` behavior.

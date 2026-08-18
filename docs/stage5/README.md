@@ -11,7 +11,7 @@ Stage 5 should leave the project with:
 - resolver graph dataclasses and deterministic JSON summaries
 - selector loading relative to declaring files
 - `$spec`, spec inheritance, implementation inheritance, and refs
-- primitive, container, union, named-ref, and `Path` type checks
+- scalar, container, union, named-ref, `Path`, and `File[T]` type checks
 - override policy checks for inherited values
 - path existence and kind validation
 - resolver-owned diagnostics and fixtures

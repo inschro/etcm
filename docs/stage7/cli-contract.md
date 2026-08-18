@@ -43,5 +43,12 @@ All commands accept:
 
 ETCM diagnostics are printed to stderr and return exit code `1`.
 
+Structured output that contains a decoder-native YAML value outside the standard
+JSON model fails with `E_SERIALIZATION`; values are not stringified. Short
+validation output does not cross this JSON boundary.
+
+Typed `File[bytes]` leaves project to JSON `null` instead of failing. Python
+views retain their exact bytes; untyped or YAML-native bytes still fail.
+
 Invalid command usage follows normal `argparse` behavior and exits with code
 `2`.

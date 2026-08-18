@@ -66,6 +66,12 @@ The target field may be declared before or after the relation. A reference must
 end at a scalar leaf; referring to an object as the expression value is an
 error. A scalar cannot be traversed further.
 
+`File[...]` values are opaque file leaves, not relation scalars or typed ETCM
+objects. This includes `File[str]` even though its materialized Python value is
+a string. A relation cannot terminate at or traverse into file contents. Model
+values that need cross-parameter validation as ordinary ETCM fields or a typed
+spec reference instead.
+
 Named assertions use the same anchor. An assertion declared in a spec can read
 any scalar descendant of that spec, including values reached through typed
 references in other files. An assertion inside an inline object starts at that
@@ -311,14 +317,15 @@ The observable pipeline is:
 ```text
 1. Resolve explicit implementation values and object references.
 2. Apply defaults and implementation inheritance.
-3. Compute derived parameters.
-4. Validate field and reference types.
-5. Validate paths, atomic metadata, and relational constraints.
-6. Evaluate named assertions.
-7. Produce the validated configuration.
+3. Load effective typed files.
+4. Compute derived parameters.
+5. Validate field and reference types.
+6. Validate paths, atomic metadata, and relational constraints.
+7. Evaluate named assertions.
+8. Produce the validated configuration.
 ```
 
-`resolve()` performs steps 1–3 and returns an unvalidated graph whose derived
+`resolve()` performs steps 1–4 and returns an unvalidated graph whose derived
 values are already inspectable. `validate()` performs the remaining checks.
 Missing values needed by a derivation fail during resolution.
 

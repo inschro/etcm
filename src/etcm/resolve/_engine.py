@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -8,6 +9,15 @@ from etcm.ir import FieldDef, LiteralValue, Selector, SourceSpan, TypeExpr
 from etcm.resolve._derivations import finalize_derivations
 from etcm.resolve._diagnostics import field_source_path as _field_source_path
 from etcm.resolve._diagnostics import raise_error as _raise
+from etcm.resolve._files import (
+    FileLoader,
+    contains_file_type,
+    file_leaf_codec,
+    non_null_union_options,
+    stage_file,
+    type_allows_null,
+    unstage_files,
+)
 from etcm.resolve._graph_builder import GraphBuilder as _GraphBuilder
 from etcm.resolve._graph_builder import NodeResult as _NodeResult
 from etcm.resolve._graph_builder import add_edge as _add_edge
@@ -76,6 +86,7 @@ class _ResolverState:
             impl_stack=(),
             ref_stack=(),
         )
+        self._finalize_files(builder)
         self._finalize_derivations(builder)
         builder.sources.update(self._spec_resolver.documents)
         return builder.to_graph()
@@ -309,6 +320,34 @@ class _ResolverState:
         builder: _GraphBuilder | None,
         value_base: Path | None = None,
     ) -> Any:
+        file_codec = file_leaf_codec(expected)
+        if file_codec is not None:
+            if literal.kind == "null" and type_allows_null(expected):
+                return None
+            return stage_file(
+                raw_value=_literal_plain_value(literal),
+                literal_kind=literal.kind,
+                codec=file_codec,
+                source_path=source_path,
+                span=span,
+                value_base=value_base,
+            )
+        if expected.kind == "union" and contains_file_type(expected):
+            if literal.kind == "null" and type_allows_null(expected):
+                return None
+            non_null = non_null_union_options(expected)
+            if len(non_null) != 1:
+                raise AssertionError("file union was not validated")
+            return self._materialize_literal(
+                literal=literal,
+                expected=non_null[0],
+                field=field,
+                source_path=source_path,
+                span=span,
+                graph_path=graph_path,
+                builder=builder,
+                value_base=value_base,
+            )
         if _type_accepts_path(expected) and literal.kind == "string":
             return self._materialize_path(
                 literal,
@@ -354,6 +393,36 @@ class _ResolverState:
                 for key, value in literal.value
             }
         return _literal_plain_value(literal)
+
+    def _finalize_files(self, builder: _GraphBuilder) -> None:
+        loader = FileLoader()
+        for node_id, node in tuple(builder.nodes.items()):
+            values = dict(node.field_values)
+            changed = False
+            for field_name, field in node.fields.items():
+                if not contains_file_type(field.type_expr):
+                    continue
+                resolved = values.get(field_name)
+                if resolved is None or resolved.ref_target is not None:
+                    continue
+                graph_path = f"{node.graph_path}.{field_name}"
+                values[field_name] = replace(
+                    resolved,
+                    value=loader.materialize(
+                        resolved.value,
+                        field.type_expr,
+                        graph_path=graph_path,
+                    ),
+                    previous_value=unstage_files(resolved.previous_value),
+                    local_value=unstage_files(resolved.local_value),
+                )
+                changed = True
+            if changed:
+                builder.nodes[node_id] = replace(
+                    node,
+                    field_values=values,
+                    values={name: value.value for name, value in values.items()},
+                )
 
     def _materialize_path(
         self,

@@ -19,6 +19,11 @@ from etcm.ir import (
 )
 from etcm.resolve._derivations import derived_cycle, expression_contains_current
 from etcm.resolve._diagnostics import field_source_path, raise_error
+from etcm.resolve._files import (
+    FileTypeError,
+    file_leaf_codec,
+    validate_file_type,
+)
 from etcm.resolve._overrides import validate_override_policy
 from etcm.resolve._selectors import normalize_selector, selector_text
 from etcm.resolve._types import type_text
@@ -341,6 +346,36 @@ class SpecResolver:
     ) -> None:
         for field in fields.values():
             validate_override_policy(field, source_path)
+            if field.ref_selector is None and not field.fields:
+                try:
+                    validate_file_type(field.type_expr)
+                except FileTypeError as exc:
+                    raise_error(
+                        "E_TYPE_MISMATCH",
+                        f"Invalid file type for field '{field.name}': {exc}",
+                        source_path=field_source_path(field, source_path),
+                        span=field.span,
+                        details={
+                            "field": field.name,
+                            "reason": exc.reason,
+                            **exc.details,
+                        },
+                    )
+            if file_leaf_codec(field.type_expr) is not None and (
+                field.constraints or field.metadata
+            ):
+                raise_error(
+                    "E_TYPE_MISMATCH",
+                    f"File field '{field.name}' cannot validate decoded content.",
+                    source_path=field_source_path(field, source_path),
+                    span=field.span,
+                    details={
+                        "field": field.name,
+                        "reason": "file_content_constraint",
+                        "constraints": [constraint.raw for constraint in field.constraints],
+                        "metadata": sorted(field.metadata),
+                    },
+                )
 
             def reference_type(
                 reference: ParameterReference,

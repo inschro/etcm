@@ -5,11 +5,18 @@ repeat resolver logic.
 
 ## dict
 
-`target="dict"` returns a JSON-compatible nested payload.
+`target="dict"` returns a nested Python payload.
 
 - references become nested dictionaries
 - `Path` values become POSIX strings
+- file leaves retain materialized Python values unchanged, including `str` and
+  `bytes`
 - graph metadata stays in `ResolvedGraph`, not in the payload
+
+Ordinary ETCM values remain JSON-compatible. Safe YAML may contain native
+values outside the JSON model; serialization is checked only at an actual JSON
+output boundary. Typed `File[bytes]` leaves project to `null` at that boundary;
+the Python dict itself retains bytes.
 
 ## dataclass
 
@@ -17,6 +24,8 @@ repeat resolver logic.
 
 - references become nested dataclass instances
 - `Path` values remain `Path`
+- `File[str]` and `File[bytes]` are annotated `str` and `bytes`; structured
+  file leaves remain unchanged and are annotated `Any`
 - generated classes are implementation details
 
 ## pydantic
@@ -26,6 +35,8 @@ repeat resolver logic.
 - models are built with `create_model()`
 - model config is frozen and `extra="forbid"`
 - references become nested Pydantic objects
+- `File[str]` and `File[bytes]` are annotated `str` and `bytes`; structured
+  file leaves remain unchanged and are annotated `Any`
 - representable constraints are mirrored into Pydantic fields
 - named assertions remain ETCM validation rules and are listed in schema
   summaries rather than installed as Pydantic model validators

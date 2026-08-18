@@ -303,6 +303,40 @@ computed by ETCM during resolution and cannot be assigned by an implementation.
 See [Parameter Relations](parameter-relations.md) for the complete expression,
 assertion, dotted-path, type, cycle, timing, and diagnostic contract.
 
+## Typed Files
+
+`File[T]` is a file-backed type. The ETCM value is a local path string; the
+resolved Python value is decoded with codec `T`:
+
+```etcm
+spec TrainConfig:
+  prompt: File[str] = "system.txt"
+  tokenizer: File[bytes] = "tokenizer.model"
+  prompts: File[json] = "prompts.json"
+  launcher: File[yaml] = "launcher.yaml"
+  inputs: list[File[json]] = ["train.json", "eval.json"]
+```
+
+`File[str]` reads strict UTF-8 text and `File[bytes]` returns exact bytes. Every
+`File[T]` declares one exact codec and ignores the filename suffix; codec unions
+are never inferred or dispatched. Nullability and containers remain outside
+`File[...]`: `File[bytes] | null` and `list[File[str]]` are valid, while
+`File[json | yaml]`, `File[json | null]`, and `File[json] | File[yaml]` are
+rejected. Bare `bytes`, `json`, and `yaml` field types are also rejected.
+
+Paths use the declaring ETCM source as their base. External override paths use
+`override_base`. All inheritance, append/merge composition, and external
+overrides finish before files are opened, so values that were replaced are
+never loaded.
+
+The contents form an opaque boundary: relations, assertions, deep overrides,
+and direct field constraints cannot inspect them. ETCM validates the file link
+and syntax but does not impose a content schema. Safe YAML 1.2 values are
+preserved in Python, including decoder-native values that standard JSON cannot
+represent. Typed `File[bytes]` leaves project to `null` at JSON boundaries;
+other non-JSON values fail explicitly rather than being normalized.
+See [Typed Files](file-types.md) for the full contract.
+
 ## Path Fields
 
 `Path` is a first-class v0 type, not just a string convention.
@@ -450,7 +484,7 @@ V0 generated representations:
 
 - `pydantic`: default Python validation and object-style runtime view
 - `dataclass`: lightweight typed object view
-- `dict`: JSON/YAML-compatible resolved payload
+- `dict`: nested Python payload preserving native file values
 - `resolve`: node and edge metadata for inspection and tooling
 
 Pydantic is the first target because it already gives Python projects strong

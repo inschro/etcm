@@ -187,6 +187,27 @@ Why ETCM helps:
 - the resolver can make delegated path fields permissive locally and strict in
   CI
 
+### Typed File Inputs
+
+```etcm
+spec TrainInputs:
+  system_prompt: File[str] = "system.txt"
+  tokenizer: File[bytes] = "tokenizer.model"
+  prompts: File[json] = "prompts.json"
+  launcher: File[yaml] = "launcher.yaml"
+  datasets: list[File[json]] = ["train.json", "eval.json"]
+```
+
+Why ETCM helps:
+
+- callers receive decoded values instead of repeating path resolution and
+  decoding in application code
+- text, byte, and structured codecs are explicit, with no filename-based
+  inference
+- config and external override paths retain their respective source bases
+- decoded contents remain opaque rather than an escape hatch for untyped graph
+  traversal or arbitrary relations
+
 ### Reusable Infrastructure Components
 
 ```etcm
@@ -216,7 +237,9 @@ V0 should include:
 - YAML-style comments outside selector positions and quoted strings
 - top-level `$spec` reuse for implementation-only files
 - spec inheritance and `$spec` references by exact spec selector
-- primitive types: `str`, `int`, `float`, `bool`, `null`, `Path`
+- scalar types: `str`, `int`, `float`, `bool`, `null`, `Path`
+- typed `File[str]`, `File[bytes]`, `File[json]`, and `File[yaml]` values,
+  including recursive list/dictionary containers
 - containers: `list[T]`, `dict[K, V]`
 - field-level path validation with `path_exists` and `path_kind`
 - resolver-level default path existence policy
@@ -250,6 +273,8 @@ ETCM is useful when a user can:
 - write implementation-only files with top-level `$spec`
 - compose implementations across files with typed refs
 - validate path fields with field-level and resolver-level existence policy
+- load source-relative JSON and safe YAML documents without application-side
+  path resolution or parsing
 - get a precise error for a bad reference or invalid override
 - express cross-parameter invariants and computed values without executing Python
 - load a Pydantic object without writing a Pydantic schema by hand

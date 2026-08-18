@@ -93,6 +93,24 @@ spec TrainingConfig:
 See [Parameter Relations](docs/parameter-relations.md) for dotted-reference,
 derived-value, named-assertion, type, evaluation, and diagnostic semantics.
 
+Text, binary, JSON, and YAML inputs can be linked as typed files:
+
+```etcm
+spec Train:
+  system_prompt: File[str] = "path/to/system.txt"
+  tokenizer: File[bytes] = "path/to/tokenizer.model"
+  prompts: File[json] = "path/to/prompts.json"
+  launcher: File[yaml] = "path/to/launcher.yaml"
+  inputs: list[File[json]] = ["train.json", "eval.json"]
+```
+
+`File[str]` reads strict UTF-8 text, `File[bytes]` preserves exact bytes, and
+the structured codecs decode JSON or safe YAML 1.2. Every `File[T]` names one
+exact codec; ETCM never infers it from the filename. Paths are source-relative,
+overrides are applied before loading, and ETCM keeps materialized contents
+opaque to relations and deep overrides. Typed byte files become `null` only at
+JSON output boundaries. See [Typed Files](docs/file-types.md).
+
 Typing note: `load()` and `convert()` return `Any`. ETCM validates the config
 before materializing it, but the returned object is a dynamic boundary for
 pyright, Pylance, and mypy. This makes attribute access ergonomic without
@@ -140,13 +158,14 @@ python -c 'from etcm import load; print(load("examples/ml/train.etcm#TrainRun:sm
 
 This repository includes the parser, resolver, generated-view API, thin CLI,
 standalone packaging, examples, typed parameter relations, named downward
-assertions, and equivalent dotted or indented field paths for declarations and
-implementations.
+assertions, typed file-backed values, and equivalent dotted or indented
+field paths for declarations and implementations.
 
 - [Manifest](docs/manifest.md)
 - [Product Spec](docs/product_spec.md)
 - [Install Guide](docs/install.md)
 - [CLI Reference](docs/cli.md)
+- [Typed Files](docs/file-types.md)
 - [Parameter Relations](docs/parameter-relations.md)
 - [Overrides](docs/overrides.md)
 - [Implementation Roadmap](docs/roadmap.md)

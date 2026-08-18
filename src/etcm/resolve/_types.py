@@ -13,6 +13,13 @@ def value_matches_type(value: Any, type_expr: TypeExpr) -> bool:
     if type_expr.kind == "union":
         return any(value_matches_type(value, option) for option in type_expr.args)
     if type_expr.kind == "generic":
+        if type_expr.name == "File" and len(type_expr.args) == 1:
+            codec_type = type_expr.args[0]
+            if codec_type.kind == "named" and codec_type.name == "str":
+                return isinstance(value, str)
+            if codec_type.kind == "named" and codec_type.name == "bytes":
+                return isinstance(value, bytes)
+            return True
         if type_expr.name == "list" and isinstance(value, list) and len(type_expr.args) == 1:
             return all(value_matches_type(item, type_expr.args[0]) for item in value)
         if type_expr.name == "dict" and isinstance(value, dict) and len(type_expr.args) == 2:

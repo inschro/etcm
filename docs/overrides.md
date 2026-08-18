@@ -132,8 +132,9 @@ not yet set. An explicit selector path is resolved from `override_base`.
 
 ## Relative Paths
 
-External `Path` values and explicit reference selector paths are resolved from
-`override_base`. It defaults to the process's current working directory:
+External `Path` values, `File[...]` paths, and explicit reference
+selector paths are resolved from `override_base`. It defaults to the process's
+current working directory:
 
 ```python
 cfg = load(
@@ -150,6 +151,12 @@ etcm load "$selector" \
   --override-base /srv/project \
   --set checkpoint=runs/latest.ckpt
 ```
+
+Typed files are opened only after local and external overrides are fully
+composed. A replaced file default is never read. With `append` or `merge`, each
+file path keeps the base of the source that contributed it. Decoded contents
+are not valid deep-override targets; only the ETCM field or an
+ETCM-owned surrounding container can be overridden.
 
 ## Override Policies
 
@@ -185,9 +192,10 @@ The visible order is:
 1. Resolve defaults and implementation inheritance.
 2. Apply local implementation patches.
 3. Apply external Python or CLI patches.
-4. Recompute derived parameters.
-5. Validate types, policies, paths, and constraints.
-6. Materialize the requested view.
+4. Load effective typed files.
+5. Recompute derived parameters.
+6. Validate types, policies, paths, and constraints.
+7. Materialize the requested view.
 ```
 
 External leaf values have `origin="external"` in the resolved graph. Their

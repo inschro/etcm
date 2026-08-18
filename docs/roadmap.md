@@ -222,7 +222,8 @@ Generated views:
 
 - `target="pydantic"` returns generated Pydantic models
 - `target="dataclass"` returns generated dataclasses
-- `target="dict"` returns a JSON-compatible payload
+- `target="dict"` returns a nested Python payload; ordinary ETCM values are
+  JSON-compatible, while typed files may retain decoder-native values
 
 Acceptance:
 
@@ -326,11 +327,45 @@ Acceptance:
 - named assertions see final derived and overridden values, inherit without
   replacement, and report their config-defined name on failure
 
-## Phase 10: Bridges And Adoption
+## Phase 10: Typed Files
+
+Load local data documents without moving path resolution or parsing into
+application code. The complete contract lives in [file-types.md](file-types.md).
+
+Deliverables:
+
+- strict UTF-8 `File[str]`, exact `File[bytes]`, `File[json]`, and safe YAML 1.2
+  `File[yaml]` leaf types
+- one explicit codec per file leaf, with no suffix-based inference
+- recursive `list` and string-keyed `dict` composition around file leaves
+- declaring-source and external-override path bases
+- deferred loading after inheritance and overrides
+- native Python values and precise generated annotations in dict, dataclass,
+  Pydantic, and graph views
+- structured file-load and JSON-serialization diagnostics
+
+Acceptance:
+
+- exact codecs ignore filename suffixes and always use their declared decoder
+- codec unions inside `File[...]` are rejected; nullability and containers
+  remain outside
+- bare codec names and non-null outer unions are rejected
+- replaced defaults are not opened, while appended/merged paths retain their
+  individual source bases
+- parameter relations, assertions, direct constraints, and deep overrides do
+  not traverse decoded contents
+- byte files remain bytes in Python and project to null at typed JSON boundaries
+- safe YAML-native values are preserved in Python and fail clearly at the CLI
+  JSON boundary when otherwise not representable
+- remote fetch, watch/reload, content schema validation, and file provenance
+  remain outside the feature
+
+## Phase 11: Bridges And Adoption
 
 Only after ETCM is easy to install into another project:
 
-- import a subset of YAML registry files like the ANF builder uses
+- generate ETCM skeletons from a subset of YAML registry files like the ANF
+  builder uses
 - generate `.etcm` skeletons from Pydantic models
 - export JSON Schema from ETCM specs
 - add a migration guide for Hydra/OmegaConf users
