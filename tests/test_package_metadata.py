@@ -21,10 +21,18 @@ def test_sdist_scope_keeps_release_artifact_focused() -> None:
     include = set(_pyproject()["tool"]["hatch"]["build"]["targets"]["sdist"]["include"])
 
     assert "/LICENSE" in include
+    assert "/zensical.toml" in include
     assert "/src/etcm" in include
     assert "/examples" in include
-    assert "/docs/install.md" in include
+    assert "/documentation" in include
+    assert not any(path.startswith("/docs") for path in include)
     assert not any(path.startswith("/tests") for path in include)
+
+
+def test_docs_extra_pins_zensical_compatibly() -> None:
+    project = _pyproject()["project"]
+
+    assert project["optional-dependencies"]["docs"] == ["zensical>=0.0.51,<0.1"]
 
 
 def test_required_package_resources_are_present_in_source_tree() -> None:

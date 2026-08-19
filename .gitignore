@@ -5,4 +5,5 @@ __pycache__/
 .basedpyright/
 dist/
 build/
+site/
 *.egg-info/

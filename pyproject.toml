@@ -32,6 +32,9 @@ dev = [
     "pytest",
     "ruff",
 ]
+docs = [
+    "zensical>=0.0.51,<0.1",
+]
 
 [build-system]
 requires = ["hatchling"]
@@ -45,14 +48,10 @@ include = [
     "/LICENSE",
     "/README.md",
     "/pyproject.toml",
+    "/zensical.toml",
     "/src/etcm",
     "/examples",
-    "/docs/install.md",
-    "/docs/cli.md",
-    "/docs/file-types.md",
-    "/docs/parameter-relations.md",
-    "/docs/manifest.md",
-    "/docs/product_spec.md",
+    "/documentation",
 ]
 
 [tool.ruff]

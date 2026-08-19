@@ -1,5 +1,11 @@
 # ETCM
 
+[![Documentation](https://github.com/inschro/etcm/actions/workflows/docs.yml/badge.svg)](
+https://github.com/inschro/etcm/actions/workflows/docs.yml)
+
+[Documentation](https://inschro.github.io/etcm/) ·
+[Documentation source](documentation/index.md)
+
 ETCM is Typed Configuration Markup: a configuration language for defining,
 validating, composing, and executing reproducible systems.
 
@@ -90,8 +96,9 @@ spec TrainingConfig:
     )
 ```
 
-See [Parameter Relations](docs/parameter-relations.md) for dotted-reference,
-derived-value, named-assertion, type, evaluation, and diagnostic semantics.
+See [Validation and derived values](documentation/guides/validation.md) for
+dotted-reference, derived-value, named-assertion, type, evaluation, and diagnostic
+semantics.
 
 Text, binary, JSON, and YAML inputs can be linked as typed files:
 
@@ -109,7 +116,7 @@ the structured codecs decode JSON or safe YAML 1.2. Every `File[T]` names one
 exact codec; ETCM never infers it from the filename. Paths are source-relative,
 overrides are applied before loading, and ETCM keeps materialized contents
 opaque to relations and deep overrides. Typed byte files become `null` only at
-JSON output boundaries. See [Typed Files](docs/file-types.md).
+JSON output boundaries. See [Typed files](documentation/guides/typed-files.md).
 
 Typing note: `load()` and `convert()` return `Any`. ETCM validates the config
 before materializing it, but the returned object is a dynamic boundary for
@@ -131,8 +138,8 @@ etcm load configs/train.etcm#TrainRun:smoke --set data.sampler.seed=42
 
 Python mappings, `PATH=VALUE` string lists, implementation assignments, and CLI
 `--set` flags all use the same deep override semantics and spec-owned policies.
-See [Overrides](docs/overrides.md) for reference replacement, relative path,
-force authorization, and audit behavior.
+See [Overrides](documentation/guides/overrides.md) for reference replacement,
+relative path, force authorization, and audit behavior.
 
 ## Install
 
@@ -161,10 +168,29 @@ standalone packaging, examples, typed parameter relations, named downward
 assertions, typed file-backed values, and equivalent dotted or indented
 field paths for declarations and implementations.
 
-- [Manifest](docs/manifest.md)
-- [Product Spec](docs/product_spec.md)
-- [Install Guide](docs/install.md)
-- [CLI Reference](docs/cli.md)
-- [Typed Files](docs/file-types.md)
-- [Parameter Relations](docs/parameter-relations.md)
-- [Overrides](docs/overrides.md)
+- [Get started](documentation/getting-started/installation.md)
+- [Core concepts](documentation/guides/core-concepts.md)
+- [Composition](documentation/guides/composition.md)
+- [Validation and derived values](documentation/guides/validation.md)
+- [Overrides](documentation/guides/overrides.md)
+- [Typed files](documentation/guides/typed-files.md)
+- [Python API](documentation/reference/python-api.md)
+- [CLI reference](documentation/reference/cli.md)
+
+The internal [product spec](docs/product_spec.md) is retained separately from the
+published user documentation.
+
+## Documentation Development
+
+Install the documentation dependencies and start a live preview:
+
+```bash
+uv sync --extra docs
+uv run --extra docs zensical serve
+```
+
+Run the same strict build used by GitHub Actions:
+
+```bash
+uv run --extra docs zensical build --clean --strict
+```
