@@ -1,0 +1,18 @@
+spec ModelConfig:
+  name: str
+  hidden_size: int = 32 [>0]
+  layers: int = 2 [>0]
+  activation: str = "relu" [in ["relu", "gelu"]]
+  dropout: float = 0.0 [>=0; <1]
+
+  impl tiny:
+    name: "tiny-mlp"
+    hidden_size: 16
+    layers: 1
+
+  impl baseline <- :tiny:
+    name: "baseline-mlp"
+    hidden_size: 64
+    layers: 3
+    activation: "gelu"
+    dropout: 0.1

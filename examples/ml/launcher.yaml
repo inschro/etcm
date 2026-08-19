@@ -1,4 +1,0 @@
-backend: local
-environment:
-  OMP_NUM_THREADS: "1"
-retries: 0

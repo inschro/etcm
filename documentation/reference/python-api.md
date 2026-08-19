@@ -1,12 +1,12 @@
-# Python API
+# Python API reference
 
-The top-level `etcm` package exposes the normal load pipeline:
+The top-level package exposes the normal configuration pipeline:
 
 ```python
 from etcm import OverrideInput, Resolver, convert, load, resolve, validate
 ```
 
-## One-step loading
+## `load()`
 
 ```python
 def load(
@@ -20,39 +20,39 @@ def load(
 ) -> Any: ...
 ```
 
-`load()` resolves, validates, and converts the selected implementation.
+`load()` resolves, validates, and converts one complete implementation selector:
 
 ```python
 from etcm import load
 
-cfg = load("configs/train.etcm#TrainRun:smoke")
-print(cfg.model.hidden_size)
+pet = load("pets.etcm#Pet:pepper")
+print(pet.name)
 ```
 
 Targets:
 
 | Target | Result |
 | --- | --- |
-| `pydantic` | Generated Pydantic model hierarchy |
+| `pydantic` | Generated Pydantic model hierarchy; default |
 | `dataclass` | Generated dataclass hierarchy |
-| `dict` | Nested mapping payload |
+| `dict` | Nested ordinary mapping |
 
 All targets are created only after successful validation.
 
 ## Staged pipeline
 
-Use the staged functions when you need to inspect or store the graph:
+Use the staged functions when a tool needs to inspect the graph:
 
 ```python
 from etcm import convert, resolve, validate
 
-graph = resolve("configs/train.etcm#TrainRun:smoke")
+graph = resolve("stays.etcm#Stay:pepper_weekend")
 assert graph.validated is False
 
 graph = validate(graph)
 assert graph.validated is True
 
-cfg = convert(graph, target="pydantic")
+stay = convert(graph, target="dict")
 ```
 
 ### `resolve()`
@@ -68,14 +68,9 @@ def resolve(
 ) -> ResolvedGraph: ...
 ```
 
-Resolution loads ETCM sources, selects specs and implementations, composes
-inheritance and references, applies overrides, loads effective typed files, and
-computes derived values. It returns an inspectable graph whose `validated` flag is
-false.
-
-Some failures necessarily occur during resolution, including syntax errors, missing
-selectors, inheritance cycles, invalid schemas, missing required inputs for a
-derivation, and derived-expression failures.
+Resolution selects and composes specs, implementations, inheritance, references,
+defaults, external overrides, typed files, and derived fields. The returned graph
+is inspectable but not validated.
 
 ### `validate()`
 
@@ -83,9 +78,9 @@ derivation, and derived-expression failures.
 def validate(graph: ResolvedGraph) -> ResolvedGraph: ...
 ```
 
-Validation checks resolved types, reference assignability, override policy,
-filesystem policy, field constraints, relational constraints, and named assertions.
-It returns a new graph with `validated == True`.
+Validation checks resolved types, reference assignability, paths, metadata, field
+constraints, and named assertions. It returns a new graph with
+`validated == True`.
 
 ### `convert()`
 
@@ -98,22 +93,24 @@ def convert(
 ) -> Any: ...
 ```
 
-Conversion normally requires a validated graph. `force=True` permits conversion of
-an unvalidated graph and should be reserved for inspection or specialized tooling;
-it does not perform validation.
+Conversion requires a validated graph unless `force=True`. Force conversion is
+for inspection; it does not perform or bypass validation successfully.
 
-## Resolver objects
+The exact stage ordering is documented in
+[resolution and validation](resolution.md).
 
-`Resolver` holds the default `Path` existence policy and exposes the same pipeline
+## `Resolver`
+
+`Resolver` stores the default path-existence policy and exposes the same pipeline
 as methods:
 
 ```python
 from etcm import Resolver
 
 resolver = Resolver(path_exists="must_exist")
-graph = resolver.resolve("configs/train.etcm#TrainRun:production")
+graph = resolver.resolve("stays.etcm#Stay:pepper_weekend")
 graph = resolver.validate(graph)
-cfg = resolver.convert(graph, target="dataclass")
+stay = resolver.convert(graph, target="dataclass")
 ```
 
 ```python
@@ -127,40 +124,32 @@ class Resolver:
     def load(...) -> Any: ...
 ```
 
-Use one resolver when multiple loads should share the same path policy. Each call
-still creates independent resolution state.
+Calls do not share mutable resolution state.
 
 ## Overrides
 
-`OverrideInput` accepts either a mapping or a sequence of strings:
+`OverrideInput` accepts a mapping or sequence of `PATH=VALUE` strings:
 
 ```python
 type OverrideInput = Mapping[str, Any] | Sequence[str]
 ```
 
 ```python
-from pathlib import Path
-
-from etcm import load
-
-cfg = load(
-    "configs/train.etcm#TrainRun:debug",
-    overrides={
-        "runtime.devices": 2,
-        "checkpoint": Path("runs/latest.ckpt"),
-    },
-    override_base="/srv/project",
+stay = load(
+    "stays.etcm#Stay:pepper_weekend",
+    target="dict",
+    overrides={"nights": 5},
 )
 ```
 
-Mapping values are normalized from native Python scalars, `Path`, lists, and
-string-keyed mappings. Sequence entries use `PATH=VALUE` and ETCM literal syntax.
-See the [override guide](../guides/overrides.md) for reference replacement, force
-authorization, and audit behavior.
+Mappings accept native Python scalar values, `Path`, lists, and string-keyed
+mappings. Sequence values use ETCM literal syntax. See the
+[override reference](overrides.md) for reference replacement, policy, and path
+base behavior.
 
-## Resolved graphs
+## Resolved graph
 
-Graph types are available from `etcm.resolve`:
+Graph types live in `etcm.resolve`:
 
 ```python
 from etcm.resolve import ResolvedEdge, ResolvedField, ResolvedGraph, ResolvedNode
@@ -172,60 +161,47 @@ Important `ResolvedGraph` attributes:
 | --- | --- |
 | `root_selector` | Canonical selected implementation |
 | `validated` | Whether validation completed |
-| `nodes` | Typed resolved object nodes |
-| `edges` | Relationships between nodes |
-| `sources` | ETCM source files used by the graph |
+| `nodes` | Resolved object nodes |
+| `edges` | Typed relationships between nodes |
+| `sources` | ETCM files used during resolution |
 | `path_resolution` | Resolved `Path` and typed-file path records |
 
-Serialize the graph to a JSON-compatible mapping with `to_dict()`:
+Serialize the graph for inspection:
 
 ```python
 payload = graph.to_dict()
 portable = graph.to_dict(path_base="/srv/project")
 ```
 
-`path_base` makes paths underneath that base relative in the output. Typed binary
-file values are projected to `null` at this JSON boundary; the Python graph retains
-the bytes.
+`path_base` makes paths below that directory relative in the output. The mapping
+is intended for JSON output; typed binary file values are represented as `null` at
+that boundary.
 
-Nodes expose field definitions, materialized values, source locations, assertion
-definitions, and per-field `ResolvedValue` audit records.
+Nodes expose their fields, resolved values, source identity, assertions, and
+per-field origin or override audit records.
 
-## Errors and diagnostics
+## Errors
 
-ETCM operational failures raise `ETCMError`:
+Operational failures raise `ETCMError`:
 
 ```python
 from etcm import load
 from etcm.errors import ETCMError
 
 try:
-    cfg = load("configs/train.etcm#TrainRun:production")
+    load("pets.etcm#Pet:missing")
 except ETCMError as exc:
-    diagnostic = exc.diagnostic
-    print(diagnostic.code)
-    print(diagnostic.message)
-    print(diagnostic.source_path)
-    print(diagnostic.line, diagnostic.column)
-    print(diagnostic.selector)
-    print(diagnostic.graph_path)
-    print(diagnostic.details)
+    print(exc.diagnostic.code)
+    print(exc.diagnostic.message)
 ```
 
-`Diagnostic` is immutable and may contain:
-
-- stable error code and human-readable message
-- source path and source span
-- selector and graph path
-- structured, error-specific details
-
-Invalid Python argument shapes and unsupported target or policy strings may raise
-`TypeError` or `ValueError` instead.
+`Diagnostic` is immutable and may include a source path and span, selector, graph
+path, and error-specific structured details. Invalid Python argument shapes or
+unsupported policy and target strings may raise `TypeError` or `ValueError`.
 
 ## Static typing boundary
 
-`load()` and `convert()` return `Any`. ETCM validates before materialization, but
-the generated runtime class is dynamic from the perspective of pyright, Pylance,
-and mypy. This keeps object-style access ergonomic, but static checkers cannot catch
-misspelled fields or incompatible usage after that boundary unless the consuming
-project supplies separate Python-visible types.
+`load()` and `convert()` return `Any` because ETCM creates the runtime model from
+the selected spec. ETCM validates the object, but a static checker cannot infer
+fields from a selector string. Consumers that require static field checking should
+define a separate Python-visible protocol or model at their application boundary.

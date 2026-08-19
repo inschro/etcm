@@ -15,15 +15,15 @@ nav = [
         { "Installation" = "getting-started/installation.md" },
         { "Quickstart" = "getting-started/quickstart.md" },
     ] },
-    { "Guides" = [
-        { "Core concepts" = "guides/core-concepts.md" },
-        { "Composition" = "guides/composition.md" },
-        { "Validation and derived values" = "guides/validation.md" },
-        { "Overrides" = "guides/overrides.md" },
-        { "Typed files" = "guides/typed-files.md" },
+    { "Understanding ETCM" = [
+        { "Basic tutorial" = "tutorials/basic.md" },
+        { "Advanced tutorial" = "tutorials/advanced.md" },
     ] },
     { "Reference" = [
         { "Language" = "reference/language.md" },
+        { "Resolution and validation" = "reference/resolution.md" },
+        { "Overrides" = "reference/overrides.md" },
+        { "File types" = "reference/files.md" },
         { "Python API" = "reference/python-api.md" },
         { "CLI" = "reference/cli.md" },
     ] },

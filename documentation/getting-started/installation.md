@@ -1,79 +1,73 @@
 # Installation
 
-ETCM is a pure Python package with an `etcm` console command. It requires Python
-3.12 or newer.
+ETCM requires Python 3.12 or newer. It provides both the `etcm` command and the
+Python package imported in the guides.
 
 !!! note "Release status"
 
-    ETCM is not currently published on the public Python Package Index. Install it
-    from a checkout, a built wheel, or its Git repository.
-
-## Install from a checkout
-
-Clone the repository and install the package into your active environment:
-
-```console
-$ git clone https://github.com/inschro/etcm.git
-$ cd etcm
-$ python -m pip install .
-```
-
-For development with [uv](https://docs.astral.sh/uv/):
-
-```console
-$ uv sync --extra dev
-```
+    ETCM is not yet published on PyPI. Install it from Git or from a repository
+    checkout.
 
 ## Install from Git
 
-Install the current default branch directly:
+Install the current default branch into an existing Python environment:
 
 ```console
 $ python -m pip install "git+https://github.com/inschro/etcm.git"
 ```
 
-Pin a tag or commit after the `@` when reproducibility matters:
+For a reproducible installation, replace the default branch with a tag or commit:
 
 ```console
 $ python -m pip install "git+https://github.com/inschro/etcm.git@<revision>"
 ```
 
-## Build and install a wheel
+## Work from a checkout
 
-From a repository checkout:
+Clone the repository when you want to run the examples, change ETCM itself, or
+build these docs:
 
 ```console
-$ uv build
-$ python -m pip install dist/etcm-0.1.0-py3-none-any.whl
+$ git clone https://github.com/inschro/etcm.git
+$ cd etcm
+$ uv sync --extra dev
 ```
 
-## Verify the installation
+Without `uv`, install the checkout with pip:
+
+```console
+$ python -m pip install .
+```
+
+## Check the installation
+
+The command should list four operations:
 
 ```console
 $ etcm --help
 usage: etcm [-h] {resolve,validate,validate-all,load} ...
 ```
 
-You can also verify the public Python entry point:
+The Python entry point should import from the same environment:
 
 ```console
 $ python -c 'from etcm import load; print(load)'
 ```
 
-Continue with the [quickstart](quickstart.md) to create and load your first ETCM
-configuration.
+Continue with the [quickstart](quickstart.md). It creates a complete ETCM file,
+validates it, and loads it from Python.
 
-## Preview these docs locally
+## Preview the documentation
 
-Documentation contributors can install the dedicated dependency extra and start
-Zensical's live preview server:
+Documentation contributors need the dedicated extra:
 
 ```console
 $ uv sync --extra docs
 $ uv run --extra docs zensical serve
 ```
 
-Open <http://localhost:8000>. To run the same strict build used by CI:
+The preview is available at <http://127.0.0.1:8000>. Run the same strict build as
+CI with:
 
 ```console
 $ uv run --extra docs zensical build --clean --strict

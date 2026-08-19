@@ -1,0 +1,11 @@
+spec RuntimeConfig:
+  device: str = "cpu" [in ["cpu", "cuda"]]
+  num_threads: int = 1 [>0]
+  output_dir: Path = "runs" [path_exists="allow_missing"; path_kind="dir"]
+
+  impl local:
+    output_dir: "runs/local"
+
+  impl cuda <- :local:
+    device: "cuda"
+    output_dir: "runs/cuda"

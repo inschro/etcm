@@ -1,43 +1,40 @@
 # Language reference
 
-This page is a compact reference for ETCM syntax. The guides explain the same
-features in context.
+This page is an exact syntax lookup. Start with the
+[quickstart](../getting-started/quickstart.md) or
+[basic tutorial](../tutorials/basic.md) if `spec`, `impl`, and selectors are new
+to you.
 
 ## Identifiers and indentation
 
 Spec, implementation, field, and assertion names start with a letter or underscore
-and continue with letters, digits, or underscores. Indentation is significant and
-must use spaces; tab indentation is invalid.
+and continue with letters, digits, or underscores.
+
+Indentation is significant and must use spaces. Tabs in indentation are invalid.
 
 ## Document forms
 
-An inline-spec document contains one or more specs:
+Most files declare one or more specs. Implementations are nested inside the spec
+they satisfy:
 
 ```text
-spec First:
-  value: int
+spec Pet:
+  name: str
 
-  impl default:
-    value: 1
-
-spec Second:
-  enabled: bool = true
+  impl pepper:
+    name: "Pepper"
 ```
 
-A spec-reuse document imports exactly one external spec and contains top-level
-implementations:
+A spec-reuse file imports one external spec and adds top-level implementations:
 
 ```text
-$spec: specs/base.etcm#Base
+$spec: pets.etcm#Pet
 
-impl first:
-  value: 1
-
-impl second:
-  value: 2
+impl luna:
+  name: "Luna"
 ```
 
-The two document forms cannot be mixed.
+A file cannot mix inline specs with top-level `$spec` reuse.
 
 ## Specs
 
@@ -46,228 +43,248 @@ spec Name:
   # fields, assertions, and implementations
 ```
 
-Spec inheritance uses `<-` and a spec selector:
+Spec inheritance uses `<-` with a spec selector:
 
 ```text
-spec Child <- parent.etcm#Parent:
-  child_field: str
+spec Dog <- animals.etcm#Animal:
+  favorite_walk_minutes: int
 ```
 
-A child adds fields and assertions. It cannot redefine an inherited field or reuse
-an inherited assertion name.
+A child adds fields and assertions. It cannot redefine an inherited field, replace
+an inherited assertion, or participate in an inheritance cycle.
 
 ## Fields
 
 ```text
 required: int
-with_default: int = 1
-derived: int := @required + @with_default
-validated: int [>0; <=100]
+with_default: int = 2
+derived: int := @required * @with_default
+constrained: int [>0; <=100]
 ```
 
-Multi-line derived expressions use an indented block:
+- No assignment means the field is required.
+- `=` declares a default.
+- `:=` declares a derived expression owned by the spec.
+- `[]` contains constraints and metadata separated by semicolons.
+
+### Nested fields
+
+Indentation and dotted declarations produce the same canonical field paths:
 
 ```text
-total: int :=
-  @first
-  + @second
-  + @third
+feeding:
+  meals_per_day: int = 2
+
+feeding.grams_per_meal: int
 ```
 
-Anonymous objects use indentation or dotted paths:
+Implementations accept the same two forms:
 
 ```text
-optimizer:
-  learning_rate: float = 0.001
-
-optimizer.weight_decay: float = 0.0
+impl pepper:
+  feeding:
+    grams_per_meal: 150
+  feeding.meals_per_day: 2
 ```
 
-A typed reference field begins with `$` and selects a spec:
-
-```text
-$model: models/model.etcm#Model
-$runtime.launcher: runtime/launcher.etcm#Launcher
-```
+A value cannot be assigned at a path that also has assigned descendants.
 
 ## Types
 
-| Syntax | Meaning |
+| Syntax | Accepted value |
 | --- | --- |
 | `str` | String |
-| `int` | Integer |
+| `int` | Integer, excluding Boolean values |
 | `float` | Integer or floating-point number |
-| `bool` | Boolean |
-| `null` | Null |
+| `bool` | `true` or `false` |
+| `null` | `null` |
 | `Path` | Filesystem path |
 | `list[T]` | Homogeneous list |
 | `dict[str, T]` | String-keyed mapping |
-| `T | U` | Union |
-| `File[str]` | Strict UTF-8 file |
-| `File[bytes]` | Binary file |
-| `File[json]` | JSON file |
-| `File[yaml]` | Safe YAML 1.2 file |
+| `T \| U` | Union |
+| `File[str]` | Strict UTF-8 file content |
+| `File[bytes]` | Exact file bytes |
+| `File[json]` | Decoded JSON |
+| `File[yaml]` | Safely decoded YAML 1.2 |
 
-Typed reference fields acquire their expected spec type from the declaration
-selector rather than from a scalar type expression.
+See the [file-types reference](files.md) for `File[...]` behavior.
 
 ## Literals
 
 ```text
-"string"
+"Pepper"
 42
 -3
-0.001
+0.25
 true
 false
 null
-[1, 2, 3]
-{name: "example", retries: 2}
+["cat", "dog"]
+{meals: 2, bowl: "blue"}
 {"quoted-key": "value"}
 ```
 
-Strings use double quotes and JSON-style escapes. Map keys are identifiers or
-double-quoted strings. Trailing commas are accepted in lists and maps.
+Strings use double quotes and JSON-style escapes. Mapping keys are identifiers or
+double-quoted strings. Lists and mappings allow trailing commas.
 
 ## Implementations
 
-An implementation belongs to the containing spec:
+An implementation belongs to its surrounding spec:
 
 ```text
-impl local:
-  host: "127.0.0.1"
-  port: 8080
+impl pepper:
+  name: "Pepper"
 ```
 
-Implementation inheritance uses an implementation selector:
+Implementation inheritance uses `<-` and an implementation selector:
 
 ```text
-impl child <- :parent:
-  workers: 4
+impl long_stay <- :weekend:
+  nights: 5
 ```
 
-Assignments use literal values. `$` assignments select referenced
-implementations:
+Parent values are resolved before local assignments. Parents may be same-file or
+external, must satisfy a compatible spec, and cannot form cycles.
 
-```text
-impl training:
-  $model: models/model.etcm#Model:base
-  model.hidden_size: 512
-```
+An implementation named `default` has no implicit behavior; callers still select
+`:default` explicitly.
 
 ## Selectors
 
-| Selector | Meaning |
+| Form | Target |
 | --- | --- |
 | `path.etcm#Spec` | Spec in another file |
-| `#Spec` | Same-file spec |
+| `#Spec` | Spec in the current file |
 | `path.etcm#Spec:impl` | Implementation in another file |
-| `#Spec:impl` | Same-file implementation with explicit spec |
+| `#Spec:impl` | Implementation in the current file |
 | `:impl` | Implementation in the active local spec |
 
-API and CLI root selectors must use the complete
-`path.etcm#Spec:implementation` form. An implementation named `default` is never
-implicit.
+CLI and Python root calls require the complete
+`path.etcm#Spec:implementation` form. Paths inside ETCM files are relative to the
+file containing the selector.
 
-## Field constraints and metadata
+## Typed references
 
-Semicolons separate entries inside `[]`:
+A `$` field declares a child object and selects the spec it must satisfy:
 
 ```text
-count: int [>0; <=100]
-mode: str [in ["fast", "safe"]]
+spec Stay:
+  $pet: pets.etcm#Pet
+```
+
+An implementation assignment selects the concrete child:
+
+```text
+impl pepper_weekend:
+  $pet: pets.etcm#Pet:pepper
+```
+
+Same-file selectors are valid:
+
+```text
+$pet: #Pet
+$pet: #Pet:pepper
+```
+
+A child field may be patched after selecting a reference:
+
+```text
+impl special_stay:
+  $pet: pets.etcm#Pet:pepper
+  pet.daily_food_grams: 320
+```
+
+The patch is copy-on-write for that resolved graph. It does not mutate the source
+implementation.
+
+## Constraints and field metadata
+
+Semicolons separate entries:
+
+```text
+nights: int [>0; <=30]
+kind: str [in ["cat", "dog"]]
 name: str [min_length=1; max_length=80]
 slug: str [regex="^[a-z0-9-]+$"]
-input: Path [path_exists="must_exist"; path_kind="file"]
+photo: Path [path_exists="must_exist"; path_kind="file"]
 tags: list[str] = [] [override="append"]
 ```
 
-Supported metadata names are:
-
-| Name | Accepted purpose |
+| Name | Values or purpose |
 | --- | --- |
-| `gt`, `ge`, `lt`, `le`, `ne` | Atomic comparisons |
-| `min_length`, `max_length` | Length bounds |
-| `regex` | String pattern |
+| `gt`, `ge`, `lt`, `le`, `ne` | Atomic comparison metadata |
+| `min_length`, `max_length` | String or collection length |
+| `regex` | String regular expression |
 | `path_exists` | `resolver`, `allow_missing`, `must_exist` |
 | `path_kind` | `any`, `file`, `dir` |
 | `override` | `allow`, `deny`, `force_only`, `append`, `merge` |
 
-`in [...]` is the preferred syntax for finite choices.
+Operator constraints such as `[>0]` are equivalent to the corresponding atomic
+comparison metadata. Use `in [...]` for a finite set of accepted values.
 
-## Parameter references
+Override policy behavior is defined in the [override reference](overrides.md).
 
-References begin with `@` and contain field-name segments:
+## Parameter references and expressions
+
+`@` reads another declared field relative to the containing object:
 
 ```text
-@batch_size
-@dataloader.local_batch_size
-@dataloader.sampler.seed
+@nights
+@pet.daily_food_grams
 ```
 
-They are relative to their containing object and may descend only through declared
-inline objects and typed references. They cannot move upward, index collections,
-traverse mappings, or enter `File[...]` content.
+References may descend through inline objects and typed references. They cannot
+move upward, index a list, traverse mapping keys, or inspect decoded `File[...]`
+content.
 
-## Arithmetic expressions
-
-Derived values and constraints support:
+Derived values support numeric and scalar literals, parentheses, unary `+` and
+`-`, and arithmetic operators:
 
 ```text
 +  -  *  /  //  %  **
 ```
 
-They also support unary `+` and `-`, parentheses, numeric and scalar literals, and
-parameter references. Comparisons use:
-
-```text
-==  !=  <  <=  >  >=
-```
-
-Assertions additionally support `not`, `and`, and `or`. Chained comparisons,
-function calls, indexing, attribute access, string concatenation, and arbitrary
-Python expressions are unsupported.
+Constraints and assertions support `==`, `!=`, `<`, `<=`, `>`, and `>=`.
+Assertions additionally support `not`, `and`, and `or`. Function calls, arbitrary
+Python, string concatenation, and chained comparisons are not part of the
+language. See [resolution and validation](resolution.md) for evaluation details.
 
 ## Assertions
 
-Inline form:
+A named assertion contains one or more predicates:
 
 ```text
-assert positive_total: @total > 0
+assert reasonable_stay:
+  @nights > 0
+  @total_food_grams >= @pet.daily_food_grams
 ```
 
-Block form:
+All predicates must be true. Assertions may read several branches below their
+containing object and support Boolean composition:
 
 ```text
-assert valid_shape:
-  @hidden_size % @attention_heads == 0
-  @partition_size * @devices == @hidden_size
+assert optional_value:
+  @value == null or @value > 0
 ```
 
-Each line in a block is a separate predicate. Parentheses allow one predicate to
-span physical lines.
+Inherited assertion names cannot be reused or disabled.
 
 ## Comments
 
-`#` begins a comment at line start or after whitespace:
+Comments begin with `#` at the start of a line or after whitespace:
 
 ```text
 # whole-line comment
-timeout: float = 30.0  # trailing comment
-label: str = "prod#primary"
+nights: 2  # end-of-line comment
+label: "#not-a-comment"
 ```
 
-In a selector position, `#Spec` is a same-file selector rather than a comment.
+Where a selector is expected, `#Pet` is a same-file selector rather than a
+comment.
 
-## Unsupported constructs
+## Deliberately unsupported
 
-ETCM does not currently support:
-
-- upward or root-relative parameter references
-- list indexing or mapping traversal in field paths
-- selectors inside expressions
-- chained comparisons or ternary expressions
-- function calls or user-defined operators
-- unions of multiple `File[...]` codecs
-- URL-backed files
-- arbitrary Python execution
+ETCM does not include implicit default implementation selection, wildcard
+selectors, environment interpolation, URL-backed files, arbitrary Python
+execution, collection indexing in field paths, or file value unions other than
+`File[T] | null`.

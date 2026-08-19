@@ -1,0 +1,48 @@
+spec TrainRun:
+  config_version: int = 1 [override="deny"]
+  $model: model.etcm#ModelConfig
+  $runtime: runtime.etcm#RuntimeConfig
+  dataset: File[json] = "dataset.json"
+  run_name: str
+  seed: int = 7 [>=0; override="force_only"]
+  max_steps: int [>0]
+  micro_batch_size: int = 8 [>0]
+  gradient_accumulation_steps: int = 1 [>0]
+  optimizer:
+    learning_rate: float = 0.001 [>0; <=1]
+    weight_decay: float = 0.01 [>=0; <=1]
+  checkpoint_every: int = 1 [>0]
+  tags: list[str] = ["training"] [override="append"]
+  metadata: dict[str, str] = {team: "research"} [override="merge"]
+  effective_batch_size: int := @micro_batch_size * @gradient_accumulation_steps
+
+  assert checkpoint_schedule:
+    @checkpoint_every <= @max_steps
+
+  impl smoke:
+    $model: model.etcm#ModelConfig:tiny
+    $runtime: runtime.etcm#RuntimeConfig:local
+    run_name: "smoke"
+    max_steps: 2
+    tags: ["smoke"]
+    metadata: {purpose: "tutorial"}
+
+  impl baseline <- :smoke:
+    $model: model.etcm#ModelConfig:baseline
+    run_name: "baseline"
+    max_steps: 20
+    micro_batch_size: 16
+    gradient_accumulation_steps: 2
+    checkpoint_every: 5
+    tags: ["baseline"]
+    metadata: {purpose: "baseline"}
+
+  impl cuda_debug <- :baseline:
+    $runtime: runtime.etcm#RuntimeConfig:cuda
+    run_name: "cuda-debug"
+    max_steps: 3
+    micro_batch_size: 4
+    gradient_accumulation_steps: 1
+    checkpoint_every: 1
+    tags: ["cuda"]
+    metadata: {purpose: "debug"}

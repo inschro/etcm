@@ -1,0 +1,5 @@
+{
+  "name": "synthetic-classification",
+  "input_features": 8,
+  "classes": 3
+}

@@ -1,0 +1,6 @@
+spec Pet:
+  name: str
+  daily_food_grams: int = 300
+
+  impl pepper:
+    name: "Pepper"

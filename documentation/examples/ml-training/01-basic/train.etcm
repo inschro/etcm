@@ -1,0 +1,17 @@
+spec TrainRun:
+  $model: model.etcm#ModelConfig
+  max_steps: int [>0]
+  micro_batch_size: int = 8 [>0]
+  gradient_accumulation_steps: int = 1 [>0]
+  learning_rate: float = 0.001 [>0; <=1]
+  effective_batch_size: int := @micro_batch_size * @gradient_accumulation_steps
+
+  impl smoke:
+    $model: model.etcm#ModelConfig:tiny
+    max_steps: 2
+
+  impl baseline:
+    $model: model.etcm#ModelConfig:baseline
+    max_steps: 100
+    micro_batch_size: 16
+    gradient_accumulation_steps: 2

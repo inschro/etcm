@@ -1,0 +1,14 @@
+spec ModelConfig:
+  name: str
+  hidden_size: int [>0]
+  layers: int = 2 [>0]
+
+  impl tiny:
+    name: "tiny-mlp"
+    hidden_size: 16
+    layers: 1
+
+  impl baseline:
+    name: "baseline-mlp"
+    hidden_size: 64
+    layers: 3

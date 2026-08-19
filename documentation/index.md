@@ -1,73 +1,91 @@
 # ETCM
 
-**ETCM Typed Configuration Markup for reproducible configuration graphs.**
+ETCM typed configuration markup is a typed language for reproducible
+configuration graphs.
 
-ETCM is a configuration language for defining, validating, composing, and loading
-typed systems. It is designed for projects where configuration is part of the
-architecture: machine-learning experiments, data pipelines, distributed runtimes,
-service settings, and reusable infrastructure components.
+ETCM is intended for application configuration that has outgrown a flat file or
+dictionary. When named configurations share components, accept overrides, or
+depend on relationships between fields, their rules tend to become scattered
+through application code.
+
+ETCM puts the contract and the concrete values in the configuration language.
+That gives both people and tools one place to answer two questions:
+
+1. What shape must this configuration have?
+2. Which named set of values do I want to use?
+
+## The smallest useful ETCM file
+
+Suppose we want to describe a pet. The contract needs only one field to begin
+with:
+
+```text title="pets.etcm"
+spec Pet:
+  name: str
+
+  impl pepper:
+    name: "Pepper"
+```
+
+`spec Pet` defines the contract. It says every `Pet` needs a string called
+`name`. `impl pepper` is one named configuration that satisfies that contract.
+
+Check the configuration from the command line before application code consumes
+it:
+
+```console
+$ etcm validate pets.etcm#Pet:pepper --short
+OK: /path/to/pets.etcm#Pet:pepper
+```
+
+When application code loads the same named configuration, `load()` validates it
+again before returning a runtime object:
+
+```python
+from etcm import load
+
+pet = load("pets.etcm#Pet:pepper")
+print(pet.name)  # Pepper
+```
+
+Specs, implementations, and selectors are ETCM's core concepts. The tutorials
+use them to introduce composition, validation rules, derived values, and
+controlled overrides.
+
+## When the configuration grows
+
+In a larger project, one configuration may refer to another. A boarding stay can
+refer to a pet, for example, without copying the pet's name and feeding needs.
+ETCM preserves that relationship as a typed graph and validates the graph before
+turning it into Python objects.
+
+This is useful when configuration has real structure: reusable components,
+several deployment or execution variants, cross-field rules, controlled
+overrides, or files whose contents belong in the resolved result.
+
+For a small collection of unrelated scalar settings, a dictionary or TOML file
+may still be the simpler choice.
 
 !!! warning "Alpha software"
 
     ETCM is under active development. The language and public API are usable, but
     compatibility is not yet guaranteed between releases.
 
-## Why ETCM?
+## Start here
 
-A real configuration often describes more than scalar settings. Models depend on
-optimizers, runtimes depend on launchers, and experiments need a complete record of
-the graph that produced a result. ETCM makes those relationships explicit and
-type-checked.
+1. [Install ETCM](getting-started/installation.md).
+2. Build and load one configuration in the
+   [quickstart](getting-started/quickstart.md).
+3. Build a composed training setup in the [basic tutorial](tutorials/basic.md).
+4. Continue with the [advanced tutorial](tutorials/advanced.md) for inheritance,
+   controlled overrides, file-backed values, and Python integration.
 
-- **Typed definitions** keep structure and validation beside the configuration.
-- **Explicit references** compose reusable implementations across files.
-- **Derived values and assertions** express relationships without executing Python.
-- **Spec-owned overrides** control which values callers may replace or combine.
-- **Resolved graphs** retain source identity and override history for audit and replay.
-- **Python and CLI entry points** use the same resolve, validate, and convert pipeline.
+Use the [language reference](reference/language.md),
+[Python API](reference/python-api.md), and [CLI reference](reference/cli.md) when
+you need an exact lookup rather than a tutorial.
 
-## A small example
+## What ETCM does not do
 
-```text title="train.etcm"
-spec TrainRun:
-  epochs: int [>0]
-  learning_rate: float = 0.001 [>0]
-  batch_size: int = 32 [>0]
-  total_examples: int := @epochs * @batch_size
-
-  impl smoke:
-    epochs: 1
-```
-
-Select the implementation by its exact file, spec, and implementation identity:
-
-```console
-$ etcm validate train.etcm#TrainRun:smoke --short
-OK: train.etcm#TrainRun:smoke
-```
-
-Load the same configuration in Python:
-
-```python
-from etcm import load
-
-cfg = load("train.etcm#TrainRun:smoke")
-print(cfg.total_examples)
-```
-
-## Where to begin
-
-- [Install ETCM](getting-started/installation.md), then follow the
-  [quickstart](getting-started/quickstart.md).
-- Read [core concepts](guides/core-concepts.md) for specs, implementations, fields,
-  selectors, and paths.
-- Use [composition](guides/composition.md) to connect typed objects across files.
-- Add invariants with [validation and derived values](guides/validation.md).
-- Integrate ETCM through the [Python API](reference/python-api.md) or
-  [CLI](reference/cli.md).
-
-## Design boundary
-
-ETCM defines, validates, composes, inspects, and materializes typed configuration.
-It is not a workflow scheduler, secrets manager, arbitrary Python execution system,
-or general-purpose programming language.
+ETCM defines, composes, validates, inspects, and materializes configuration. It
+does not schedule work, execute arbitrary Python from configuration, manage
+secrets, or replace the application that consumes the result.

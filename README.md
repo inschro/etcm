@@ -1,196 +1,123 @@
 # ETCM
 
-[![Documentation](https://github.com/inschro/etcm/actions/workflows/docs.yml/badge.svg)](
-https://github.com/inschro/etcm/actions/workflows/docs.yml)
+[![Documentation](https://github.com/inschro/etcm/actions/workflows/docs.yml/badge.svg)](https://github.com/inschro/etcm/actions/workflows/docs.yml)
 
 [Documentation](https://inschro.github.io/etcm/) ·
-[Documentation source](documentation/index.md)
+[Quickstart](documentation/getting-started/quickstart.md) ·
+[Language reference](documentation/reference/language.md)
 
-ETCM is Typed Configuration Markup: a configuration language for defining,
-validating, composing, and executing reproducible systems.
+ETCM is **ETCM Typed Configuration Markup**: a configuration language for
+defining named, reusable configurations and validating them before application
+code consumes them.
 
-The thesis:
-
-> Configuration describes a typed graph of executable objects.
-
-ETCM is for projects where configuration is part of the system architecture:
-machine learning experiments, distributed runtimes, HPC jobs, data pipelines,
-service settings, and reusable infrastructure components.
-
-## Why
-
-ETCM is designed to complement familiar Python configuration workflows. It is
-useful when a project benefits from:
-
-- config files that reference reusable definitions across files
-- generated Pydantic views from shared configuration definitions
-- typed relationships and derived values across nested config objects
-- explicit override policy for important fields
-- resolved config artifacts for replay and audit
-- object graphs made from models, optimizers, datasets, launchers, callbacks,
-  and runtime modules
-
-ETCM keeps those relationships explicit, type-checked, and easy to inspect.
-
-## Example
+Start with a contract and one implementation:
 
 ```etcm
-spec TrainRun:
-  $model: models/lm.etcm#LMConfig
-  $data: data/streams.etcm#DataStream
-  $optimizer: optimizers/adamw.etcm#Optimizer
-  max_steps: int [>0]
+spec Pet:
+  name: str
+  daily_food_grams: int [>0]
 
-  impl smoke:
-    $model: models/lm.etcm#LMConfig:tiny
-    $data: data/streams.etcm#DataStream:smoke
-    $optimizer: optimizers/adamw.etcm#Optimizer:fast
-    max_steps: 2
+  impl pepper:
+    name: "Pepper"
+    daily_food_grams: 300
 ```
 
-Python API:
-
-```python
-from etcm import convert, load, resolve, validate
-
-cfg = load("configs/train.etcm#TrainRun:smoke", target="pydantic")
-
-cfg = load(
-    "configs/train.etcm#TrainRun:smoke",
-    overrides={"data.sampler.seed": 42},
-)
-
-graph = resolve("configs/train.etcm#TrainRun:smoke")
-graph = validate(graph)
-cfg = convert(graph, target="pydantic")
-```
-
-Selectors identify their target without inspecting the target file:
-
-- `path.etcm#Spec` and `#Spec` select cross-file and same-file specs.
-- `path.etcm#Spec:implementation` and `#Spec:implementation` select named
-  implementations.
-- `:implementation` selects an implementation in the active local spec.
-
-Root selectors always use `path.etcm#Spec:implementation`. Implementations
-named `default` are written explicitly as `:default`; ETCM never infers them.
-
-Parameters can validate against or derive from other parameters. References
-start at the containing object and may follow typed child objects:
-
-```etcm
-spec TrainingConfig:
-  $dataloader: data/dataloader.etcm#DataLoaderConfig
-  accumulation_steps: int = 1 [>0]
-  world_size: int = 1 [>0]
-
-  global_batch_size: int :=
-    @dataloader.local_batch_size * @accumulation_steps * @world_size
-
-  seed_confirmation: int [== @dataloader.sampler.seed]
-
-  assert batch_shape:
-    (
-      @global_batch_size
-      == @dataloader.local_batch_size * @accumulation_steps * @world_size
-    )
-```
-
-See [Validation and derived values](documentation/guides/validation.md) for
-dotted-reference, derived-value, named-assertion, type, evaluation, and diagnostic
-semantics.
-
-Text, binary, JSON, and YAML inputs can be linked as typed files:
-
-```etcm
-spec Train:
-  system_prompt: File[str] = "path/to/system.txt"
-  tokenizer: File[bytes] = "path/to/tokenizer.model"
-  prompts: File[json] = "path/to/prompts.json"
-  launcher: File[yaml] = "path/to/launcher.yaml"
-  inputs: list[File[json]] = ["train.json", "eval.json"]
-```
-
-`File[str]` reads strict UTF-8 text, `File[bytes]` preserves exact bytes, and
-the structured codecs decode JSON or safe YAML 1.2. Every `File[T]` names one
-exact codec; ETCM never infers it from the filename. Paths are source-relative,
-overrides are applied before loading, and ETCM keeps materialized contents
-opaque to relations and deep overrides. Typed byte files become `null` only at
-JSON output boundaries. See [Typed files](documentation/guides/typed-files.md).
-
-Typing note: `load()` and `convert()` return `Any`. ETCM validates the config
-before materializing it, but the returned object is a dynamic boundary for
-pyright, Pylance, and mypy. This makes attribute access ergonomic without
-repeated `cast(Any, ...)` calls. Static checkers will not catch misspelled
-fields or incompatible field usage after that boundary unless your project
-provides Python-visible types separately.
-
-CLI:
+`spec Pet` says which fields every pet must provide. `impl pepper` supplies one
+named set of values. The selector `pets.etcm#Pet:pepper` identifies that exact
+implementation, so the CLI and Python API load the same thing:
 
 ```bash
-etcm resolve configs/train.etcm#TrainRun:smoke --format json
-etcm validate configs/train.etcm#TrainRun:smoke
-etcm validate configs/train.etcm#TrainRun:smoke --short
-etcm validate-all configs/
-etcm load configs/train.etcm#TrainRun:smoke --target pydantic
-etcm load configs/train.etcm#TrainRun:smoke --set data.sampler.seed=42
+etcm validate pets.etcm#Pet:pepper --short
 ```
 
-Python mappings, `PATH=VALUE` string lists, implementation assignments, and CLI
-`--set` flags all use the same deep override semantics and spec-owned policies.
-See [Overrides](documentation/guides/overrides.md) for reference replacement,
-relative path, force authorization, and audit behavior.
+```python
+from etcm import load
+
+pet = load("pets.etcm#Pet:pepper")
+print(pet.name)  # Pepper
+```
+
+As configuration grows, ETCM can compose implementations into a typed graph,
+apply controlled overrides, check cross-field constraints, derive values, and
+load typed file contents. For a few unrelated scalar settings, a dictionary or
+TOML file may still be the simpler choice.
 
 ## Install
 
-ETCM is currently scoped as a standalone Python package installable from a
-built wheel, a local checkout, or a Git URL. Public PyPI publishing is deferred
-until the release process is finalized.
+ETCM requires Python 3.12 or newer. It is not yet published on PyPI; install the
+current package directly from GitHub:
 
 ```bash
-uv build
-python -m pip install dist/etcm-0.1.0-py3-none-any.whl
+python -m pip install "etcm @ git+https://github.com/inschro/etcm.git"
+etcm --help
 ```
 
-After installation, the CLI and Python API can be smoke-tested against the
-example configs:
+For development, clone the repository and install the locked environment:
 
 ```bash
-etcm validate examples/ml/train.etcm#TrainRun:smoke --short
-etcm load examples/ml/train.etcm#TrainRun:smoke --target dict
-python -c 'from etcm import load; print(load("examples/ml/train.etcm#TrainRun:smoke", target="dict")["run_name"])'
+git clone https://github.com/inschro/etcm.git
+cd etcm
+uv sync --locked --extra dev --extra docs
 ```
 
-## Current Status
+See the [installation guide](documentation/getting-started/installation.md) for
+the supported install paths, then follow the
+[quickstart](documentation/getting-started/quickstart.md) to create and load a
+configuration.
 
-This repository includes the parser, resolver, generated-view API, thin CLI,
-standalone packaging, examples, typed parameter relations, named downward
-assertions, typed file-backed values, and equivalent dotted or indented
-field paths for declarations and implementations.
+## Everyday workflow
 
-- [Get started](documentation/getting-started/installation.md)
-- [Core concepts](documentation/guides/core-concepts.md)
-- [Composition](documentation/guides/composition.md)
-- [Validation and derived values](documentation/guides/validation.md)
-- [Overrides](documentation/guides/overrides.md)
-- [Typed files](documentation/guides/typed-files.md)
+Validate the implementation you changed:
+
+```bash
+etcm validate path/to/config.etcm#Spec:implementation --short
+```
+
+If you changed a shared spec or reference, validate every implementation below
+the affected configuration directory:
+
+```bash
+etcm validate-all path/to/configs
+```
+
+Load a validated result as a generated Pydantic model (the default) or as a
+plain dictionary:
+
+```python
+from etcm import load
+
+run = load("train.etcm#TrainRun:smoke")
+run_dict = load("train.etcm#TrainRun:smoke", target="dict")
+```
+
+The documentation continues from the basic workflow without assuming prior
+ETCM knowledge:
+
+- [Basic tutorial](documentation/tutorials/basic.md)
+- [Advanced tutorial](documentation/tutorials/advanced.md)
+- [Language reference](documentation/reference/language.md)
+- [Override reference](documentation/reference/overrides.md)
+- [File-types reference](documentation/reference/files.md)
 - [Python API](documentation/reference/python-api.md)
 - [CLI reference](documentation/reference/cli.md)
 
-The internal [product spec](docs/product_spec.md) is retained separately from the
-published user documentation.
+## Development
 
-## Documentation Development
-
-Install the documentation dependencies and start a live preview:
+Run the project checks from a development checkout:
 
 ```bash
-uv sync --extra docs
-uv run --extra docs zensical serve
+uv run --no-sync pytest
+uv run --no-sync ruff check .
+uv run --no-sync basedpyright
+uv run --no-sync zensical build --clean --strict
 ```
 
-Run the same strict build used by GitHub Actions:
+Start the documentation preview at `http://127.0.0.1:8000/`:
 
 ```bash
-uv run --extra docs zensical build --clean --strict
+uv run --no-sync zensical serve
 ```
+
+ETCM is alpha software: the language and public API are usable, but compatibility
+is not yet guaranteed between releases. The project is licensed under
+[Apache-2.0](LICENSE).
