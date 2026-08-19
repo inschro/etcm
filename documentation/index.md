@@ -1,6 +1,6 @@
 # ETCM
 
-**Typed Configuration Markup for reproducible configuration graphs.**
+**ETCM Typed Configuration Markup for reproducible configuration graphs.**
 
 ETCM is a configuration language for defining, validating, composing, and loading
 typed systems. It is designed for projects where configuration is part of the
