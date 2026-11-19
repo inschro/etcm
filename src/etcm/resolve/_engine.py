@@ -31,8 +31,8 @@ from etcm.resolve._selectors import resolve_path as _resolve_path
 from etcm.resolve._selectors import selector_from_ir as _selector_from_ir
 from etcm.resolve._selectors import selector_from_raw as _selector_from_raw
 from etcm.resolve._selectors import selector_text as _selector_text
+from etcm.resolve._specs import DocumentLoader, SpecResolver
 from etcm.resolve._specs import ResolvedSpec as _ResolvedSpec
-from etcm.resolve._specs import SpecResolver
 from etcm.resolve._types import literal_plain_value as _literal_plain_value
 from etcm.resolve._types import type_accepts_path as _type_accepts_path
 from etcm.resolve.graph import (
@@ -51,9 +51,11 @@ _PATH_METADATA = {"path_exists", "path_kind"}
 
 
 class _ResolverState:
-    def __init__(self, resolver: Resolver) -> None:
+    def __init__(
+        self, resolver: Resolver, *, document_loader: DocumentLoader | None = None
+    ) -> None:
         self._resolver = resolver
-        self._spec_resolver = SpecResolver()
+        self._spec_resolver = SpecResolver(document_loader=document_loader)
         self._patch_applier = PatchApplier(self)
 
     def resolve(
@@ -88,7 +90,7 @@ class _ResolverState:
         )
         self._finalize_files(builder)
         self._finalize_derivations(builder)
-        builder.sources.update(self._spec_resolver.documents)
+        builder.sources.update(self._spec_resolver.source_paths)
         return builder.to_graph()
 
     def resolve_patch_reference(

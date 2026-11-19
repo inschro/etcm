@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, replace
+from functools import cache
 from pathlib import Path
 from types import MappingProxyType
 from typing import NoReturn
@@ -36,6 +37,8 @@ from etcm.resolve.relations import (
 )
 from etcm.syntax import parse_file
 
+type DocumentLoader = Callable[[Path], Document]
+
 
 @dataclass(frozen=True)
 class ResolvedSpec:
@@ -62,15 +65,14 @@ class ImplTarget:
 
 
 class SpecResolver:
-    def __init__(self) -> None:
-        self._documents: dict[Path, Document] = {}
+    def __init__(self, *, document_loader: DocumentLoader | None = None) -> None:
+        self._document_loader = (
+            document_loader if document_loader is not None else cache(parse_file)
+        )
+        self.source_paths: set[Path] = set()
         self._specs: dict[tuple[Path, str], ResolvedSpec] = {}
         self._relations_validating: set[tuple[Path, str]] = set()
         self._relations_validated: set[tuple[Path, str]] = set()
-
-    @property
-    def documents(self) -> Mapping[Path, Document]:
-        return MappingProxyType(self._documents)
 
     def resolve_implementation_selector(self, selector: Selector) -> ImplTarget:
         if selector.target != "implementation":
@@ -99,17 +101,14 @@ class SpecResolver:
 
     def load_document(self, source_path: Path) -> Document:
         source_path = source_path.resolve()
-        cached = self._documents.get(source_path)
-        if cached is not None:
-            return cached
-        if not source_path.is_file():
+        if source_path not in self.source_paths and not source_path.is_file():
             raise_error(
                 "E_MISSING_SELECTOR",
                 f"Selector source file does not exist: {source_path}",
                 source_path=source_path,
             )
-        document = parse_file(source_path)
-        self._documents[source_path] = document
+        document = self._document_loader(source_path)
+        self.source_paths.add(source_path)
         return document
 
     def _resolve_spec(

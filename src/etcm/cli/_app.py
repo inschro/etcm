@@ -64,6 +64,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_path_exists_argument(validate_all_parser)
     validate_all_parser.add_argument(
+        "--jobs",
+        type=_positive_int,
+        default=1,
+        metavar="N",
+        help="maximum parallel validation workers (default: 1)",
+    )
+    validate_all_parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
@@ -115,6 +122,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         parser.error(str(exc))
 
     parser.error(f"unknown command: {args.command}")
+
+
+def _positive_int(value: str) -> int:
+    number = int(value)
+    if number < 1:
+        raise argparse.ArgumentTypeError("must be a positive integer")
+    return number
 
 
 def _add_selector_argument(parser: argparse.ArgumentParser) -> None:
@@ -179,6 +193,7 @@ def _cmd_validate_all(args: argparse.Namespace) -> int:
     results = validate_all_results(
         paths=tuple(Path(path) for path in args.paths) or (Path.cwd(),),
         resolver=resolver,
+        jobs=args.jobs,
     )
     if args.format == "json":
         write_json(validate_all_json_payload(results))

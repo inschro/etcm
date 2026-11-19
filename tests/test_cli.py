@@ -1,11 +1,18 @@
 from __future__ import annotations
 
+import concurrent.futures
 import json
+from collections import Counter
+from functools import partial
+from multiprocessing import get_context
 from pathlib import Path
 
 import pytest
 
 from etcm.cli import main
+from etcm.ir import Document
+from etcm.resolve import ResolvedGraph, Resolver
+from etcm.syntax import parser as syntax_parser
 
 ROOT = Path(__file__).resolve().parent
 FIXTURES = ROOT / "fixtures"
@@ -178,6 +185,110 @@ def test_validate_all_scans_directory_recursively(capsys: pytest.CaptureFixture[
     assert exit_code == 0
     assert captured.err == ""
     assert captured.out == "4 total, 4 OK, 0 fail\n"
+
+
+def test_validate_all_reuses_parsed_documents_within_a_run(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = tmp_path.resolve()
+    first = root / "first.etcm"
+    second = root / "second.etcm"
+    shared = root / "shared.etcm"
+    shared.write_text("spec Shared:\n  value: int\n", encoding="utf-8")
+    first.write_text(
+        "$spec: shared.etcm#Shared\n\nimpl one:\n  value: 1\n\nimpl two:\n  value: 2\n",
+        encoding="utf-8",
+    )
+    second.write_text("$spec: shared.etcm#Shared\n\nimpl three:\n  value: 3\n", encoding="utf-8")
+
+    calls: Counter[Path] = Counter()
+    sources: list[tuple[Path, ...]] = []
+    parse_document = syntax_parser.parse_document
+    validate = Resolver.validate
+
+    def track_parse(text: str, source_path: str | Path) -> Document:
+        calls[Path(source_path)] += 1
+        return parse_document(text, source_path)
+
+    def track_sources(resolver: Resolver, graph: ResolvedGraph) -> ResolvedGraph:
+        sources.append(graph.sources)
+        return validate(resolver, graph)
+
+    monkeypatch.setattr(syntax_parser, "parse_document", track_parse)
+    monkeypatch.setattr(Resolver, "validate", track_sources)
+
+    args = ["validate-all", str(root), str(second)]
+    assert main(args) == 0
+    assert capsys.readouterr().out == "3 total, 3 OK, 0 fail\n"
+    assert calls == {first: 1, second: 1, shared: 1}
+    assert sources == [(first, shared), (first, shared), (second, shared)]
+
+    shared.write_text("spec Shared:\n  value: str\n", encoding="utf-8")
+    assert main(args) == 1
+    assert capsys.readouterr().out.endswith("3 total, 0 OK, 3 fail\n")
+    assert calls == {first: 2, second: 2, shared: 2}
+
+
+@pytest.mark.parametrize("output_args", [("--verbose",), ("--format", "json")])
+def test_validate_all_parallel_matches_serial(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+    output_args: tuple[str, ...],
+) -> None:
+    (tmp_path / "a.etcm").write_text(
+        "spec Good:\n  value: int\n  impl default:\n    value: 1\n", encoding="utf-8"
+    )
+    (tmp_path / "b.etcm").write_text(
+        'spec Strict:\n  path: Path\n  impl default:\n    path: "absent.txt"\n', encoding="utf-8"
+    )
+    (tmp_path / "c.etcm").write_text("spec Broken:\n  value: int\n  value: int\n", encoding="utf-8")
+    args = [
+        "validate-all",
+        str(tmp_path),
+        str(tmp_path / "missing"),
+        "--path-exists",
+        "must_exist",
+        *output_args,
+    ]
+
+    assert main([*args, "--jobs", "1"]) == 1
+    serial = capsys.readouterr()
+    assert serial.err == ""
+    assert "E_MISSING_SELECTOR" in serial.out
+    assert "E_INVALID_PATH" in serial.out
+    assert "E_DUPLICATE_FIELD" in serial.out
+    if "--format" in output_args:
+        payload = json.loads(serial.out)
+        assert (payload["total"], payload["ok"], payload["fail"]) == (4, 1, 3)
+        assert [result["artifact"] for result in payload["results"]] == [
+            (tmp_path / "missing").as_posix(),
+            f"{(tmp_path / 'a.etcm').resolve().as_posix()}#Good:default",
+            f"{(tmp_path / 'b.etcm').resolve().as_posix()}#Strict:default",
+            (tmp_path / "c.etcm").resolve().as_posix(),
+        ]
+        assert payload["results"][3]["diagnostic"]["source_path"] == (
+            tmp_path / "c.etcm"
+        ).resolve().as_posix()
+
+    monkeypatch.setattr(
+        concurrent.futures,
+        "ProcessPoolExecutor",
+        partial(concurrent.futures.ProcessPoolExecutor, mp_context=get_context("spawn")),
+    )
+    assert main([*args, "--jobs", "4"]) == 1
+    assert capsys.readouterr() == serial
+
+
+@pytest.mark.parametrize("jobs", ["0", "-1", "many"])
+def test_validate_all_rejects_invalid_jobs(capsys: pytest.CaptureFixture[str], jobs: str) -> None:
+    with pytest.raises(SystemExit) as raised:
+        main(["validate-all", "--jobs", jobs])
+
+    assert raised.value.code == 2
+    assert "--jobs" in capsys.readouterr().err
 
 
 def test_validate_all_enumerates_multi_spec_implementations(

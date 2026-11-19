@@ -63,6 +63,9 @@ $ etcm validate-all [PATH ...] [options]
 With no path, scanning starts in the current directory. Spec-only files are
 skipped; every discovered implementation is checked.
 
+Use `etcm validate-all configs --jobs 4` to validate files in parallel on large
+trees. Results are reported in the same order as a serial run.
+
 ```console
 $ etcm validate-all configs --verbose
 OK: /project/configs/pets.etcm#Pet:pepper
@@ -79,6 +82,7 @@ Options:
 | `--format text` | Human-readable output; default |
 | `--format json` | Totals and per-selector result objects |
 | `--path-exists POLICY` | Resolver default for delegated `Path` fields |
+| `--jobs N` | Maximum parallel workers, defaults to `1` |
 
 `validate-all` intentionally does not accept override options.
 

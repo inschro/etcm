@@ -8,7 +8,7 @@ from dataclasses import asdict, is_dataclass
 from pathlib import Path
 from typing import Any, NoReturn
 
-from etcm.cli._validate_all import ValidationResult
+from etcm.cli._validate_all import ValidationResult, diagnostic_payload
 from etcm.errors import Diagnostic, ETCMError
 from etcm.ir import TypeExpr
 from etcm.resolve._files import (
@@ -59,27 +59,10 @@ def validate_all_json_payload(results: Sequence[ValidationResult]) -> dict[str, 
             {
                 "artifact": result.artifact,
                 "ok": result.ok,
-                "diagnostic": _diagnostic_payload(result.diagnostic)
-                if result.diagnostic is not None
-                else None,
+                "diagnostic": _json_compatible(diagnostic_payload(result.diagnostic)),
             }
             for result in results
         ],
-    }
-
-
-def _diagnostic_payload(diagnostic: Diagnostic) -> dict[str, Any]:
-    return {
-        "code": diagnostic.code,
-        "message": diagnostic.message,
-        "source_path": diagnostic.source_path,
-        "line": diagnostic.line,
-        "column": diagnostic.column,
-        "end_line": diagnostic.end_line,
-        "end_column": diagnostic.end_column,
-        "selector": diagnostic.selector,
-        "graph_path": diagnostic.graph_path,
-        "details": diagnostic.details,
     }
 
 
